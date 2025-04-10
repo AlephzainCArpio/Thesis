@@ -1,0 +1,291 @@
+const { PrismaClient } = require("@prisma/client")
+const prisma = new PrismaClient()
+
+const getAllUsers = async (req, res) => {
+  try {
+    const { role, name, email } = req.query
+
+    const where = {}
+
+    if (role) {
+      where.role = role
+    }
+
+    if (name) {
+      where.name = { contains: name }
+    }
+
+    if (email) {
+      where.email = { contains: email }
+    }
+
+    const users = await prisma.user.findMany({
+      where,
+      include: {
+        profile: true,
+      },
+    })
+
+    res.json(users)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const getUserById = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      include: {
+        profile: true,
+        venues: true,
+        caterings: true,
+        photographers: true,
+        designers: true,
+      },
+    })
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
+    }
+
+    res.json(user)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const updateUser = async (req, res) => {
+  try {
+    const { name, email, role, phone } = req.body
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+    })
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: req.params.id },
+      data: {
+        name,
+        email,
+        role,
+        phone,
+      },
+    })
+
+    res.json(updatedUser)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const deleteUser = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+    })
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
+    }
+
+    await prisma.user.delete({
+      where: { id: req.params.id },
+    })
+
+    res.json({ message: "User removed" })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const getPendingServices = async (req, res) => {
+  try {
+    const pendingVenues = await prisma.venue.findMany({
+      where: { status: "PENDING" },
+      include: { provider: true },
+    })
+
+    const pendingCaterings = await prisma.catering.findMany({
+      where: { status: "PENDING" },
+      include: { provider: true },
+    })
+
+    const pendingPhotographers = await prisma.photographer.findMany({
+      where: { status: "PENDING" },
+      include: { provider: true },
+    })
+
+    const pendingDesigners = await prisma.designer.findMany({
+      where: { status: "PENDING" },
+      include: { provider: true },
+    })
+
+    res.json({
+      venues: pendingVenues,
+      caterings: pendingCaterings,
+      photographers: pendingPhotographers,
+      designers: pendingDesigners,
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const approveService = async (req, res) => {
+  try {
+    const { serviceType, id } = req.params
+    let result
+
+    switch (serviceType) {
+      case "venue":
+        result = await prisma.venue.update({
+          where: { id },
+          data: { status: "APPROVED" },
+        })
+        break
+      case "catering":
+        result = await prisma.catering.update({
+          where: { id },
+          data: { status: "APPROVED" },
+        })
+        break
+      case "photographer":
+        result = await prisma.photographer.update({
+          where: { id },
+          data: { status: "APPROVED" },
+        })
+        break
+      case "designer":
+        result = await prisma.designer.update({
+          where: { id },
+          data: { status: "APPROVED" },
+        })
+        break
+      default:
+        return res.status(400).json({ message: "Invalid service type" })
+    }
+
+    res.json({
+      message: `${serviceType} approved successfully`,
+      result,
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const rejectService = async (req, res) => {
+  try {
+    const { serviceType, id } = req.params
+    let result
+
+    switch (serviceType) {
+      case "venue":
+        result = await prisma.venue.update({
+          where: { id },
+          data: { status: "REJECTED" },
+        })
+        break
+      case "catering":
+        result = await prisma.catering.update({
+          where: { id },
+          data: { status: "REJECTED" },
+        })
+        break
+      case "photographer":
+        result = await prisma.photographer.update({
+          where: { id },
+          data: { status: "REJECTED" },
+        })
+        break
+      case "designer":
+        result = await prisma.designer.update({
+          where: { id },
+          data: { status: "REJECTED" },
+        })
+        break
+      default:
+        return res.status(400).json({ message: "Invalid service type" })
+    }
+
+    res.json({
+      message: `${serviceType} rejected`,
+      result,
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const getDashboardStats = async (req, res) => {
+  try {
+    const [
+      userCount,
+      providerCount,
+      venueCount,
+      cateringCount,
+      photographerCount,
+      designerCount,
+      pendingCount,
+      recentUsers,
+      recentViews,
+    ] = await Promise.all([
+      prisma.user.count({ where: { role: "USER" } }),
+      prisma.user.count({ where: { role: "PROVIDER" } }),
+      prisma.venue.count({ where: { status: "APPROVED" } }),
+      prisma.catering.count({ where: { status: "APPROVED" } }),
+      prisma.photographer.count({ where: { status: "APPROVED" } }),
+      prisma.designer.count({ where: { status: "APPROVED" } }),
+      prisma.venue.count({ where: { status: "PENDING" } }) +
+        prisma.catering.count({ where: { status: "PENDING" } }) +
+        prisma.photographer.count({ where: { status: "PENDING" } }) +
+        prisma.designer.count({ where: { status: "PENDING" } }),
+      prisma.user.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        select: { id: true, name: true, email: true, role: true, createdAt: true },
+      }),
+      prisma.viewHistory.findMany({
+        take: 10,
+        orderBy: { viewedAt: "desc" },
+        include: {
+          user: { select: { name: true, email: true } },
+          venue: { select: { name: true } },
+          catering: { select: { name: true } },
+          photographer: { select: { name: true } },
+          designer: { select: { name: true } },
+        },
+      }),
+    ])
+
+    res.json({
+      userCount,
+      providerCount,
+      venueCount,
+      cateringCount,
+      photographerCount,
+      designerCount,
+      pendingCount,
+      recentUsers,
+      recentViews,
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+module.exports = {
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  getPendingServices,
+  approveService,
+  rejectService,
+  getDashboardStats,
+}

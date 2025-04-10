@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  PROVIDER
+  ADMIN
+}
+
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  password       String
+  name           String?
+  phone          String?
+  role           UserRole       @default(USER)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  profile        UserProfile?
+  venues         Venue[]        @relation("VenueProvider")
+  caterings      Catering[]     @relation("CateringProvider")
+  photographers  Photographer[] @relation("PhotographerProvider")
+  designers      Designer[]     @relation("DesignerProvider")
+  viewHistory    ViewHistory[]
+  
+  @@map("users")
+}
+
+model UserProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location       String?
+  preferences    Json?
+  notifyEmail    Boolean  @default(true)
+  notifyPhone    Boolean  @default(false)
+  avatar         String?
+  
+  @@map("user_profiles")
+}
+
+enum ServiceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Venue {
+  id             String        @id @default(uuid())
+  name           String
+  description    String        @db.Text
+  location       String
+  capacity       Int
+  price          Float
+  amenities      Json?
+  images         String?       @db.Text // JSON array of image URLs
+  providerId     String
+  provider       User          @relation("VenueProvider", fields: [providerId], references: [id])
+  status         ServiceStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  viewHistory    ViewHistory[]
+  
+  @@map("venues")
+}
+
+model Catering {
+  id             String        @id @default(uuid())
+  name           String
+  description    String        @db.Text
+  location       String
+  maxPeople      Int
+  pricePerPerson Float
+  cuisineType    String
+  serviceType    String        // buffet, plated, etc.
+  dietaryOptions Json?        // vegetarian, vegan, gluten-free, etc.
+  images         String?       @db.Text // JSON array of image URLs
+  providerId     String
+  provider       User          @relation("CateringProvider", fields: [providerId], references: [id])
+  status         ServiceStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  viewHistory    ViewHistory[]
+  
+  @@map("caterings")
+}
+
+model Photographer {
+  id             String        @id @default(uuid())
+  name           String
+  description    String        @db.Text
+  location       String
+  style          String
+  experienceYears Int
+  priceRange     String
+  copyType       String        // printed, digital, etc.
+  serviceType    String        // photo, video, both
+  portfolio      String?       @db.Text // JSON array of image URLs
+  providerId     String
+  provider       User          @relation("PhotographerProvider", fields: [providerId], references: [id])
+  status         ServiceStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  viewHistory    ViewHistory[]
+  
+  @@map("photographers")
+}
+
+model Designer {
+  id             String        @id @default(uuid())
+  name           String
+  description    String        @db.Text
+  location       String
+  style          String
+  priceRange     String
+  preferredVenues String?
+  eventTypes     String?       // JSON array of event types
+  portfolio      String?       @db.Text // JSON array of image URLs
+  providerId     String
+  provider       User          @relation("DesignerProvider", fields: [providerId], references: [id])
+  status         ServiceStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  viewHistory    ViewHistory[]
+  
+  @@map("designers")
+}
+
+model ViewHistory {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  venueId        String?
+  venue          Venue?   @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  cateringId     String?
+  catering       Catering? @relation(fields: [cateringId], references: [id], onDelete: SetNull)
+  photographerId String?
+  photographer   Photographer? @relation(fields: [photographerId], references: [id], onDelete: SetNull)
+  designerId     String?
+  designer       Designer? @relation(fields: [designerId], references: [id], onDelete: SetNull)
+  viewedAt       DateTime @default(now())
+  
+  @@map("view_history")
+}
