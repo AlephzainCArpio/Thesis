@@ -38,6 +38,7 @@ import AdminVenuesPage from "./pages/admin/AdminVenuesPage"
 import AdminCateringPage from "./pages/admin/AdminCateringPage"
 import AdminPhotographersPage from "./pages/admin/AdminPhotographersPage"
 import AdminDesignersPage from "./pages/admin/AdminDesignersPage"
+import ProviderManagementPage from "./pages/admin/ProviderManagementPage" 
 
 function App() {
   const { currentUser, loading } = useAuth()
@@ -85,6 +86,7 @@ function App() {
         <Route path="catering" element={<AdminCateringPage />} />
         <Route path="photographers" element={<AdminPhotographersPage />} />
         <Route path="designers" element={<AdminDesignersPage />} />
+        <Route path="provider-management" element={<ProviderManagementPage />} /> 
       </Route>
 
       {/* Redirect for any other routes */}

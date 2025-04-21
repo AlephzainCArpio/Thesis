@@ -36,7 +36,11 @@ const MainLayout = () => {
 
   // Navigation items for desktop menu
   const menuItems = [
-    { key: "/", label: "Home", icon: <HomeOutlined /> },
+    {
+      key: currentUser ? "/user" : "/",
+      label: "Home",
+      icon: <HomeOutlined />,
+    },
     { key: "/user/venues", label: "Venues", icon: null },
     { key: "/user/catering", label: "Catering", icon: null },
     { key: "/user/photographers", label: "Photographers", icon: null },
@@ -108,7 +112,7 @@ const MainLayout = () => {
         }}
       >
         <div className="logo" style={{ color: "white", fontSize: "1.5rem", fontWeight: "bold" }}>
-          <Link to="/" style={{ color: "white" }}>
+          <Link to={currentUser ? "/user" : "/"} style={{ color: "white" }}>
             Organiceee
           </Link>
         </div>

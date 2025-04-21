@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Form, Input, InputNumber, Select, Button, Upload, Card, Tabs, message } from "antd"
+import { useState, useEffect } from "react"
+import { Form, Input, InputNumber, Select, Button, Upload, Card, Tabs, message, Alert } from "antd"
 import { UploadOutlined } from "@ant-design/icons"
 import { useAuth } from "../../contexts/AuthContext"
 import api from "../../services/api"
@@ -13,11 +13,68 @@ const { TextArea } = Input
 const RegisterServicePage = () => {
   const [loading, setLoading] = useState(false)
   const [serviceType, setServiceType] = useState("venue")
+  const [providerType, setProviderType] = useState(null)
+  const [canRegister, setCanRegister] = useState(true)
+  const [errorMessage, setErrorMessage] = useState("")
   const { currentUser } = useAuth()
+
+  useEffect(() => {
+    // Check if provider already has a service type
+    const checkProviderType = async () => {
+      try {
+        const response = await api.get("/provider/type")
+        setProviderType(response.data.providerType)
+
+        // If provider already has a type, set it as the active tab
+        if (response.data.providerType) {
+          setServiceType(response.data.providerType)
+        }
+      } catch (error) {
+        console.error("Error checking provider type:", error)
+      }
+    }
+
+    checkProviderType()
+  }, [])
+
+  // When service type changes, validate if provider can register this type
+  useEffect(() => {
+    const validateServiceType = async () => {
+      // If provider doesn't have a type yet, they can register any service
+      if (!providerType) {
+        setCanRegister(true)
+        setErrorMessage("")
+        return
+      }
+
+      // If provider already has a type, they can only register that type
+      if (providerType !== serviceType) {
+        setCanRegister(false)
+        setErrorMessage(
+          `You are registered as a ${providerType} provider. You cannot register services in multiple categories.`,
+        )
+      } else {
+        setCanRegister(true)
+        setErrorMessage("")
+      }
+    }
+
+    validateServiceType()
+  }, [serviceType, providerType])
 
   const onFinish = async (values) => {
     try {
       setLoading(true)
+
+      // First validate if provider can register this service type
+      const validationResponse = await api.post("/provider/register-service/validate", {
+        serviceType,
+      })
+
+      if (!validationResponse.data.canProceed) {
+        message.error(validationResponse.data.message)
+        return
+      }
 
       // Format image URLs as JSON string
       let images = []
@@ -54,9 +111,9 @@ const RegisterServicePage = () => {
 
       message.success("Service submitted for approval!")
       // Reset form
-      setServiceType("venue")
+      setServiceType(providerType || "venue")
     } catch (error) {
-      message.error("Failed to register service")
+      message.error(error.response?.data?.message || "Failed to register service")
       console.error(error)
     } finally {
       setLoading(false)
@@ -79,10 +136,20 @@ const RegisterServicePage = () => {
         published.
       </p>
 
+      {errorMessage && (
+        <Alert
+          message="Registration Restricted"
+          description={errorMessage}
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
       <Card>
-        <Tabs activeKey={serviceType} onChange={setServiceType}>
-          <TabPane tab="Venue" key="venue">
-            <Form name="register_venue" layout="vertical" onFinish={onFinish}>
+        <Tabs activeKey={serviceType} onChange={setServiceType} disabled={providerType !== null}>
+          <TabPane tab="Venue" key="venue" disabled={providerType && providerType !== "venue"}>
+            <Form name="register_venue" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
               <Form.Item
                 name="name"
                 label="Venue Name"
@@ -135,15 +202,15 @@ const RegisterServicePage = () => {
               </Form.Item>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loading}>
+                <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
                   Submit for Approval
                 </Button>
               </Form.Item>
             </Form>
           </TabPane>
 
-          <TabPane tab="Catering" key="catering">
-            <Form name="register_catering" layout="vertical" onFinish={onFinish}>
+          <TabPane tab="Catering" key="catering" disabled={providerType && providerType !== "catering"}>
+            <Form name="register_catering" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
               <Form.Item name="name" label="Business Name" rules={[{ required: true }]}>
                 <Input placeholder="Enter business name" />
               </Form.Item>
@@ -190,15 +257,15 @@ const RegisterServicePage = () => {
               </Form.Item>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loading}>
+                <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
                   Submit for Approval
                 </Button>
               </Form.Item>
             </Form>
           </TabPane>
 
-          <TabPane tab="Photographer" key="photographer">
-            <Form name="register_photographer" layout="vertical" onFinish={onFinish}>
+          <TabPane tab="Photographer" key="photographer" disabled={providerType && providerType !== "photographer"}>
+            <Form name="register_photographer" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
               <Form.Item name="name" label="Business Name" rules={[{ required: true }]}>
                 <Input placeholder="Enter business name" />
               </Form.Item>
@@ -240,15 +307,15 @@ const RegisterServicePage = () => {
               </Form.Item>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loading}>
+                <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
                   Submit for Approval
                 </Button>
               </Form.Item>
             </Form>
           </TabPane>
 
-          <TabPane tab="Designer" key="designer">
-            <Form name="register_designer" layout="vertical" onFinish={onFinish}>
+          <TabPane tab="Designer" key="designer" disabled={providerType && providerType !== "designer"}>
+            <Form name="register_designer" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
               <Form.Item name="name" label="Business Name" rules={[{ required: true }]}>
                 <Input placeholder="Enter business name" />
               </Form.Item>
@@ -297,7 +364,7 @@ const RegisterServicePage = () => {
               </Form.Item>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loading}>
+                <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
                   Submit for Approval
                 </Button>
               </Form.Item>

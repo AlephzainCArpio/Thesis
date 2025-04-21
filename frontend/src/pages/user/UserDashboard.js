@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Row, Col, Card, Button, Typography, Statistic, List, Spin, Empty, Tabs, Tag, message } from "antd"
+import { Row, Col, Card, Button, Typography, Statistic, List, Spin, Empty, Tabs, Tag, message, Popover } from "antd"
 import {
   HomeOutlined,
   ShopOutlined,
@@ -12,12 +12,16 @@ import {
   CalendarOutlined,
   RightOutlined,
   EnvironmentOutlined,
+  InfoCircleOutlined,
+  StarOutlined,
+  DollarOutlined,
+  TeamOutlined,
 } from "@ant-design/icons"
 import { Link } from "react-router-dom"
 import api from "../../services/api"
 import { useAuth } from "../../contexts/AuthContext"
-
-const { Title, Paragraph } = Typography
+import ServiceCard from '../../components/common/ServiceCard';
+const { Title, Paragraph, Text } = Typography
 const { TabPane } = Tabs
 
 const UserDashboard = () => {
@@ -58,8 +62,6 @@ const UserDashboard = () => {
       case "catering":
         return <ShopOutlined style={{ color: "#fa8c16" }} />
       case "photographer":
-        return <CameraOutlined style={{ color: "#color: '#fa8c16" }} />
-      case "photographer":
         return <CameraOutlined style={{ color: "#52c41a" }} />
       case "designer":
         return <BgColorsOutlined style={{ color: "#722ed1" }} />
@@ -97,6 +99,41 @@ const UserDashboard = () => {
         return "#"
     }
   }
+
+  // Detailed content for hover popover
+  const getDetailedContent = (item) => (
+    <div style={{ maxWidth: 300 }}>
+      <div style={{ marginBottom: 8 }}>
+        <Text strong>{item.name}</Text>
+      </div>
+      <div style={{ marginBottom: 8 }}>
+        <EnvironmentOutlined /> {item.location}
+      </div>
+      {item.rating && (
+        <div style={{ marginBottom: 8 }}>
+          <StarOutlined style={{ color: "#faad14" }} /> {item.rating} ({item.reviewCount || 0} reviews)
+        </div>
+      )}
+      {item.price && (
+        <div style={{ marginBottom: 8 }}>
+          <DollarOutlined /> Starting from {item.price}
+        </div>
+      )}
+      {item.capacity && (
+        <div style={{ marginBottom: 8 }}>
+          <TeamOutlined /> Capacity: {item.capacity} guests
+        </div>
+      )}
+      {item.description && (
+        <div style={{ marginBottom: 8 }}>
+          <Text type="secondary">{item.description.substring(0, 150)}...</Text>
+        </div>
+      )}
+      <div style={{ marginTop: 12 }}>
+        <Link to={getServiceUrl(item.type, item.id)}>View full details</Link>
+      </div>
+    </div>
+  )
 
   if (loading) {
     return (
@@ -155,38 +192,67 @@ const UserDashboard = () => {
               dataSource={dashboardData.recentViews}
               renderItem={(item) => (
                 <List.Item>
-                  <Card
-                    hoverable
-                    cover={
-                      <img
-                        alt={item.name}
-                        src={item.image || "https://via.placeholder.com/300x150"}
-                        style={{ height: 150, objectFit: "cover" }}
-                      />
-                    }
+                  <Popover
+                    content={getDetailedContent(item)}
+                    title={`${getServiceTypeText(item.type)} Details`}
+                    placement="right"
+                    trigger="hover"
                   >
-                    <Card.Meta
-                      avatar={getServiceIcon(item.type)}
-                      title={item.name}
-                      description={
-                        <>
-                          <Tag color="blue">{getServiceTypeText(item.type)}</Tag>
-                          <div style={{ marginTop: 8 }}>
-                            <EnvironmentOutlined /> {item.location}
+                    <Card
+                      hoverable
+                      cover={
+                        <div style={{ position: "relative" }}>
+                          <img
+                            alt={item.name}
+                            src={
+                              `${process.env.REACT_APP_API_URL}/uploads/${item.image}` ||
+                              "https://via.placeholder.com/300x150"
+                            }
+                            style={{ height: 150, objectFit: "cover" }}
+                          />
+                          <div
+                            style={{
+                              position: "absolute",
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              background: "linear-gradient(transparent, rgba(0,0,0,0.7))",
+                              padding: "30px 10px 10px",
+                            }}
+                          >
+                            <Text style={{ color: "white", fontWeight: "bold" }}>{item.name}</Text>
                           </div>
-                          <div style={{ marginTop: 8 }}>Viewed on {new Date(item.viewedAt).toLocaleDateString()}</div>
-                        </>
+                        </div>
                       }
-                    />
-                    <Button
-                      type="link"
-                      style={{ padding: 0, marginTop: 8 }}
-                      as={Link}
-                      to={getServiceUrl(item.type, item.id)}
                     >
-                      View Details <RightOutlined />
-                    </Button>
-                  </Card>
+                      <Card.Meta
+                        avatar={getServiceIcon(item.type)}
+                        title={
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            {item.name}
+                            <InfoCircleOutlined style={{ color: "#1890ff", cursor: "pointer" }} />
+                          </div>
+                        }
+                        description={
+                          <>
+                            <Tag color="blue">{getServiceTypeText(item.type)}</Tag>
+                            <div style={{ marginTop: 8 }}>
+                              <EnvironmentOutlined /> {item.location}
+                            </div>
+                            <div style={{ marginTop: 8 }}>Viewed on {new Date(item.viewedAt).toLocaleDateString()}</div>
+                          </>
+                        }
+                      />
+                      <Button
+                        type="link"
+                        style={{ padding: 0, marginTop: 8 }}
+                        as={Link}
+                        to={getServiceUrl(item.type, item.id)}
+                      >
+                        View Details <RightOutlined />
+                      </Button>
+                    </Card>
+                  </Popover>
                 </List.Item>
               )}
             />
@@ -202,37 +268,80 @@ const UserDashboard = () => {
               dataSource={dashboardData.favorites}
               renderItem={(item) => (
                 <List.Item>
-                  <Card
-                    hoverable
-                    cover={
-                      <img
-                        alt={item.name}
-                        src={item.image || "https://via.placeholder.com/300x150"}
-                        style={{ height: 150, objectFit: "cover" }}
-                      />
-                    }
+                  <Popover
+                    content={getDetailedContent(item)}
+                    title={`${getServiceTypeText(item.type)} Details`}
+                    placement="right"
+                    trigger="hover"
                   >
-                    <Card.Meta
-                      avatar={getServiceIcon(item.type)}
-                      title={item.name}
-                      description={
-                        <>
-                          <Tag color="blue">{getServiceTypeText(item.type)}</Tag>
-                          <div style={{ marginTop: 8 }}>
-                            <EnvironmentOutlined /> {item.location}
+                    <Card
+                      hoverable
+                      cover={
+                        <div style={{ position: "relative" }}>
+                          <img
+                            alt={item.name}
+                            src={
+                              `${process.env.REACT_APP_API_URL}/uploads/${item.image}` ||
+                              "https://via.placeholder.com/300x150"
+                            }
+                            style={{ height: 150, objectFit: "cover" }}
+                          />
+                          <div
+                            style={{
+                              position: "absolute",
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              background: "linear-gradient(transparent, rgba(0,0,0,0.7))",
+                              padding: "30px 10px 10px",
+                            }}
+                          >
+                            <Text style={{ color: "white", fontWeight: "bold" }}>{item.name}</Text>
                           </div>
-                        </>
+                        </div>
                       }
-                    />
-                    <Button
-                      type="link"
-                      style={{ padding: 0, marginTop: 8 }}
-                      as={Link}
-                      to={getServiceUrl(item.type, item.id)}
                     >
-                      View Details <RightOutlined />
-                    </Button>
-                  </Card>
+                      <Card.Meta
+                        avatar={getServiceIcon(item.type)}
+                        title={
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            {item.name}
+                            <InfoCircleOutlined style={{ color: "#1890ff", cursor: "pointer" }} />
+                          </div>
+                        }
+                        description={
+                          <>
+                            <Tag color="blue">{getServiceTypeText(item.type)}</Tag>
+                            <div style={{ marginTop: 8 }}>
+                              <EnvironmentOutlined /> {item.location}
+                            </div>
+                            {item.rating && (
+                              <div style={{ marginTop: 4 }}>
+                                {Array(Math.floor(item.rating))
+                                  .fill()
+                                  .map((_, i) => (
+                                    <StarOutlined key={i} style={{ color: "#faad14" }} />
+                                  ))}
+                                {Array(5 - Math.floor(item.rating))
+                                  .fill()
+                                  .map((_, i) => (
+                                    <StarOutlined key={i} style={{ color: "#d9d9d9" }} />
+                                  ))}
+                              </div>
+                            )}
+                          </>
+                        }
+                      />
+                      <Button
+                        type="link"
+                        style={{ padding: 0, marginTop: 8 }}
+                        as={Link}
+                        to={getServiceUrl(item.type, item.id)}
+                      >
+                        View Details <RightOutlined />
+                      </Button>
+                    </Card>
+                  </Popover>
                 </List.Item>
               )}
             />
@@ -248,37 +357,80 @@ const UserDashboard = () => {
               dataSource={dashboardData.recommendations}
               renderItem={(item) => (
                 <List.Item>
-                  <Card
-                    hoverable
-                    cover={
-                      <img
-                        alt={item.name}
-                        src={item.image || "https://via.placeholder.com/300x150"}
-                        style={{ height: 150, objectFit: "cover" }}
-                      />
-                    }
+                  <Popover
+                    content={getDetailedContent(item)}
+                    title={`${getServiceTypeText(item.type)} Details`}
+                    placement="right"
+                    trigger="hover"
                   >
-                    <Card.Meta
-                      avatar={getServiceIcon(item.type)}
-                      title={item.name}
-                      description={
-                        <>
-                          <Tag color="blue">{getServiceTypeText(item.type)}</Tag>
-                          <div style={{ marginTop: 8 }}>
-                            <EnvironmentOutlined /> {item.location}
+                    <Card
+                      hoverable
+                      cover={
+                        <div style={{ position: "relative" }}>
+                          <img
+                            alt={item.name}
+                            src={
+                              `${process.env.REACT_APP_API_URL}/uploads/${item.image}` ||
+                              "https://via.placeholder.com/300x150"
+                            }
+                            style={{ height: 150, objectFit: "cover" }}
+                          />
+                          <div
+                            style={{
+                              position: "absolute",
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              background: "linear-gradient(transparent, rgba(0,0,0,0.7))",
+                              padding: "30px 10px 10px",
+                            }}
+                          >
+                            <Text style={{ color: "white", fontWeight: "bold" }}>{item.name}</Text>
                           </div>
-                        </>
+                        </div>
                       }
-                    />
-                    <Button
-                      type="link"
-                      style={{ padding: 0, marginTop: 8 }}
-                      as={Link}
-                      to={getServiceUrl(item.type, item.id)}
                     >
-                      View Details <RightOutlined />
-                    </Button>
-                  </Card>
+                      <Card.Meta
+                        avatar={getServiceIcon(item.type)}
+                        title={
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            {item.name}
+                            <InfoCircleOutlined style={{ color: "#1890ff", cursor: "pointer" }} />
+                          </div>
+                        }
+                        description={
+                          <>
+                            <Tag color="blue">{getServiceTypeText(item.type)}</Tag>
+                            <div style={{ marginTop: 8 }}>
+                              <EnvironmentOutlined /> {item.location}
+                            </div>
+                            {item.rating && (
+                              <div style={{ marginTop: 4 }}>
+                                {Array(Math.floor(item.rating))
+                                  .fill()
+                                  .map((_, i) => (
+                                    <StarOutlined key={i} style={{ color: "#faad14" }} />
+                                  ))}
+                                {Array(5 - Math.floor(item.rating))
+                                  .fill()
+                                  .map((_, i) => (
+                                    <StarOutlined key={i} style={{ color: "#d9d9d9" }} />
+                                  ))}
+                              </div>
+                            )}
+                          </>
+                        }
+                      />
+                      <Button
+                        type="link"
+                        style={{ padding: 0, marginTop: 8 }}
+                        as={Link}
+                        to={getServiceUrl(item.type, item.id)}
+                      >
+                        View Details <RightOutlined />
+                      </Button>
+                    </Card>
+                  </Popover>
                 </List.Item>
               )}
             />

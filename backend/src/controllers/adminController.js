@@ -1,29 +1,21 @@
 const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient()
+const path = require("path")
+const fs = require("fs")
 
+// USERS 
 const getAllUsers = async (req, res) => {
   try {
     const { role, name, email } = req.query
 
     const where = {}
-
-    if (role) {
-      where.role = role
-    }
-
-    if (name) {
-      where.name = { contains: name }
-    }
-
-    if (email) {
-      where.email = { contains: email }
-    }
+    if (role) where.role = role
+    if (name) where.name = { contains: name }
+    if (email) where.email = { contains: email }
 
     const users = await prisma.user.findMany({
       where,
-      include: {
-        profile: true,
-      },
+      include: { profile: true },
     })
 
     res.json(users)
@@ -45,9 +37,7 @@ const getUserById = async (req, res) => {
       },
     })
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" })
-    }
+    if (!user) return res.status(404).json({ message: "User not found" })
 
     res.json(user)
   } catch (error) {
@@ -63,18 +53,11 @@ const updateUser = async (req, res) => {
       where: { id: req.params.id },
     })
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" })
-    }
+    if (!user) return res.status(404).json({ message: "User not found" })
 
     const updatedUser = await prisma.user.update({
       where: { id: req.params.id },
-      data: {
-        name,
-        email,
-        role,
-        phone,
-      },
+      data: { name, email, role, phone },
     })
 
     res.json(updatedUser)
@@ -89,13 +72,9 @@ const deleteUser = async (req, res) => {
       where: { id: req.params.id },
     })
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" })
-    }
+    if (!user) return res.status(404).json({ message: "User not found" })
 
-    await prisma.user.delete({
-      where: { id: req.params.id },
-    })
+    await prisma.user.delete({ where: { id: req.params.id } })
 
     res.json({ message: "User removed" })
   } catch (error) {
@@ -103,27 +82,15 @@ const deleteUser = async (req, res) => {
   }
 }
 
+// SERVICES 
 const getPendingServices = async (req, res) => {
   try {
-    const pendingVenues = await prisma.venue.findMany({
-      where: { status: "PENDING" },
-      include: { provider: true },
-    })
-
-    const pendingCaterings = await prisma.catering.findMany({
-      where: { status: "PENDING" },
-      include: { provider: true },
-    })
-
-    const pendingPhotographers = await prisma.photographer.findMany({
-      where: { status: "PENDING" },
-      include: { provider: true },
-    })
-
-    const pendingDesigners = await prisma.designer.findMany({
-      where: { status: "PENDING" },
-      include: { provider: true },
-    })
+    const [pendingVenues, pendingCaterings, pendingPhotographers, pendingDesigners] = await Promise.all([
+      prisma.venue.findMany({ where: { status: "PENDING" }, include: { provider: true } }),
+      prisma.catering.findMany({ where: { status: "PENDING" }, include: { provider: true } }),
+      prisma.photographer.findMany({ where: { status: "PENDING" }, include: { provider: true } }),
+      prisma.designer.findMany({ where: { status: "PENDING" }, include: { provider: true } }),
+    ])
 
     res.json({
       venues: pendingVenues,
@@ -143,37 +110,18 @@ const approveService = async (req, res) => {
 
     switch (serviceType) {
       case "venue":
-        result = await prisma.venue.update({
-          where: { id },
-          data: { status: "APPROVED" },
-        })
-        break
+        result = await prisma.venue.update({ where: { id }, data: { status: "APPROVED" } }); break
       case "catering":
-        result = await prisma.catering.update({
-          where: { id },
-          data: { status: "APPROVED" },
-        })
-        break
+        result = await prisma.catering.update({ where: { id }, data: { status: "APPROVED" } }); break
       case "photographer":
-        result = await prisma.photographer.update({
-          where: { id },
-          data: { status: "APPROVED" },
-        })
-        break
+        result = await prisma.photographer.update({ where: { id }, data: { status: "APPROVED" } }); break
       case "designer":
-        result = await prisma.designer.update({
-          where: { id },
-          data: { status: "APPROVED" },
-        })
-        break
+        result = await prisma.designer.update({ where: { id }, data: { status: "APPROVED" } }); break
       default:
         return res.status(400).json({ message: "Invalid service type" })
     }
 
-    res.json({
-      message: `${serviceType} approved successfully`,
-      result,
-    })
+    res.json({ message: `${serviceType} approved successfully`, result })
   } catch (error) {
     res.status(500).json({ message: error.message })
   }
@@ -186,42 +134,135 @@ const rejectService = async (req, res) => {
 
     switch (serviceType) {
       case "venue":
-        result = await prisma.venue.update({
-          where: { id },
-          data: { status: "REJECTED" },
-        })
-        break
+        result = await prisma.venue.update({ where: { id }, data: { status: "REJECTED" } }); break
       case "catering":
-        result = await prisma.catering.update({
-          where: { id },
-          data: { status: "REJECTED" },
-        })
-        break
+        result = await prisma.catering.update({ where: { id }, data: { status: "REJECTED" } }); break
       case "photographer":
-        result = await prisma.photographer.update({
-          where: { id },
-          data: { status: "REJECTED" },
-        })
-        break
+        result = await prisma.photographer.update({ where: { id }, data: { status: "REJECTED" } }); break
       case "designer":
-        result = await prisma.designer.update({
-          where: { id },
-          data: { status: "REJECTED" },
-        })
-        break
+        result = await prisma.designer.update({ where: { id }, data: { status: "REJECTED" } }); break
       default:
         return res.status(400).json({ message: "Invalid service type" })
     }
 
+    res.json({ message: `${serviceType} rejected`, result })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+// PROVIDERS 
+const getPendingProviders = async (req, res) => {
+  try {
+    const pendingProviders = await prisma.user.findMany({
+      where: {
+        role: "PROVIDER",
+        providerStatus: "PENDING",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        verificationDoc: true,
+        createdAt: true,
+      },
+    })
+
+    res.json(pendingProviders)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const getVerificationDocument = async (req, res) => {
+  try {
+    const { id } = req.params
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: { verificationDoc: true },
+    })
+
+    if (!user || !user.verificationDoc) {
+      return res.status(404).json({ message: "Verification document not found" })
+    }
+
+    const filePath = path.join(__dirname, "../../uploads/verification", user.verificationDoc)
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: "File not found" })
+    }
+
+    res.sendFile(filePath)
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+const approveProvider = async (req, res) => {
+  try {
+    const { id } = req.params
+    const user = await prisma.user.findUnique({ where: { id } })
+
+    if (!user) return res.status(404).json({ message: "User not found" })
+    if (user.role !== "PROVIDER" || user.providerStatus !== "PENDING") {
+      return res.status(400).json({ message: "User is not a pending provider" })
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: { providerStatus: "APPROVED" },
+    })
+
     res.json({
-      message: `${serviceType} rejected`,
-      result,
+      message: "Provider approved successfully",
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        providerStatus: updatedUser.providerStatus,
+      },
     })
   } catch (error) {
     res.status(500).json({ message: error.message })
   }
 }
 
+const rejectProvider = async (req, res) => {
+  try {
+    const { id } = req.params
+    const user = await prisma.user.findUnique({ where: { id } })
+
+    if (!user) return res.status(404).json({ message: "User not found" })
+    if (user.role !== "PROVIDER" || user.providerStatus !== "PENDING") {
+      return res.status(400).json({ message: "User is not a pending provider" })
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        role: "USER",
+        providerStatus: "REJECTED",
+      },
+    })
+
+    res.json({
+      message: "Provider rejected and downgraded to user",
+      user: {
+        id: updatedUser.id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        providerStatus: updatedUser.providerStatus,
+      },
+    })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+
+//  STATS 
 const getDashboardStats = async (req, res) => {
   try {
     const [
@@ -279,6 +320,7 @@ const getDashboardStats = async (req, res) => {
   }
 }
 
+//EXPORT
 module.exports = {
   getAllUsers,
   getUserById,
@@ -287,5 +329,9 @@ module.exports = {
   getPendingServices,
   approveService,
   rejectService,
+  getPendingProviders,
+  getVerificationDocument,
+  approveProvider,
+  rejectProvider,
   getDashboardStats,
 }

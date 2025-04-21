@@ -1,7 +1,43 @@
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const { PrismaClient } = require("@prisma/client")
+const fs = require("fs")
+const path = require("path")
+const multer = require("multer")
 const prisma = new PrismaClient()
+
+// Configure multer for file storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadsDir = path.join(__dirname, "../../uploads/verification")
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true })
+    }
+    
+    cb(null, uploadsDir)
+  },
+  filename: (req, file, cb) => {
+    // Generate unique filename with original extension
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    const ext = path.extname(file.originalname)
+    cb(null, `verification-${uniqueSuffix}${ext}`)
+  }
+})
+
+const upload = multer({ 
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    // Accept only images
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true)
+    } else {
+      cb(new Error('Only image files are allowed'))
+    }
+  } 
+})
 
 // Generate JWT
 const generateToken = (id) => {
@@ -12,45 +48,77 @@ const generateToken = (id) => {
 
 const register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body
+    // Handle file upload if present
+    upload.single('verificationDocument')(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ message: err.message })
+      }
+      
+      const { name, email, password, role, phone } = req.body
 
-    // Check if user exists
-    const userExists = await prisma.user.findUnique({
-      where: { email },
-    })
+      // Check if user exists
+      const userExists = await prisma.user.findUnique({
+        where: { email },
+      })
 
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" })
-    }
+      if (userExists) {
+        // Delete uploaded file if user exists
+        if (req.file) {
+          fs.unlinkSync(req.file.path)
+        }
+        return res.status(400).json({ message: "User already exists" })
+      }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(password, salt)
+      // Hash password
+      const salt = await bcrypt.genSalt(10)
+      const hashedPassword = await bcrypt.hash(password, salt)
 
-    // Create user
-    const user = await prisma.user.create({
-      data: {
+      // Prepare user data
+      const userData = {
         name,
         email,
         password: hashedPassword,
+        phone,
         role: role || "USER",
         profile: {
           create: {}, 
         },
-      },
-    })
+      }
 
-    if (user) {
-      res.status(201).json({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        token: generateToken(user.id),
+      // Add provider-specific fields if registering as provider
+      if (role === "PROVIDER") {
+        if (!req.file) {
+          return res.status(400).json({ 
+            message: "Verification document is required for provider registration" 
+          })
+        }
+        
+        userData.providerStatus = "PENDING"
+        userData.verificationDoc = req.file.filename
+      }
+
+      // Create user
+      const user = await prisma.user.create({
+        data: userData,
       })
-    } else {
-      res.status(400).json({ message: "Invalid user data" })
-    }
+
+      if (user) {
+        res.status(201).json({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          providerStatus: user.providerStatus,
+          token: generateToken(user.id),
+        })
+      } else {
+        // Delete uploaded file if user creation fails
+        if (req.file) {
+          fs.unlinkSync(req.file.path)
+        }
+        res.status(400).json({ message: "Invalid user data" })
+      }
+    })
   } catch (error) {
     res.status(500).json({ message: error.message })
   }
@@ -71,6 +139,7 @@ const login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        providerStatus: user.providerStatus,
         token: generateToken(user.id),
       })
     } else {
@@ -93,6 +162,7 @@ const getMe = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      providerStatus: user.providerStatus,
       profile: user.profile,
     })
   } catch (error) {

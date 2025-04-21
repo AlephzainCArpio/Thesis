@@ -1,0 +1,30 @@
+.service-card {
+    width: 250px;
+    padding: 10px;
+    margin: 10px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    position: relative;
+    transition: transform 0.2s;
+  }
+  
+  .service-card:hover {
+    transform: scale(1.03);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .service-image {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+  
+  .hover-details {
+    background: #fff;
+    padding: 10px;
+    border-top: 1px solid #eee;
+    margin-top: 8px;
+    font-size: 14px;
+  }
+  

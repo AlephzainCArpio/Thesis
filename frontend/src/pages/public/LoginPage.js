@@ -1,6 +1,4 @@
-"use client"
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Form, Input, Button, Card, message } from "antd"
 import { UserOutlined, LockOutlined } from "@ant-design/icons"
 import { Link, useNavigate } from "react-router-dom"
@@ -8,30 +6,34 @@ import { useAuth } from "../../contexts/AuthContext"
 
 const LoginPage = () => {
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const { login, currentUser } = useAuth()
   const navigate = useNavigate()
 
   const onFinish = async (values) => {
     try {
       setLoading(true)
-      const user = await login(values.email, values.password)
-
-      message.success(`Welcome back, ${user.name || "User"}!`)
-
-      // Redirect based on user role
-      if (user.role === "ADMIN") {
-        navigate("/admin")
-      } else if (user.role === "PROVIDER") {
-        navigate("/provider")
-      } else {
-        navigate("/user")
-      }
+      await login(values.email, values.password)
+     
+      message.success("Login successful!")
     } catch (error) {
       message.error(error.message || "Failed to login")
     } finally {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (currentUser) {
+      // Redirect based on user role
+      if (currentUser.role === "ADMIN") {
+        navigate("/admin")
+      } else if (currentUser.role === "PROVIDER") {
+        navigate("/provider")
+      } else {
+        navigate("/user")
+      }
+    }
+  }, [currentUser, navigate]) 
 
   return (
     <div style={{ maxWidth: 400, margin: "0 auto", paddingTop: 50 }}>

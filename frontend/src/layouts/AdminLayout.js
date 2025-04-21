@@ -1,7 +1,6 @@
 "use client"
-
-import { useState } from "react"
-import { Layout, Menu, Button, Avatar, Dropdown } from "antd"
+import { useState, useEffect } from "react"
+import { Layout, Menu, Button, Avatar, Dropdown, Badge } from "antd"
 import {
   UserOutlined,
   LogoutOutlined,
@@ -10,9 +9,11 @@ import {
   CoffeeOutlined,
   CameraOutlined,
   BgColorsOutlined,
+  AuditOutlined,
 } from "@ant-design/icons"
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
+import api from "../services/api" 
 
 const { Header, Content, Footer, Sider } = Layout
 
@@ -21,6 +22,26 @@ const AdminLayout = () => {
   const { currentUser, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [pendingCount, setPendingCount] = useState(0)
+
+  // Fetch pending providers count
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const response = await api.get("/providers/pending") 
+        setPendingCount(response.data.length)
+      } catch (error) {
+        console.error("Error fetching pending providers:", error)
+      }
+    }
+
+    fetchPendingCount()
+
+    // Set up interval to refresh count
+    const interval = setInterval(fetchPendingCount, 60000) // Check every minute
+
+    return () => clearInterval(interval)
+  }, [])
 
   const handleLogout = () => {
     logout()
@@ -42,6 +63,13 @@ const AdminLayout = () => {
         <Menu theme="dark" defaultSelectedKeys={["1"]} mode="inline" selectedKeys={[location.pathname]}>
           <Menu.Item key="/admin" icon={<DashboardOutlined />}>
             <Link to="/admin">Dashboard</Link>
+          </Menu.Item>
+          <Menu.Item key="/admin/provider-management" icon={<AuditOutlined />}>
+            <Link to="/admin/provider-management">Provider Management</Link>
+            {/* Use Badge to show pending count */}
+            {pendingCount > 0 && (
+              <Badge count={pendingCount} style={{ marginLeft: '10px', backgroundColor: '#52c41a' }} />
+            )}
           </Menu.Item>
           <Menu.Item key="/admin/venues" icon={<BankOutlined />}>
             <Link to="/admin/venues">Venues</Link>

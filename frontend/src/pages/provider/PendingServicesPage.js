@@ -19,28 +19,56 @@ const PendingServicesPage = () => {
   const [loading, setLoading] = useState(true)
   const [selectedService, setSelectedService] = useState(null)
   const [detailModalVisible, setDetailModalVisible] = useState(false)
+  const [providerType, setProviderType] = useState(null)
 
   const { currentUser } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
-    fetchServices()
+    // First get the provider type
+    const checkProviderType = async () => {
+      try {
+        const response = await api.get("/provider/type")
+        setProviderType(response.data.providerType)
+
+        // Set the active tab to the provider's type
+        if (response.data.providerType) {
+          setActiveTab(response.data.providerType + "s") // Add 's' for plural
+        }
+      } catch (error) {
+        console.error("Error checking provider type:", error)
+      }
+    }
+
+    checkProviderType().then(() => {
+      fetchServices()
+    })
   }, [currentUser])
 
   const fetchServices = async () => {
     try {
       setLoading(true)
 
-      // Fetch services for the current provider
-      const venuesRes = await api.get(`/venues/provider/${currentUser.id}`)
-      const cateringRes = await api.get(`/catering/provider/${currentUser.id}`)
-      const photographersRes = await api.get(`/photographers/provider/${currentUser.id}`)
-      const designersRes = await api.get(`/designers/provider/${currentUser.id}`)
+      // Only fetch services for the provider's type
+      if (providerType === "venue" || !providerType) {
+        const venuesRes = await api.get(`/venues/provider/${currentUser.id}`)
+        setVenues(venuesRes.data)
+      }
 
-      setVenues(venuesRes.data)
-      setCatering(cateringRes.data)
-      setPhotographers(photographersRes.data)
-      setDesigners(designersRes.data)
+      if (providerType === "catering" || !providerType) {
+        const cateringRes = await api.get(`/catering/provider/${currentUser.id}`)
+        setCatering(cateringRes.data)
+      }
+
+      if (providerType === "photographer" || !providerType) {
+        const photographersRes = await api.get(`/photographers/provider/${currentUser.id}`)
+        setPhotographers(photographersRes.data)
+      }
+
+      if (providerType === "designer" || !providerType) {
+        const designersRes = await api.get(`/designers/provider/${currentUser.id}`)
+        setDesigners(designersRes.data)
+      }
     } catch (error) {
       message.error("Failed to load services")
       console.error(error)
@@ -96,20 +124,20 @@ const PendingServicesPage = () => {
     let color = ""
 
     switch (status) {
-      case "pending":
+      case "PENDING":
         color = "gold"
         break
-      case "approved":
+      case "APPROVED":
         color = "green"
         break
-      case "rejected":
+      case "REJECTED":
         color = "red"
         break
       default:
         color = "default"
     }
 
-    return <Tag color={color}>{status.toUpperCase()}</Tag>
+    return <Tag color={color}>{status}</Tag>
   }
 
   const columns = [
@@ -138,12 +166,12 @@ const PendingServicesPage = () => {
           <Button icon={<EyeOutlined />} onClick={() => showServiceDetails(record, activeTab)} />
           <Button
             icon={<EditOutlined />}
-            onClick={() => handleEdit(record._id, activeTab)}
-            disabled={record.status === "approved"} // Disable edit for approved services
+            onClick={() => handleEdit(record.id, activeTab)}
+            disabled={record.status === "APPROVED"} // Disable edit for approved services
           />
           <Popconfirm
             title="Are you sure you want to delete this service?"
-            onConfirm={() => handleDelete(record._id, activeTab)}
+            onConfirm={() => handleDelete(record.id, activeTab)}
             okText="Yes"
             cancelText="No"
           >
@@ -165,7 +193,7 @@ const PendingServicesPage = () => {
         <p>
           <strong>Status:</strong> {getStatusTag(selectedService.status)}
         </p>
-        {selectedService.status === "rejected" && (
+        {selectedService.status === "REJECTED" && (
           <p>
             <strong>Rejection Reason:</strong> {selectedService.rejectionReason || "No reason provided"}
           </p>
@@ -249,35 +277,35 @@ const PendingServicesPage = () => {
 
       <Card>
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          <TabPane tab="Venues" key="venues">
-            <Table dataSource={venues} columns={columns} rowKey="_id" loading={loading} pagination={{ pageSize: 10 }} />
+          <TabPane tab="Venues" key="venues" disabled={providerType && providerType !== "venue"}>
+            <Table dataSource={venues} columns={columns} rowKey="id" loading={loading} pagination={{ pageSize: 10 }} />
           </TabPane>
 
-          <TabPane tab="Catering" key="catering">
+          <TabPane tab="Catering" key="catering" disabled={providerType && providerType !== "catering"}>
             <Table
               dataSource={catering}
               columns={columns}
-              rowKey="_id"
+              rowKey="id"
               loading={loading}
               pagination={{ pageSize: 10 }}
             />
           </TabPane>
 
-          <TabPane tab="Photographers" key="photographers">
+          <TabPane tab="Photographers" key="photographers" disabled={providerType && providerType !== "photographer"}>
             <Table
               dataSource={photographers}
               columns={columns}
-              rowKey="_id"
+              rowKey="id"
               loading={loading}
               pagination={{ pageSize: 10 }}
             />
           </TabPane>
 
-          <TabPane tab="Designers" key="designers">
+          <TabPane tab="Designers" key="designers" disabled={providerType && providerType !== "designer"}>
             <Table
               dataSource={designers}
               columns={columns}
-              rowKey="_id"
+              rowKey="id"
               loading={loading}
               pagination={{ pageSize: 10 }}
             />

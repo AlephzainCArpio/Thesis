@@ -1,48 +1,62 @@
 "use client"
 
 import { useState } from "react"
-import { Form, Input, Button, Card, Radio, message } from "antd"
-import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons"
+import { Form, Input, Button, Card, Radio, message, Upload } from "antd"
+import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, UploadOutlined } from "@ant-design/icons"
 import { Link, useNavigate } from "react-router-dom"
-import { useAuth } from "../../contexts/AuthContext"
+import axios from "axios"
+import api from "../../services/api"
 
 const RegisterPage = () => {
   const [loading, setLoading] = useState(false)
-  const { register } = useAuth()
+  const [userRole, setUserRole] = useState("USER")
+  const [form] = Form.useForm()
   const navigate = useNavigate()
 
   const onFinish = async (values) => {
     try {
       setLoading(true)
 
-      // Check if passwords match
       if (values.password !== values.confirmPassword) {
         message.error("Passwords do not match!")
         return
       }
 
-      const userData = {
-        name: values.name,
-        email: values.email,
-        password: values.password,
-        phone: values.phone,
-        role: values.role,
+      const formData = new FormData()
+      formData.append("name", values.name)
+      formData.append("email", values.email)
+      formData.append("password", values.password)
+      formData.append("phone", values.phone)
+      formData.append("role", values.role)
+
+      if (values.role === "PROVIDER" && values.verificationDocument?.[0]) {
+        formData.append("verificationDocument", values.verificationDocument[0].originFileObj)
       }
 
-      const user = await register(userData)
+      const response = await axios.post(
+        `${api.defaults.baseURL}/auth/register`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      )
+
+      const user = response.data
+      localStorage.setItem("token", user.token)
+      api.defaults.headers.common["Authorization"] = `Bearer ${user.token}`
 
       message.success(`Welcome, ${user.name}!`)
 
-     
       if (user.role === "ADMIN") {
         navigate("/admin")
       } else if (user.role === "PROVIDER") {
+        if (user.providerStatus === "PENDING") {
+          message.info("Your provider account is pending approval. Some features will be limited until approved.")
+        }
         navigate("/provider")
       } else {
         navigate("/user")
       }
     } catch (error) {
-      message.error(error.message || "Failed to register")
+      message.error(error.response?.data?.message || "Failed to register")
     } finally {
       setLoading(false)
     }
@@ -51,7 +65,17 @@ const RegisterPage = () => {
   return (
     <div style={{ maxWidth: 400, margin: "0 auto", paddingTop: 50 }}>
       <Card title="Register" bordered={false}>
-        <Form name="register" initialValues={{ role: "USER" }} onFinish={onFinish}>
+        <Form
+          name="register"
+          form={form}
+          initialValues={{ role: "USER" }}
+          onFinish={onFinish}
+          onValuesChange={(changedValues) => {
+            if (changedValues.role) {
+              setUserRole(changedValues.role)
+            }
+          }}
+        >
           <Form.Item name="name" rules={[{ required: true, message: "Please input your name!" }]}>
             <Input prefix={<UserOutlined />} placeholder="Full Name" />
           </Form.Item>
@@ -84,6 +108,25 @@ const RegisterPage = () => {
               <Radio value="PROVIDER">Service Provider</Radio>
             </Radio.Group>
           </Form.Item>
+
+          {userRole === "PROVIDER" && (
+            <Form.Item
+              name="verificationDocument"
+              label="Business Verification Document"
+              valuePropName="fileList"
+              getValueFromEvent={(e) => Array.isArray(e) ? e : e?.fileList}
+              rules={[{ required: true, message: "Please upload a verification document!" }]}
+            >
+              <Upload
+                name="verificationDocument"
+                listType="picture"
+                maxCount={1}
+                beforeUpload={() => false} // Prevent auto upload
+              >
+                <Button icon={<UploadOutlined />}>Click to upload</Button>
+              </Upload>
+            </Form.Item>
+          )}
 
           <Form.Item>
             <Button type="primary" htmlType="submit" loading={loading} style={{ width: "100%" }}>
