@@ -25,6 +25,13 @@ enum ServiceStatus {
   REJECTED
 }
 
+enum ServiceType {
+  VENUE
+  CATERING
+  PHOTOGRAPHER
+  DESIGNER
+}
+
 model User {
   id              String         @id @default(uuid())
   email           String         @unique
@@ -32,16 +39,17 @@ model User {
   name            String?
   phone           String?
   role            UserRole       @default(USER)
-  providerStatus  ProviderStatus? // Only relevant for providers
-  verificationDoc String?         // Path to verification document
+  providerStatus  ProviderStatus?
+  serviceType     ServiceType?   
+  verificationDoc String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   profile         UserProfile?
-  venues          Venue[]        @relation("VenueProvider")
-  caterings       Catering[]     @relation("CateringProvider")
-  photographers   Photographer[] @relation("PhotographerProvider")
-  designers       Designer[]     @relation("DesignerProvider")
   viewHistory     ViewHistory[]
+  venues          Venue[]        @relation("VenueProvider")       
+  caterings       Catering[]     @relation("CateringProvider")    
+  photographers   Photographer[] @relation("PhotographerProvider")
+  designers       Designer[]     @relation("DesignerProvider")    
 
   @@map("users")
 }
@@ -67,7 +75,7 @@ model Venue {
   capacity    Int
   price       Float
   amenities   Json?
-  images      String?       @db.Text // JSON array of image URLs
+  images      String?       @db.Text
   providerId  String
   provider    User          @relation("VenueProvider", fields: [providerId], references: [id])
   status      ServiceStatus @default(PENDING)

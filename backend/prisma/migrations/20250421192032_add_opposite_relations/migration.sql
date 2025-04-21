@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `users` ADD COLUMN `serviceType` ENUM('VENUE', 'CATERING', 'PHOTOGRAPHER', 'DESIGNER') NULL;

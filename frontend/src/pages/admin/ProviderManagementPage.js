@@ -36,8 +36,8 @@ const ProviderManagementPage = () => {
     try {
       setDocumentLoading(true)
       setViewingProvider(provider)
-      // Create a URL for the image
-      setDocumentUrl(`${api.defaults.baseURL}/admin/verification-document/${provider.id}`)
+      // Create a URL for the verification document
+      setDocumentUrl(`${api.defaults.baseURL}/uploads/${provider.verificationDoc}`)
       setDocumentVisible(true)
     } catch (error) {
       message.error("Failed to load document")
@@ -106,9 +106,9 @@ const ProviderManagementPage = () => {
       key: "phone",
     },
     {
-      title: "Provider Type",
-      dataIndex: "providerType",
-      key: "providerType",
+      title: "Service Type",
+      dataIndex: "serviceType",
+      key: "serviceType",
       render: (type) => <Tag color={getProviderTypeColor(type)}>{formatProviderType(type)}</Tag>,
     },
     {
@@ -181,28 +181,6 @@ const ProviderManagementPage = () => {
         footer={[
           <Button key="close" onClick={() => setDocumentVisible(false)}>
             Close
-          </Button>,
-          <Button
-            key="approve"
-            type="primary"
-            icon={<CheckOutlined />}
-            onClick={() => {
-              handleApproveProvider(viewingProvider.id)
-              setDocumentVisible(false)
-            }}
-          >
-            Approve Provider
-          </Button>,
-          <Button
-            key="reject"
-            danger
-            icon={<CloseOutlined />}
-            onClick={() => {
-              handleRejectProvider(viewingProvider.id)
-              setDocumentVisible(false)
-            }}
-          >
-            Reject Provider
           </Button>,
         ]}
         width={800}

@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Form, Input, Button, Card, Radio, message, Upload } from "antd"
+import { Form, Input, Button, Card, Radio, message, Upload, Select } from "antd"
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, UploadOutlined } from "@ant-design/icons"
 import { Link, useNavigate } from "react-router-dom"
 import axios from "axios"
 import api from "../../services/api"
+
+const { Option } = Select
 
 const RegisterPage = () => {
   const [loading, setLoading] = useState(false)
@@ -29,8 +31,11 @@ const RegisterPage = () => {
       formData.append("phone", values.phone)
       formData.append("role", values.role)
 
-      if (values.role === "PROVIDER" && values.verificationDocument?.[0]) {
-        formData.append("verificationDocument", values.verificationDocument[0].originFileObj)
+      if (values.role === "PROVIDER") {
+        formData.append("serviceType", values.serviceType)
+        if (values.verificationDocument?.[0]) {
+          formData.append("verificationDocument", values.verificationDocument[0].originFileObj)
+        }
       }
 
       const response = await axios.post(
@@ -110,22 +115,37 @@ const RegisterPage = () => {
           </Form.Item>
 
           {userRole === "PROVIDER" && (
-            <Form.Item
-              name="verificationDocument"
-              label="Business Verification Document"
-              valuePropName="fileList"
-              getValueFromEvent={(e) => Array.isArray(e) ? e : e?.fileList}
-              rules={[{ required: true, message: "Please upload a verification document!" }]}
-            >
-              <Upload
-                name="verificationDocument"
-                listType="picture"
-                maxCount={1}
-                beforeUpload={() => false} // Prevent auto upload
+            <>
+              <Form.Item
+                name="serviceType"
+                label="Service Type"
+                rules={[{ required: true, message: "Please select a service type!" }]}
               >
-                <Button icon={<UploadOutlined />}>Click to upload</Button>
-              </Upload>
-            </Form.Item>
+                <Select placeholder="Select a service type">
+                  <Option value="VENUE">Venue</Option>
+                  <Option value="CATERING">Catering</Option>
+                  <Option value="PHOTOGRAPHER">Photographer</Option>
+                  <Option value="DESIGNER">Event Designer</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                name="verificationDocument"
+                label="Business Verification Document"
+                valuePropName="fileList"
+                getValueFromEvent={(e) => Array.isArray(e) ? e : e?.fileList}
+                rules={[{ required: true, message: "Please upload a verification document!" }]}
+              >
+                <Upload
+                  name="verificationDocument"
+                  listType="picture"
+                  maxCount={1}
+                  beforeUpload={() => false} // Prevent auto upload
+                >
+                  <Button icon={<UploadOutlined />}>Click to upload</Button>
+                </Upload>
+              </Form.Item>
+            </>
           )}
 
           <Form.Item>
