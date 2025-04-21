@@ -75,7 +75,7 @@ model Venue {
   capacity    Int
   price       Float
   amenities   Json?
-  images      String?       @db.Text
+  images      Json?       
   providerId  String
   provider    User          @relation("VenueProvider", fields: [providerId], references: [id])
   status      ServiceStatus @default(PENDING)
@@ -96,7 +96,7 @@ model Catering {
   cuisineType    String
   serviceType    String
   dietaryOptions Json?
-  images         String?       @db.Text
+  images         Json?       
   providerId     String
   provider       User          @relation("CateringProvider", fields: [providerId], references: [id])
   status         ServiceStatus @default(PENDING)
@@ -118,6 +118,7 @@ model Photographer {
   copyType        String
   serviceType     String
   portfolio       String?       @db.Text
+  images          Json?      
   providerId      String
   provider        User          @relation("PhotographerProvider", fields: [providerId], references: [id])
   status          ServiceStatus @default(PENDING)
@@ -138,6 +139,7 @@ model Designer {
   preferredVenues String?
   eventTypes      String?
   portfolio       String?       @db.Text
+  images          Json?     
   providerId      String
   provider        User          @relation("DesignerProvider", fields: [providerId], references: [id])
   status          ServiceStatus @default(PENDING)
