@@ -30,7 +30,7 @@ const RegisterPage = () => {
       formData.append("role", values.role)
 
       if (values.role === "PROVIDER") {
-        formData.append("serviceType", values.serviceType)
+        formData.append("serviceType", values.serviceType)  // Add serviceType here
         if (values.verificationDocument?.[0]) {
           formData.append("verificationDocument", values.verificationDocument[0].originFileObj)
         }
@@ -85,10 +85,7 @@ const RegisterPage = () => {
 
           <Form.Item
             name="email"
-            rules={[
-              { required: true, message: "Please input your email!" },
-              { type: "email", message: "Please enter a valid email!" },
-            ]}
+            rules={[{ required: true, message: "Please input your email!" }, { type: "email", message: "Please enter a valid email!" }]}
           >
             <Input prefix={<MailOutlined />} placeholder="Email" />
           </Form.Item>
