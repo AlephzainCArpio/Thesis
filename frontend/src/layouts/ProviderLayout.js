@@ -74,7 +74,7 @@ const ProviderLayout = ({ children }) => {
             <Link to="/provider/dashboard">Dashboard</Link>
           </Menu.Item>
           <Menu.Item key="/provider/services" icon={<ProfileOutlined />}>
-            <Link to="/provider/services">Manage Services</Link>
+            <Link to="/provider/register-service">Manage Services</Link>
           </Menu.Item>
           <Menu.Item key="/provider/pending" icon={<ProfileOutlined />}>
             <Link to="/provider/pending">Pending Services</Link>

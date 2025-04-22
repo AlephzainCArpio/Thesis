@@ -1,331 +1,377 @@
 import { useState, useEffect } from "react"
-import { Table, Tag, Button, Card, Tabs, message, Popconfirm, Modal, Typography } from "antd"
-import { EditOutlined, DeleteOutlined, EyeOutlined } from "@ant-design/icons"
+import { Form, Input, InputNumber, Select, Button, Upload, Card, Tabs, message, Alert } from "antd"
+import { UploadOutlined } from "@ant-design/icons"
 import { useAuth } from "../../contexts/AuthContext"
 import api from "../../services/api"
-import { useNavigate } from "react-router-dom"
 
 const { TabPane } = Tabs
-const { Title, Text } = Typography
+const { Option } = Select
+const { TextArea } = Input
 
-const PendingServicesPage = () => {
-  const [activeTab, setActiveTab] = useState("venues")
-  const [venues, setVenues] = useState([])
-  const [catering, setCatering] = useState([])
-  const [photographers, setPhotographers] = useState([])
-  const [designers, setDesigners] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [selectedService, setSelectedService] = useState(null)
-  const [detailModalVisible, setDetailModalVisible] = useState(false)
+const RegisterServicePage = () => {
+  const [loading, setLoading] = useState(false)
+  const [serviceType, setServiceType] = useState("")
   const [providerType, setProviderType] = useState(null)
-
+  const [canRegister, setCanRegister] = useState(true)
+  const [errorMessage, setErrorMessage] = useState("")
   const { currentUser } = useAuth()
-  const navigate = useNavigate()
 
   useEffect(() => {
-    // First get the provider type
+    // Check if provider already has a service type
     const checkProviderType = async () => {
       try {
         const response = await api.get("/provider/type")
         setProviderType(response.data.providerType)
 
-        // Set the active tab to the provider's type
+        // If provider already has a type, set it as the active tab
         if (response.data.providerType) {
-          setActiveTab(response.data.providerType + "s") // Add 's' for plural
+          setServiceType(response.data.providerType)
         }
       } catch (error) {
         console.error("Error checking provider type:", error)
       }
     }
 
-    checkProviderType().then(() => {
-      fetchServices()
-    })
-  }, [currentUser])
+    checkProviderType()
+  }, [])
 
-  const fetchServices = async () => {
+  // When service type changes, validate if provider can register this type
+  useEffect(() => {
+    const validateServiceType = async () => {
+      // If provider doesn't have a type yet, they can register any service
+      if (!providerType) {
+        setCanRegister(true)
+        setErrorMessage("")
+        return
+      }
+
+      // If provider already has a type, they can only register that type
+      if (providerType !== serviceType) {
+        setCanRegister(false)
+        setErrorMessage(
+          `You are registered as a ${providerType} provider. You cannot register services in multiple categories.`,
+        )
+      } else {
+        setCanRegister(true)
+        setErrorMessage("")
+      }
+    }
+
+    validateServiceType()
+  }, [serviceType, providerType])
+
+  const onFinish = async (values) => {
     try {
       setLoading(true)
 
-      // Only fetch services for the provider's type
-      if (providerType === "venue" || !providerType) {
-        const venuesRes = await api.get(`/venues/provider/${currentUser.id}`)
-        setVenues(venuesRes.data)
+      // First validate if provider can register this service type
+      const validationResponse = await api.post("/provider/register-service/validate", {
+        serviceType,
+      })
+
+      if (!validationResponse.data.canProceed) {
+        message.error(validationResponse.data.message)
+        return
       }
 
-      if (providerType === "catering" || !providerType) {
-        const cateringRes = await api.get(`/catering/provider/${currentUser.id}`)
-        setCatering(cateringRes.data)
+      // Format image URLs as JSON string
+      let images = []
+      if (values.images && values.images.fileList) {
+        images = values.images.fileList.map((file) => file.thumbUrl || file.url)
       }
 
-      if (providerType === "photographer" || !providerType) {
-        const photographersRes = await api.get(`/photographers/provider/${currentUser.id}`)
-        setPhotographers(photographersRes.data)
+      const serviceData = {
+        ...values,
+        images: JSON.stringify(images),
+        providerId: currentUser.id,
       }
 
-      if (providerType === "designer" || !providerType) {
-        const designersRes = await api.get(`/designers/provider/${currentUser.id}`)
-        setDesigners(designersRes.data)
+      // Send to appropriate endpoint based on service type
+      let endpoint = ""
+      switch (serviceType) {
+        case "venue":
+          endpoint = "/venues"
+          break
+        case "catering":
+          endpoint = "/catering"
+          break
+        case "photographer":
+          endpoint = "/photographers"
+          break
+        case "designer":
+          endpoint = "/designers"
+          break
+        default:
+          endpoint = "/venues"
       }
+
+      await api.post(endpoint, serviceData)
+
+      message.success("Service submitted for approval!")
+      
+      setServiceType(providerType || "venue")
     } catch (error) {
-      message.error("Failed to load services")
+      message.error(error.response?.data?.message || "Failed to register service")
       console.error(error)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleDelete = async (id, serviceType) => {
-    try {
-      let endpoint = ""
-
-      switch (serviceType) {
-        case "venues":
-          endpoint = `/venues/${id}`
-          break
-        case "catering":
-          endpoint = `/catering/${id}`
-          break
-        case "photographers":
-          endpoint = `/photographers/${id}`
-          break
-        case "designers":
-          endpoint = `/designers/${id}`
-          break
-        default:
-          throw new Error("Invalid service type")
-      }
-
-      await api.delete(endpoint)
-
-      message.success("Service deleted successfully")
-      fetchServices() // Refresh the list
-    } catch (error) {
-      message.error("Failed to delete service")
-      console.error(error)
-    }
-  }
-
-  const handleEdit = (id, serviceType) => {
-    // Navigate to edit page or show edit modal
-    navigate("/provider/register-service", {
-      state: { serviceId: id, serviceType },
-    })
-  }
-
-  const showServiceDetails = (service, serviceType) => {
-    setSelectedService({ ...service, serviceType })
-    setDetailModalVisible(true)
-  }
-
-  const getStatusTag = (status) => {
-    let color = ""
-
-    switch (status) {
-      case "PENDING":
-        color = "gold"
-        break
-      case "APPROVED":
-        color = "green"
-        break
-      case "REJECTED":
-        color = "red"
-        break
-      default:
-        color = "default"
-    }
-
-    return <Tag color={color}>{status}</Tag>
-  }
-
-  const columns = [
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
+  const uploadProps = {
+    listType: "picture",
+    beforeUpload: (file) => {
+      return false 
     },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => getStatusTag(status),
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <div style={{ display: "flex", gap: "8px" }}>
-          <Button icon={<EyeOutlined />} onClick={() => showServiceDetails(record, activeTab)} />
-          <Button
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record.id, activeTab)}
-            disabled={record.status === "APPROVED"} // Disable edit for approved services
-          />
-          <Popconfirm
-            title="Are you sure you want to delete this service?"
-            onConfirm={() => handleDelete(record.id, activeTab)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </div>
-      ),
-    },
-  ]
-
-  const renderServiceDetails = () => {
-    if (!selectedService) return null
-
-    const { serviceType } = selectedService
-
-    return (
-      <div>
-        <Title level={4}>{selectedService.name}</Title>
-        <p>
-          <strong>Status:</strong> {getStatusTag(selectedService.status)}
-        </p>
-        {selectedService.status === "REJECTED" && (
-          <p>
-            <strong>Rejection Reason:</strong> {selectedService.rejectionReason || "No reason provided"}
-          </p>
-        )}
-        <p>
-          <strong>Description:</strong> {selectedService.description}
-        </p>
-        <p>
-          <strong>Location:</strong> {selectedService.location}
-        </p>
-
-        {serviceType === "venues" && (
-          <>
-            <p>
-              <strong>Capacity:</strong> {selectedService.capacity} people
-            </p>
-            <p>
-              <strong>Price:</strong> ₱{selectedService.price}
-            </p>
-            <p>
-              <strong>Amenities:</strong> {selectedService.amenities?.join(", ") || "None"}
-            </p>
-          </>
-        )}
-
-        {serviceType === "catering" && (
-          <>
-            <p>
-              <strong>Maximum People:</strong> {selectedService.maxPeople} people
-            </p>
-            <p>
-              <strong>Price Per Person:</strong> ₱{selectedService.pricePerPerson}
-            </p>
-            <p>
-              <strong>Cuisine Types:</strong> {selectedService.cuisineTypes?.join(", ") || "None"}
-            </p>
-            <p>
-              <strong>Menu Options:</strong> {selectedService.menuOptions || "None"}
-            </p>
-          </>
-        )}
-
-        {serviceType === "photographers" && (
-          <>
-            <p>
-              <strong>Specialties:</strong> {selectedService.specialties?.join(", ") || "None"}
-            </p>
-            <p>
-              <strong>Price Range:</strong> {selectedService.priceRange}
-            </p>
-            <p>
-              <strong>Packages:</strong> {selectedService.packages || "None"}
-            </p>
-          </>
-        )}
-
-        {serviceType === "designers" && (
-          <>
-            <p>
-              <strong>Design Types:</strong> {selectedService.designTypes?.join(", ") || "None"}
-            </p>
-            <p>
-              <strong>Price Range:</strong> {selectedService.priceRange}
-            </p>
-            <p>
-              <strong>Packages:</strong> {selectedService.packages || "None"}
-            </p>
-          </>
-        )}
-      </div>
-    )
+    maxCount: 5,
   }
 
   return (
-    <div className="pending-services-container">
-      <Title level={2}>My Services</Title>
+    <div>
+      <h2>Register a New Service</h2>
       <p>
-        Manage all your registered services here. Services need to be approved by admin before they become visible to
-        clients.
+        Fill out the details below to add your service to our platform. It will be reviewed by an admin before being
+        published.
       </p>
 
+      {errorMessage && (
+        <Alert
+          message="Registration Restricted"
+          description={errorMessage}
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
       <Card>
-        <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          <TabPane tab="Venues" key="venues" disabled={providerType && providerType !== "venue"}>
-            <Table dataSource={venues} columns={columns} rowKey="id" loading={loading} pagination={{ pageSize: 10 }} />
+        <Tabs activeKey={serviceType} onChange={setServiceType} disabled={providerType !== null}>
+          <TabPane tab="Venue" key="venue" disabled={providerType && providerType !== "venue"}>
+            <Form name="register_venue" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
+              <Form.Item
+                name="name"
+                label="Venue Name"
+                rules={[{ required: true, message: "Please enter venue name!" }]}
+              >
+                <Input placeholder="Enter venue name" />
+              </Form.Item>
+
+              <Form.Item
+                name="description"
+                label="Description"
+                rules={[{ required: true, message: "Please enter description!" }]}
+              >
+                <TextArea rows={4} placeholder="Describe your venue" />
+              </Form.Item>
+
+              <Form.Item
+                name="location"
+                label="Location"
+                rules={[{ required: true, message: "Please enter location!" }]}
+              >
+                <Input placeholder="Full address" />
+              </Form.Item>
+
+              <Form.Item
+                name="capacity"
+                label="Maximum Capacity"
+                rules={[{ required: true, message: "Please enter capacity!" }]}
+              >
+                <InputNumber min={1} style={{ width: "100%" }} placeholder="Max number of guests" />
+              </Form.Item>
+
+              <Form.Item name="price" label="Price (₱)" rules={[{ required: true, message: "Please enter price!" }]}>
+                <InputNumber min={0} style={{ width: "100%" }} placeholder="Rental fee" />
+              </Form.Item>
+
+              <Form.Item name="amenities" label="Amenities">
+                <Select mode="tags" placeholder="Enter amenities">
+                  <Option value="parking">Parking</Option>
+                  <Option value="wifi">WiFi</Option>
+                  <Option value="air-conditioning">Air Conditioning</Option>
+                  <Option value="sound-system">Sound System</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item name="images" label="Photos">
+                <Upload {...uploadProps}>
+                  <Button icon={<UploadOutlined />}>Upload Images</Button>
+                </Upload>
+              </Form.Item>
+
+              <Form.Item>
+                <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
+                  Submit for Approval
+                </Button>
+              </Form.Item>
+            </Form>
           </TabPane>
 
           <TabPane tab="Catering" key="catering" disabled={providerType && providerType !== "catering"}>
-            <Table
-              dataSource={catering}
-              columns={columns}
-              rowKey="id"
-              loading={loading}
-              pagination={{ pageSize: 10 }}
-            />
+            <Form name="register_catering" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
+              <Form.Item name="name" label="Business Name" rules={[{ required: true }]}>
+                <Input placeholder="Enter business name" />
+              </Form.Item>
+
+              <Form.Item name="description" label="Description" rules={[{ required: true }]}>
+                <TextArea rows={4} placeholder="Describe your catering service" />
+              </Form.Item>
+
+              <Form.Item name="location" label="Location" rules={[{ required: true }]}>
+                <Input placeholder="Full address" />
+              </Form.Item>
+
+              <Form.Item name="maxPeople" label="Maximum People" rules={[{ required: true }]}>
+                <InputNumber min={1} style={{ width: "100%" }} placeholder="Max number of guests" />
+              </Form.Item>
+
+              <Form.Item name="pricePerPerson" label="Price Per Person (₱)" rules={[{ required: true }]}>
+                <InputNumber min={0} style={{ width: "100%" }} placeholder="Price per person" />
+              </Form.Item>
+
+              <Form.Item name="cuisineTypes" label="Cuisine Types">
+                <Select mode="tags" placeholder="Enter cuisine types">
+                  <Option value="filipino">Filipino</Option>
+                  <Option value="chinese">Chinese</Option>
+                  <Option value="japanese">Japanese</Option>
+                  <Option value="italian">Italian</Option>
+                  <Option value="american">American</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item name="dietaryOptions" label="Dietary Options">
+                <Select mode="tags" placeholder="Enter dietary options">
+                  <Option value="vegetarian">Vegetarian</Option>
+                  <Option value="vegan">Vegan</Option>
+                  <Option value="gluten-free">Gluten-Free</Option>
+                  <Option value="halal">Halal</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item name="images" label="Food Photos">
+                <Upload {...uploadProps}>
+                  <Button icon={<UploadOutlined />}>Upload Images</Button>
+                </Upload>
+              </Form.Item>
+
+              <Form.Item>
+                <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
+                  Submit for Approval
+                </Button>
+              </Form.Item>
+            </Form>
           </TabPane>
 
-          <TabPane tab="Photographers" key="photographers" disabled={providerType && providerType !== "photographer"}>
-            <Table
-              dataSource={photographers}
-              columns={columns}
-              rowKey="id"
-              loading={loading}
-              pagination={{ pageSize: 10 }}
-            />
+          <TabPane tab="Photographer" key="photographer" disabled={providerType && providerType !== "photographer"}>
+            <Form name="register_photographer" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
+              <Form.Item name="name" label="Business Name" rules={[{ required: true }]}>
+                <Input placeholder="Enter business name" />
+              </Form.Item>
+
+              <Form.Item name="description" label="Description" rules={[{ required: true }]}>
+                <TextArea rows={4} placeholder="Describe your photography services" />
+              </Form.Item>
+
+              <Form.Item name="location" label="Location" rules={[{ required: true }]}>
+                <Input placeholder="Full address" />
+              </Form.Item>
+
+              <Form.Item name="hourlyRate" label="Hourly Rate (₱)" rules={[{ required: true }]}>
+                <InputNumber min={0} style={{ width: "100%" }} placeholder="Hourly rate" />
+              </Form.Item>
+
+              <Form.Item name="packages" label="Packages (separate with commas)">
+                <TextArea rows={4} placeholder="Describe your package options" />
+              </Form.Item>
+
+              <Form.Item name="photographyStyles" label="Photography Styles">
+                <Select mode="tags" placeholder="Enter photography styles">
+                  <Option value="traditional">Traditional</Option>
+                  <Option value="photojournalistic">Photojournalistic</Option>
+                  <Option value="artistic">Artistic</Option>
+                  <Option value="candid">Candid</Option>
+                  <Option value="vintage">Vintage</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item name="experienceYears" label="Years of Experience" rules={[{ required: true }]}>
+                <InputNumber min={0} style={{ width: "100%" }} placeholder="Experience in years" />
+              </Form.Item>
+
+              <Form.Item name="images" label="Portfolio Photos">
+                <Upload {...uploadProps}>
+                  <Button icon={<UploadOutlined />}>Upload Images</Button>
+                </Upload>
+              </Form.Item>
+
+              <Form.Item>
+                <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
+                  Submit for Approval
+                </Button>
+              </Form.Item>
+            </Form>
           </TabPane>
 
-          <TabPane tab="Designers" key="designers" disabled={providerType && providerType !== "designer"}>
-            <Table
-              dataSource={designers}
-              columns={columns}
-              rowKey="id"
-              loading={loading}
-              pagination={{ pageSize: 10 }}
-            />
+          <TabPane tab="Designer" key="designer" disabled={providerType && providerType !== "designer"}>
+            <Form name="register_designer" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
+              <Form.Item name="name" label="Business Name" rules={[{ required: true }]}>
+                <Input placeholder="Enter business name" />
+              </Form.Item>
+
+              <Form.Item name="description" label="Description" rules={[{ required: true }]}>
+                <TextArea rows={4} placeholder="Describe your design services" />
+              </Form.Item>
+
+              <Form.Item name="location" label="Location" rules={[{ required: true }]}>
+                <Input placeholder="Full address" />
+              </Form.Item>
+
+              <Form.Item name="price" label="Base Price (₱)" rules={[{ required: true }]}>
+                <InputNumber min={0} style={{ width: "100%" }} placeholder="Starting price" />
+              </Form.Item>
+
+              <Form.Item name="designStyles" label="Design Styles">
+                <Select mode="tags" placeholder="Enter design styles">
+                  <Option value="modern">Modern</Option>
+                  <Option value="rustic">Rustic</Option>
+                  <Option value="minimalist">Minimalist</Option>
+                  <Option value="bohemian">Bohemian</Option>
+                  <Option value="tropical">Tropical</Option>
+                  <Option value="traditional">Traditional</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item name="services" label="Services Offered">
+                <Select mode="tags" placeholder="Enter services">
+                  <Option value="floral-arrangements">Floral Arrangements</Option>
+                  <Option value="table-settings">Table Settings</Option>
+                  <Option value="stage-design">Stage Design</Option>
+                  <Option value="lighting">Lighting Design</Option>
+                  <Option value="full-venue-styling">Full Venue Styling</Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item name="specialty" label="Specialty (if any)">
+                <Input placeholder="Your special expertise" />
+              </Form.Item>
+
+              <Form.Item name="images" label="Portfolio Photos">
+                <Upload {...uploadProps}>
+                  <Button icon={<UploadOutlined />}>Upload Images</Button>
+                </Upload>
+              </Form.Item>
+
+              <Form.Item>
+                <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
+                  Submit for Approval
+                </Button>
+              </Form.Item>
+            </Form>
           </TabPane>
         </Tabs>
       </Card>
-
-      <Modal
-        title="Service Details"
-        visible={detailModalVisible}
-        onCancel={() => setDetailModalVisible(false)}
-        footer={[
-          <Button key="close" onClick={() => setDetailModalVisible(false)}>
-            Close
-          </Button>,
-        ]}
-        width={700}
-      >
-        {renderServiceDetails()}
-      </Modal>
     </div>
   )
 }
 
-export default PendingServicesPage
+export default RegisterServicePage

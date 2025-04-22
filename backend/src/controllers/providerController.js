@@ -111,5 +111,18 @@ const getMe = async (req, res) => {
     res.status(500).json({ message: error.message })
   }
 }
-
-module.exports = { register, login, getMe }
+const getProviderType = async (req, res) => {
+  try {
+    const provider = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { serviceType: true },
+    })
+    if (!provider || !provider.serviceType) {
+      return res.status(404).json({ message: "Provider type not found" })
+    }
+    res.json({ providerType: provider.serviceType })
+  } catch (error) {
+    res.status(500).json({ message: error.message })
+  }
+}
+module.exports = { register, login, getMe,getProviderType }
