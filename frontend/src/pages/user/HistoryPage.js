@@ -5,7 +5,6 @@ import { Table, Tag, Button, Card, Typography, Spin, Empty, Tabs, message, Space
 import {
   EyeOutlined,
   HistoryOutlined,
-  CalendarOutlined,
   HomeOutlined,
   ShopOutlined,
   CameraOutlined,
@@ -21,14 +20,11 @@ const { TabPane } = Tabs
 const HistoryPage = () => {
   const [loading, setLoading] = useState(true)
   const [viewHistory, setViewHistory] = useState([])
-  const [inquiries, setInquiries] = useState([])
   const [activeTab, setActiveTab] = useState("views")
 
   useEffect(() => {
     if (activeTab === "views") {
       fetchViewHistory()
-    } else {
-      fetchInquiries()
     }
   }, [activeTab])
 
@@ -40,19 +36,6 @@ const HistoryPage = () => {
     } catch (error) {
       console.error("Error fetching view history:", error)
       message.error("Failed to load view history")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchInquiries = async () => {
-    try {
-      setLoading(true)
-      const response = await api.get("/users/inquiries")
-      setInquiries(response.data)
-    } catch (error) {
-      console.error("Error fetching inquiries:", error)
-      message.error("Failed to load inquiries")
     } finally {
       setLoading(false)
     }
@@ -158,99 +141,11 @@ const HistoryPage = () => {
     },
   ]
 
-  const inquiryColumns = [
-    {
-      title: "Service Type",
-      dataIndex: "serviceType",
-      key: "serviceType",
-      render: (type) => (
-        <Tag
-          icon={getServiceIcon(type)}
-          color={
-            type === "venue" ? "blue" : type === "catering" ? "orange" : type === "photographer" ? "green" : "purple"
-          }
-        >
-          {type.charAt(0).toUpperCase() + type.slice(1)}
-        </Tag>
-      ),
-      filters: [
-        { text: "Venue", value: "venue" },
-        { text: "Catering", value: "catering" },
-        { text: "Photographer", value: "photographer" },
-        { text: "Designer", value: "designer" },
-      ],
-      onFilter: (value, record) => record.serviceType === value,
-    },
-    {
-      title: "Service Name",
-      dataIndex: "serviceName",
-      key: "serviceName",
-    },
-    {
-      title: "Event Type",
-      dataIndex: "eventType",
-      key: "eventType",
-      render: (type) => type.charAt(0).toUpperCase() + type.slice(1),
-    },
-    {
-      title: "Event Date",
-      dataIndex: "eventDate",
-      key: "eventDate",
-      render: (date) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: "Guests",
-      dataIndex: "guestCount",
-      key: "guestCount",
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => {
-        let color = "default"
-        if (status === "PENDING") color = "gold"
-        if (status === "RESPONDED") color = "green"
-        if (status === "REJECTED") color = "red"
-
-        return <Tag color={color}>{status}</Tag>
-      },
-      filters: [
-        { text: "Pending", value: "PENDING" },
-        { text: "Responded", value: "RESPONDED" },
-        { text: "Rejected", value: "REJECTED" },
-      ],
-      onFilter: (value, record) => record.status === value,
-    },
-    {
-      title: "Sent On",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      render: (date) => new Date(date).toLocaleString(),
-      sorter: (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
-      defaultSortOrder: "descend",
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          icon={<EyeOutlined />}
-          as={Link}
-          to={getServiceUrl(record.serviceType, record.serviceId)}
-        >
-          View Service
-        </Button>
-      ),
-    },
-  ]
 
   return (
     <div className="history-page">
       <Title level={2}>My History</Title>
-      <Paragraph>Track your viewed services and inquiries.</Paragraph>
+      <Paragraph>Track your viewed services.</Paragraph>
 
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
         <TabPane
@@ -270,27 +165,6 @@ const HistoryPage = () => {
               <Table columns={viewHistoryColumns} dataSource={viewHistory} rowKey="id" pagination={{ pageSize: 10 }} />
             ) : (
               <Empty description="No view history found" />
-            )}
-          </Card>
-        </TabPane>
-
-        <TabPane
-          tab={
-            <span>
-              <CalendarOutlined /> Inquiries
-            </span>
-          }
-          key="inquiries"
-        >
-          <Card>
-            {loading ? (
-              <div style={{ textAlign: "center", padding: "50px 0" }}>
-                <Spin size="large" />
-              </div>
-            ) : inquiries.length > 0 ? (
-              <Table columns={inquiryColumns} dataSource={inquiries} rowKey="id" pagination={{ pageSize: 10 }} />
-            ) : (
-              <Empty description="No inquiries found" />
             )}
           </Card>
         </TabPane>

@@ -86,9 +86,9 @@ const ProviderManagementPage = () => {
 
   const formatProviderType = (type) => {
     if (!type) return "Not specified"
-    return type.charAt(0) + type.slice(1).toLowerCase()
+    return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase() 
   }
-
+  
   const columns = [
     {
       title: "Name",

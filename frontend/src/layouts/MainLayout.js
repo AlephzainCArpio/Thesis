@@ -71,7 +71,7 @@ const MainLayout = () => {
     },
     {
       key: "/user/history",
-      label: "My Bookings",
+      label: "History",
       icon: null,
     },
     {

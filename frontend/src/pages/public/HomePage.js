@@ -39,7 +39,10 @@ const HomePage = () => {
 
         // Fetch featured services
         const featuredResponse = await api.get("/public/featured")
-        setFeaturedServices(featuredResponse.data)
+        console.log("Featured Services:", featuredResponse.data) // Log the response to check the data structure
+
+        // Ensure featuredServices is an array
+        setFeaturedServices(Array.isArray(featuredResponse.data) ? featuredResponse.data : [])
       } catch (error) {
         console.error("Error fetching homepage data:", error)
       } finally {
@@ -155,27 +158,31 @@ const HomePage = () => {
           Featured Services
         </Title>
         <Carousel autoplay>
-          {featuredServices.map((service) => (
-            <div key={service.id}>
-              <Row justify="center" align="middle" gutter={[24, 24]}>
-                <Col xs={24} md={12}>
-                  <img
-                    src={service.image || "https://via.placeholder.com/600x400"}
-                    alt={service.name}
-                    style={{ width: "100%", height: "auto", borderRadius: "8px" }}
-                  />
-                </Col>
-                <Col xs={24} md={12}>
-                  <Title level={3}>{service.name}</Title>
-                  <Paragraph>{service.description}</Paragraph>
-                  <Paragraph>
-                    <strong>Location:</strong> {service.location}
-                  </Paragraph>
-                  <Button type="primary">View Details</Button>
-                </Col>
-              </Row>
-            </div>
-          ))}
+          {Array.isArray(featuredServices) && featuredServices.length > 0 ? (
+            featuredServices.map((service) => (
+              <div key={service.id}>
+                <Row justify="center" align="middle" gutter={[24, 24]}>
+                  <Col xs={24} md={12}>
+                    <img
+                      src={service.image || "https://via.placeholder.com/600x400"}
+                      alt={service.name}
+                      style={{ width: "100%", height: "auto", borderRadius: "8px" }}
+                    />
+                  </Col>
+                  <Col xs={24} md={12}>
+                    <Title level={3}>{service.name}</Title>
+                    <Paragraph>{service.description}</Paragraph>
+                    <Paragraph>
+                      <strong>Location:</strong> {service.location}
+                    </Paragraph>
+                    <Button type="primary">View Details</Button>
+                  </Col>
+                </Row>
+              </div>
+            ))
+          ) : (
+            <div>No featured services available.</div>
+          )}
         </Carousel>
       </div>
 
@@ -278,85 +285,13 @@ const HomePage = () => {
               >
                 3
               </div>
-              <Title level={4}>Book and Enjoy</Title>
+              <Title level={4}>Book Services</Title>
               <Paragraph>
-                Contact service providers, make arrangements, and enjoy your perfectly planned event.
+                Once you find the perfect services, contact the providers directly to finalize the details.
               </Paragraph>
             </div>
           </Col>
         </Row>
-        <div style={{ textAlign: "center", marginTop: "40px" }}>
-          <Button type="primary" size="large" as={Link} to="/register">
-            Get Started Now
-          </Button>
-        </div>
-      </div>
-
-{/* Testimonials */}
-      <div style={{ padding: "60px 20px", background: "#f7fafc" }}>
-        <Title level={2} style={{ textAlign: "center", marginBottom: "40px" }}>
-          What Our Users Say
-        </Title>
-        <Row gutter={[24, 24]} justify="center">
-          <Col xs={24} md={8}>
-            <Card>
-              <Paragraph style={{ fontSize: "16px" }}>
-                "   "
-              </Paragraph>
-              <div style={{ marginTop: "16px" }}>
-                <strong>    </strong>
-                <div>       </div>
-              </div>
-            </Card>
-          </Col>
-          <Col xs={24} md={8}>
-            <Card>
-              <Paragraph style={{ fontSize: "16px" }}>
-                "       "
-              </Paragraph>
-              <div style={{ marginTop: "16px" }}>
-                <strong>Juan Dela Cruz</strong>
-                <div>Professional Photographer</div>
-              </div>
-            </Card>
-          </Col>
-          <Col xs={24} md={8}>
-            <Card>
-              <Paragraph style={{ fontSize: "16px" }}>
-                "        "
-              </Paragraph>
-              <div style={{ marginTop: "16px" }}>
-                <strong>Anna Reyes</strong>
-                <div>Event Coordinator</div>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-      </div>
-
-      {/* CTA Section */}
-      <div
-        style={{
-          padding: "80px 20px",
-          background: "linear-gradient(135deg, #1a365d 0%, #2a4365 100%)",
-          color: "white",
-          textAlign: "center",
-        }}
-      >
-        <Title level={2} style={{ color: "white" }}>
-          Ready to Plan Your Next Event?
-        </Title>
-        <Paragraph style={{ color: "white", fontSize: "1.2rem", marginBottom: "2rem" }}>
-          Join the Organiceee for smooth and budget-friendly event planning.    
-        </Paragraph>
-        <Space size="large">
-          <Button type="primary" size="large" as={Link} to="/register">
-            Sign Up Now
-          </Button>
-          <Button ghost size="large" as={Link} to="/user/customize">
-            Browse Services
-          </Button>
-        </Space>
       </div>
     </div>
   )

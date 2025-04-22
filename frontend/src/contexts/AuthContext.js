@@ -13,7 +13,6 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check if user is already logged in
     const checkAuthStatus = async () => {
       try {
         setLoading(true);
@@ -25,6 +24,7 @@ export function AuthProvider({ children }) {
           
           // Fetch current user
           const response = await api.get('/auth/me');
+          console.log('Current user data:', response.data); // Log for debugging
           setCurrentUser(response.data);
         }
       } catch (err) {
@@ -46,15 +46,19 @@ export function AuthProvider({ children }) {
       setError(null);
       
       const response = await api.post('/auth/login', { email, password });
+      console.log('Login API response:', response.data); // Debug log
+      
       const { token, user } = response.data;
       
       // Save token and set headers
       localStorage.setItem('token', token);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
-      setCurrentUser(user);
+      setCurrentUser(user); // Ensure the user object is set
+      console.log('User after login:', user); // Debug log
       return user;
     } catch (err) {
+      console.error('Login error details:', err);
       setError(err.response?.data?.message || 'Login failed');
       throw err;
     } finally {
@@ -118,7 +122,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }

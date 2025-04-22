@@ -164,16 +164,17 @@ const getPendingProviders = async (req, res) => {
         name: true,
         email: true,
         phone: true,
+        serviceType: true, // Ensure serviceType is included
         verificationDoc: true,
         createdAt: true,
       },
-    })
+    });
 
-    res.json(pendingProviders)
+    res.json(pendingProviders);
   } catch (error) {
-    res.status(500).json({ message: error.message })
+    res.status(500).json({ message: error.message });
   }
-}
+};
 
 const getVerificationDocument = async (req, res) => {
   try {
