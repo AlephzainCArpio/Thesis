@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Table, Button, Space, Tag, Drawer, Descriptions, Carousel, Modal, Form, Input, message } from "antd"
 import {
@@ -121,15 +119,15 @@ const AdminVenuesPage = () => {
 
       await api.put(`/admin/venues/${selectedVenue.id}`, updatedValues)
       message.success("Venue updated successfully")
-      fetchVenues() // Refresh the list
+      fetchVenues() 
       setEditModalVisible(false)
 
-      // If drawer is open, update the selected venue
+      
       if (drawerVisible) {
         const updatedVenue = {
           ...selectedVenue,
           ...updatedValues,
-          amenities: values.amenities, // Keep as array for display
+          amenities: values.amenities,
         }
         setSelectedVenue(updatedVenue)
       }
@@ -151,7 +149,7 @@ const AdminVenuesPage = () => {
         try {
           await api.delete(`/admin/venues/${venueId}`)
           message.success("Venue deleted successfully")
-          fetchVenues() // Refresh the list
+          fetchVenues() 
           setDrawerVisible(false)
         } catch (error) {
           message.error("Failed to delete venue")
@@ -278,7 +276,7 @@ const AdminVenuesPage = () => {
         pagination={{ pageSize: 10 }}
       />
 
-      {/* Venue Detail Drawer */}
+      
       <Drawer
         title={selectedVenue?.name}
         placement="right"
@@ -300,7 +298,7 @@ const AdminVenuesPage = () => {
       >
         {selectedVenue && (
           <>
-            {/* Venue Images */}
+            
             {selectedVenue.images && JSON.parse(selectedVenue.images).length > 0 ? (
               <Carousel autoplay>
                 {JSON.parse(selectedVenue.images).map((image, index) => (
@@ -390,7 +388,7 @@ const AdminVenuesPage = () => {
         )}
       </Drawer>
 
-      {/* Reject Modal */}
+      
       <Modal
         title="Reject Venue"
         visible={rejectModalVisible}
@@ -414,7 +412,7 @@ const AdminVenuesPage = () => {
         </Form>
       </Modal>
 
-      {/* Edit Modal */}
+      
       <Modal
         title="Edit Venue"
         visible={editModalVisible}

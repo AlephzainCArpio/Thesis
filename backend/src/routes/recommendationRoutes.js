@@ -1,9 +1,8 @@
-const express = require("express")
-const { getRecommendations } = require("../controllers/recommendationController")
-const { protect } = require("../middlewares/authMiddleware")
+const express = require('express');
+const router = express.Router();
+const { getRecommendationsController } = require('../controllers/recommendationController');
 
-const router = express.Router()
 
-router.post("/", protect, getRecommendations)
+router.post('/recommend', getRecommendationsController);
 
-module.exports = router
+module.exports = router;

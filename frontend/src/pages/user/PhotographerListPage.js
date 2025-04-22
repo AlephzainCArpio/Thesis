@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Card, Typography, Row, Col, Spin, Empty } from "antd"
 import { useNavigate } from "react-router-dom"

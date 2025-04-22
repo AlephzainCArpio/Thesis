@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Table, Tag, Button, Card, Typography, Spin, Empty, Tabs, message, Space } from "antd"
 import {

@@ -1,4 +1,3 @@
-"use client"
 import { useState, useEffect } from "react"
 import { Layout, Menu, Button, Avatar, Dropdown, Badge } from "antd"
 import {

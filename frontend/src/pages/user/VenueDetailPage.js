@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import {
   Row,
@@ -171,17 +169,17 @@ const VenueDetailPage = () => {
     )
   }
 
-  // Parse images from JSON string
+  
   const images = venue.images ? JSON.parse(venue.images) : []
 
-  // Parse amenities from JSON string
+  
   const amenities = venue.amenities ? JSON.parse(venue.amenities) : []
 
   return (
     <div className="venue-detail-page">
       <Row gutter={[24, 24]}>
         <Col xs={24} md={16}>
-          {/* Venue Images */}
+        
           <Card style={{ marginBottom: 24 }}>
             {images.length > 0 ? (
               <Carousel autoplay>
@@ -212,7 +210,7 @@ const VenueDetailPage = () => {
             )}
           </Card>
 
-          {/* Venue Details */}
+          
           <Card>
             <div
               style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}
@@ -272,7 +270,7 @@ const VenueDetailPage = () => {
         </Col>
 
         <Col xs={24} md={8}>
-          {/* Provider Info */}
+          
           <Card title="Venue Provider" style={{ marginBottom: 24 }}>
             <Descriptions column={1}>
               <Descriptions.Item label="Name">{venue.provider?.name || "N/A"}</Descriptions.Item>

@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Row, Col, Card, Typography, Spin, Empty } from "antd"
 import { Link } from "react-router-dom"

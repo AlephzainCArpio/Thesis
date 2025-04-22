@@ -1,7 +1,5 @@
-"use client"
-
 import { useState } from "react"
-import { Form, Input, InputNumber, Select, Button, Slider, Card, Row, Col, message } from "antd"
+import { Form, Input, InputNumber, Select, Button, Row, Col, message, Checkbox, Card } from "antd"
 import { useNavigate } from "react-router-dom"
 import api from "../../services/api"
 
@@ -10,22 +8,38 @@ const { Option } = Select
 const CustomizationPage = () => {
   const [loading, setLoading] = useState(false)
   const [recommendations, setRecommendations] = useState(null)
+  const [selectedService, setSelectedService] = useState([])
   const navigate = useNavigate()
 
   const onFinish = async (values) => {
     try {
       setLoading(true)
 
-      const response = await api.post("/recommendations", values)
-      setRecommendations(response.data.recommendations)
+      // Add the selected services to the request data
+      const data = {
+        ...values,
+        serviceType: selectedService.join(", "), // Convert the array to a string of selected services
+      }
 
-      message.success("Recommendations generated successfully!")
+      const response = await api.post("/recommend", data)
+      
+      // Ensure that the response contains recommendations
+      if (response.data && response.data.recommendations) {
+        setRecommendations(response.data.recommendations)
+        message.success("Recommendations generated successfully!")
+      } else {
+        message.warning("No recommendations found.")
+      }
     } catch (error) {
       message.error("Failed to generate recommendations")
       console.error(error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const onServiceTypeChange = (checkedValues) => {
+    setSelectedService(checkedValues)
   }
 
   const viewService = (serviceType, id) => {
@@ -44,7 +58,6 @@ const CustomizationPage = () => {
           onFinish={onFinish}
           initialValues={{
             eventType: "wedding",
-            serviceType: "venue",
             budget: 50000,
             guests: 100,
           }}
@@ -58,17 +71,6 @@ const CustomizationPage = () => {
                   <Option value="corporate">Corporate Event</Option>
                   <Option value="conference">Conference</Option>
                   <Option value="social">Social Gathering</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-
-            <Col span={12}>
-              <Form.Item name="serviceType" label="Service Type" rules={[{ required: true }]}>
-                <Select>
-                  <Option value="venues">Venue</Option>
-                  <Option value="catering">Catering</Option>
-                  <Option value="photographers">Photographer</Option>
-                  <Option value="designers">Event Designer</Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -89,17 +91,33 @@ const CustomizationPage = () => {
           </Row>
 
           <Form.Item name="budget" label="Budget (₱)" rules={[{ required: true }]}>
-            <Slider
+            <InputNumber
+              style={{ width: "100%" }}
               min={5000}
               max={500000}
               step={5000}
-              marks={{
-                5000: "₱5k",
-                100000: "₱100k",
-                250000: "₱250k",
-                500000: "₱500k",
-              }}
+              formatter={(value) => `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+              parser={(value) => value.replace(/₱\s?|(,*)/g, "")}
             />
+          </Form.Item>
+
+          <Form.Item name="serviceType" label="Select Service Types" rules={[{ required: true }]}>
+            <Checkbox.Group onChange={onServiceTypeChange}>
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Checkbox value="venues">Venue</Checkbox>
+                </Col>
+                <Col span={8}>
+                  <Checkbox value="catering">Catering</Checkbox>
+                </Col>
+                <Col span={8}>
+                  <Checkbox value="photographers">Photographer</Checkbox>
+                </Col>
+                <Col span={8}>
+                  <Checkbox value="designers">Event Designer</Checkbox>
+                </Col>
+              </Row>
+            </Checkbox.Group>
           </Form.Item>
 
           <Form.Item>
@@ -110,7 +128,7 @@ const CustomizationPage = () => {
         </Form>
       </Card>
 
-      {recommendations && (
+      {recommendations && recommendations.length > 0 ? (
         <Card title="Recommended Services">
           <Row gutter={[16, 16]}>
             {recommendations.map((service, index) => (
@@ -120,7 +138,11 @@ const CustomizationPage = () => {
                   cover={
                     <img
                       alt={service.name}
-                      src={service.images ? JSON.parse(service.images)[0] : "https://via.placeholder.com/300x200"}
+                      src={
+                        service.images && service.images.length > 0
+                          ? JSON.parse(service.images)[0]
+                          : "https://via.placeholder.com/300x200"
+                      }
                     />
                   }
                   onClick={() => viewService(service.type, service.id)}
@@ -140,6 +162,8 @@ const CustomizationPage = () => {
             ))}
           </Row>
         </Card>
+      ) : (
+        recommendations && <p>No recommendations available.</p>
       )}
     </div>
   )

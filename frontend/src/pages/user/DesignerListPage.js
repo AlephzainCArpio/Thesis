@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Card, Row, Col, Typography, Spin, Empty } from "antd"
 import { useNavigate } from "react-router-dom"
@@ -89,3 +87,4 @@ const DesignerListPage = () => {
 }
 
 export default DesignerListPage
+  

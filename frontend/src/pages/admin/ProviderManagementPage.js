@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Table, Button, Modal, Space, Card, Typography, Image, message, Spin, Tag } from "antd"
 import { CheckOutlined, CloseOutlined, EyeOutlined } from "@ant-design/icons"
@@ -36,7 +34,6 @@ const ProviderManagementPage = () => {
     try {
       setDocumentLoading(true)
       setViewingProvider(provider)
-      // Create a URL for the verification document
       setDocumentUrl(`${api.defaults.baseURL}/uploads/${provider.verificationDoc}`)
       setDocumentVisible(true)
     } catch (error) {

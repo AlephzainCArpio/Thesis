@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Form, Input, InputNumber, Select, Button, Upload, Card, Tabs, message, Alert } from "antd"
 import { UploadOutlined } from "@ant-design/icons"
@@ -12,7 +10,7 @@ const { TextArea } = Input
 
 const RegisterServicePage = () => {
   const [loading, setLoading] = useState(false)
-  const [serviceType, setServiceType] = useState("venue")
+  const [serviceType, setServiceType] = useState("")
   const [providerType, setProviderType] = useState(null)
   const [canRegister, setCanRegister] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
@@ -110,7 +108,7 @@ const RegisterServicePage = () => {
       await api.post(endpoint, serviceData)
 
       message.success("Service submitted for approval!")
-      // Reset form
+      
       setServiceType(providerType || "venue")
     } catch (error) {
       message.error(error.response?.data?.message || "Failed to register service")
@@ -123,7 +121,7 @@ const RegisterServicePage = () => {
   const uploadProps = {
     listType: "picture",
     beforeUpload: (file) => {
-      return false // Prevent actual upload, handle manually
+      return false 
     },
     maxCount: 5,
   }

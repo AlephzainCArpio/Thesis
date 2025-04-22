@@ -1,5 +1,3 @@
-"use client"
-
 import React, { useState, useEffect } from "react"
 import { Layout, Menu, Avatar, Dropdown, Breadcrumb } from "antd"
 import {

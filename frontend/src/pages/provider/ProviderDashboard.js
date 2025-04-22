@@ -1,5 +1,3 @@
-"use client"
-
 import React, { useState, useEffect } from "react"
 import { Table, Button, Tag, message, Spin } from "antd"
 import { useAuth } from "../../contexts/AuthContext"

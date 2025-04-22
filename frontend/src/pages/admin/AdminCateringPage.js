@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import {
   Table,
@@ -147,7 +145,7 @@ const AdminCateringPage = () => {
         const updatedCatering = {
           ...selectedCatering,
           ...updatedValues,
-          menuItems: values.menuItems, // Keep as array for display
+          menuItems: values.menuItems, 
           cuisineTypes: values.cuisineTypes,
         }
         setSelectedCatering(updatedCatering)

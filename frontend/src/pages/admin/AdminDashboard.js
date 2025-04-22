@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { Row, Col, Card, Statistic, Table, Tag, Spin, Alert, Tabs, Select, DatePicker } from "antd"
 import {

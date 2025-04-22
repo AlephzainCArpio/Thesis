@@ -1,61 +1,76 @@
-const { PrismaClient } = require("@prisma/client")
-const prisma = new PrismaClient()
-
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 const getProfile = async (req, res) => {
   try {
-    const profile = await prisma.userProfile.findUnique({
-      where: { userId: req.user.id },
-      include: { user: true },
-    })
-
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" })
-    }
-
-    res.json(profile)
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    res.json(user);
   } catch (error) {
-    res.status(500).json({ message: error.message })
+    console.error("Error in getProfile:", error);
+    res.status(500).json({ message: "Internal Server Error", details: error.message });
   }
-}
+};
 
 const updateProfile = async (req, res) => {
   try {
-    const { location, preferences, notifyEmail, notifyPhone, avatar } = req.body
-
-    const updatedProfile = await prisma.userProfile.update({
-      where: { userId: req.user.id },
-      data: {
-        location,
-        preferences,
-        notifyEmail,
-        notifyPhone,
-        avatar,
-      },
-    })
-
-    res.json(updatedProfile)
+    const { name, email } = req.body;
+    const updatedUser = await prisma.user.update({
+      where: { id: req.user.id },
+      data: { name, email },
+    });
+    res.json(updatedUser);
   } catch (error) {
-    res.status(500).json({ message: error.message })
+    console.error("Error in updateProfile:", error);
+    res.status(500).json({ message: "Internal Server Error", details: error.message });
   }
-}
+};
 
 const getViewHistory = async (req, res) => {
   try {
-    const history = await prisma.viewHistory.findMany({
-      where: { userId: req.user.id },
-      include: {
-        venue: true,
-        catering: true,
-        photographer: true,
-        designer: true,
-      },
+    const userId = req.user.id;
+    const viewHistory = await prisma.viewHistory.findMany({
+      where: { userId },
+      include: { venue: true, catering: true, photographer: true, designer: true },
       orderBy: { viewedAt: "desc" },
-    })
-
-    res.json(history)
+    });
+    res.json(viewHistory);
   } catch (error) {
-    res.status(500).json({ message: error.message })
+    console.error("Error in getViewHistory:", error);
+    res.status(500).json({ message: "Internal Server Error", details: error.message });
   }
-}
+};
 
-module.exports = { getProfile, updateProfile, getViewHistory }
+const getDashboard = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const recentViews = await prisma.viewHistory.findMany({
+      where: { userId },
+      include: { venue: true, catering: true, photographer: true, designer: true },
+      orderBy: { viewedAt: "desc" },
+      take: 10,
+    });
+
+    const favorites = await prisma.favorite.findMany({
+      where: { userId },
+      include: { venue: true, catering: true, photographer: true, designer: true },
+    });
+
+    const stats = {
+      totalViews: await prisma.viewHistory.count({ where: { userId } }),
+      totalFavorites: await prisma.favorite.count({ where: { userId } }),
+    };
+
+    res.json({ recentViews, favorites, stats }); 
+  } catch (error) {
+    console.error("Error in getDashboard:", error);
+    res.status(500).json({ message: "Internal Server Error", details: error.message });
+  }
+};
+
+
+module.exports = {
+  getProfile,
+  updateProfile,
+  getViewHistory,
+  getDashboard,
+};

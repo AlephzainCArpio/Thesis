@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import {
   Form,
@@ -13,8 +11,6 @@ import {
   Spin,
   Divider,
   Typography,
-  Switch,
-  Select,
 } from "antd"
 import {
   UserOutlined,
@@ -22,15 +18,12 @@ import {
   PhoneOutlined,
   UploadOutlined,
   LockOutlined,
-  EnvironmentOutlined,
-  BellOutlined,
 } from "@ant-design/icons"
 import { useAuth } from "../../contexts/AuthContext"
 import api from "../../services/api"
 
 const { Title, Paragraph } = Typography
 const { TabPane } = Tabs
-const { Option } = Select
 
 const UserProfilePage = () => {
   const { currentUser, updateProfile } = useAuth()
@@ -39,7 +32,6 @@ const UserProfilePage = () => {
   const [avatarUrl, setAvatarUrl] = useState("")
   const [profileForm] = Form.useForm()
   const [passwordForm] = Form.useForm()
-  const [notificationForm] = Form.useForm()
 
   useEffect(() => {
     fetchProfileData()
@@ -61,13 +53,6 @@ const UserProfilePage = () => {
         name: response.data.name,
         email: response.data.email,
         phone: response.data.phone || "",
-        location: response.data.profile?.location || "",
-      })
-
-      notificationForm.setFieldsValue({
-        notifyEmail: response.data.profile?.notifyEmail || false,
-        notifyPhone: response.data.profile?.notifyPhone || false,
-        preferences: response.data.profile?.preferences || [],
       })
     } catch (error) {
       console.error("Error fetching profile data:", error)
@@ -85,7 +70,6 @@ const UserProfilePage = () => {
         name: values.name,
         phone: values.phone,
         profile: {
-          location: values.location,
           avatar: avatarUrl,
         },
       }
@@ -124,28 +108,8 @@ const UserProfilePage = () => {
     }
   }
 
-  const handleNotificationUpdate = async (values) => {
-    try {
-      setLoading(true)
-
-      await api.put("/users/profile", {
-        notifyEmail: values.notifyEmail,
-        notifyPhone: values.notifyPhone,
-        preferences: values.preferences,
-      })
-
-      message.success("Notification preferences updated successfully")
-    } catch (error) {
-      console.error("Error updating notification preferences:", error)
-      message.error("Failed to update notification preferences")
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleAvatarChange = (info) => {
     if (info.file.status === "done") {
-      // Assuming the server returns the URL to the uploaded image
       setAvatarUrl(info.file.response.url)
       message.success(`${info.file.name} uploaded successfully`)
     } else if (info.file.status === "error") {
@@ -198,10 +162,7 @@ const UserProfilePage = () => {
               <Form.Item
                 name="email"
                 label="Email"
-                rules={[
-                  { required: true, message: "Please enter your email" },
-                  { type: "email", message: "Please enter a valid email" },
-                ]}
+                rules={[{ required: true, message: "Please enter your email" }, { type: "email", message: "Please enter a valid email" }]}
               >
                 <Input prefix={<MailOutlined />} disabled />
               </Form.Item>
@@ -212,10 +173,6 @@ const UserProfilePage = () => {
                 rules={[{ required: true, message: "Please enter your phone number" }]}
               >
                 <Input prefix={<PhoneOutlined />} placeholder="Your phone number" />
-              </Form.Item>
-
-              <Form.Item name="location" label="Location">
-                <Input prefix={<EnvironmentOutlined />} placeholder="Your location" />
               </Form.Item>
 
               <Form.Item>
@@ -241,10 +198,7 @@ const UserProfilePage = () => {
               <Form.Item
                 name="newPassword"
                 label="New Password"
-                rules={[
-                  { required: true, message: "Please enter your new password" },
-                  { min: 8, message: "Password must be at least 8 characters" },
-                ]}
+                rules={[{ required: true, message: "Please enter your new password" }, { min: 8, message: "Password must be at least 8 characters" }]}
               >
                 <Input.Password prefix={<LockOutlined />} placeholder="New password" />
               </Form.Item>
@@ -270,40 +224,6 @@ const UserProfilePage = () => {
               <Form.Item>
                 <Button type="primary" htmlType="submit" loading={loading}>
                   Update Password
-                </Button>
-              </Form.Item>
-            </Form>
-          </Card>
-        </TabPane>
-
-        <TabPane tab="Notification Settings" key="notifications">
-          <Card>
-            <Form form={notificationForm} layout="vertical" onFinish={handleNotificationUpdate}>
-              <Form.Item name="notifyEmail" label="Email Notifications" valuePropName="checked">
-                <Switch />
-              </Form.Item>
-
-              <Form.Item name="notifyPhone" label="SMS Notifications" valuePropName="checked">
-                <Switch />
-              </Form.Item>
-
-              <Form.Item
-                name="preferences"
-                label="Event Preferences"
-                help="Select the types of events you're interested in"
-              >
-                <Select mode="multiple" placeholder="Select your preferences">
-                  <Option value="wedding">Wedding</Option>
-                  <Option value="birthday">Birthday</Option>
-                  <Option value="corporate">Corporate Event</Option>
-                  <Option value="conference">Conference</Option>
-                  <Option value="social">Social Gathering</Option>
-                </Select>
-              </Form.Item>
-
-              <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loading} icon={<BellOutlined />}>
-                  Update Notification Settings
                 </Button>
               </Form.Item>
             </Form>

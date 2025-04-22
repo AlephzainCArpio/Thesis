@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { Form, Input, Button, Card, Radio, message, Upload, Select } from "antd"
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, UploadOutlined } from "@ant-design/icons"
