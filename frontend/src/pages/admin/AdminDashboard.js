@@ -1,281 +1,179 @@
-"use client"
+import React, { useState } from 'react';
+import { Card, Tabs, Form, Input, InputNumber, Button, Select, Upload, message } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 
-import { useState, useEffect } from "react"
-import { Row, Col, Card, Statistic, Table, Tag, Spin, Alert, Tabs, Select, DatePicker } from "antd"
-import {
-  UserOutlined,
-  TeamOutlined,
-  HomeOutlined,
-  CameraOutlined,
-  ShopOutlined,
-  PictureOutlined,
-} from "@ant-design/icons"
-import api from "../../services/api"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts"
+const { TextArea } = Input;
+const { Option } = Select;
+const { TabPane } = Tabs;
 
-const { TabPane } = Tabs
-const { RangePicker } = DatePicker
-const { Option } = Select
+const serviceTypes = [
+  { key: "venue", label: "Venues" },
+  { key: "photographer", label: "Photographers" },
+  { key: "designer", label: "Designers" },
+  { key: "catering", label: "Caterings" },
+];
 
-const AdminDashboard = () => {
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalProviders: 0,
-    totalVenues: 0,
-    totalCatering: 0,
-    totalPhotographers: 0,
-    totalDesigners: 0,
-    pendingVenues: 0,
-    pendingCatering: 0,
-    pendingPhotographers: 0,
-    pendingDesigners: 0,
-  })
+const AdminDashboardPage = () => {
+  const [activeTab, setActiveTab] = useState("venue");
+  const [loading, setLoading] = useState(false);
 
-  const [recentBookings, setRecentBookings] = useState([])
-  const [bookingStats, setBookingStats] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-  const [timeframe, setTimeframe] = useState("week")
-  const [chartData, setChartData] = useState([])
+  const handleTabChange = (key) => {
+    setActiveTab(key);
+  };
 
-  useEffect(() => {
-    fetchDashboardData()
-  }, [timeframe])
+  const handleSubmit = async (values) => {
+    const formData = new FormData();
+    formData.append("serviceType", activeTab);
 
-  const fetchDashboardData = async () => {
+    for (const key in values) {
+      if (key === "images") {
+        values.images.fileList.forEach((file) => {
+          formData.append("images", file.originFileObj);
+        });
+      } else {
+        formData.append(key, Array.isArray(values[key]) ? JSON.stringify(values[key]) : values[key]);
+      }
+    }
+
     try {
-      setLoading(true)
-      setError(null)
-
-      // Fetch dashboard statistics
-      const statsResponse = await api.get("/admin/dashboard/stats")
-      setStats(statsResponse.data)
-
-      // Fetch recent bookings
-      const bookingsResponse = await api.get("/admin/dashboard/recent-bookings")
-      setRecentBookings(bookingsResponse.data)
-
-      // Fetch booking statistics based on timeframe
-      const bookingStatsResponse = await api.get(`/admin/dashboard/booking-stats?timeframe=${timeframe}`)
-      setBookingStats(bookingStatsResponse.data)
-
-      // Format data for chart
-      const formattedChartData = bookingStatsResponse.data.map((item) => ({
-        name: item.date,
-        bookings: item.count,
-      }))
-      setChartData(formattedChartData)
+      setLoading(true);
+      const response = await fetch('/api/services', {
+        method: 'POST',
+        body: formData,
+      });
+      if (response.ok) {
+        message.success("Service added successfully!");
+      } else {
+        throw new Error("Failed to add service");
+      }
     } catch (error) {
-      console.error("Error fetching dashboard data:", error)
-      setError("Failed to load dashboard data. Please try again later.")
+      message.error(error.message || "Error adding service");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const getStatusTag = (status) => {
-    switch (status) {
-      case "PENDING":
-        return <Tag color="blue">Pending</Tag>
-      case "APPROVED":
-        return <Tag color="green">Approved</Tag>
-      case "REJECTED":
-        return <Tag color="red">Rejected</Tag>
-      case "COMPLETED":
-        return <Tag color="purple">Completed</Tag>
-      case "CANCELLED":
-        return <Tag color="volcano">Cancelled</Tag>
-      default:
-        return <Tag>{status}</Tag>
-    }
-  }
-
-  const bookingColumns = [
-    {
-      title: "Booking ID",
-      dataIndex: "id",
-      key: "id",
+  const uploadProps = {
+    beforeUpload: (file) => {
+      const isImage = file.type.startsWith('image/');
+      const isLt5M = file.size / 1024 / 1024 < 5;
+      if (!isImage) message.error('You can only upload image files!');
+      if (!isLt5M) message.error('Image must be smaller than 5MB!');
+      return isImage && isLt5M;
     },
-    {
-      title: "Customer",
-      dataIndex: ["user", "name"],
-      key: "user",
-    },
-    {
-      title: "Service Type",
-      dataIndex: "serviceType",
-      key: "serviceType",
-      render: (type) => {
-        const types = {
-          VENUE: { color: "geekblue", icon: <HomeOutlined /> },
-          CATERING: { color: "orange", icon: <ShopOutlined /> },
-          PHOTOGRAPHER: { color: "green", icon: <CameraOutlined /> },
-          DESIGNER: { color: "purple", icon: <PictureOutlined /> },
-        }
-
-        return (
-          <Tag color={types[type]?.color || "default"} icon={types[type]?.icon}>
-            {type}
-          </Tag>
-        )
-      },
-    },
-    {
-      title: "Service Name",
-      dataIndex: "serviceName",
-      key: "serviceName",
-    },
-    {
-      title: "Date",
-      dataIndex: "eventDate",
-      key: "eventDate",
-    },
-    {
-      title: "Price",
-      dataIndex: "totalPrice",
-      key: "totalPrice",
-      render: (price) => `₱${price?.toLocaleString() || "0"}`,
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status) => getStatusTag(status),
-    },
-  ]
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: "center", padding: "50px" }}>
-        <Spin size="large" />
-        <p style={{ marginTop: "20px" }}>Loading dashboard data...</p>
-      </div>
-    )
-  }
-
-  if (error) {
-    return <Alert message="Error" description={error} type="error" showIcon />
-  }
+    listType: 'picture',
+  };
 
   return (
-    <div className="admin-dashboard">
-      <h1>Admin Dashboard</h1>
+    <Card>
+      <Tabs activeKey={activeTab} onChange={handleTabChange} type="card">
+        {serviceTypes.map((service) => (
+          <TabPane tab={service.label} key={service.key}>
+            <Form layout="vertical" onFinish={handleSubmit}>
+              <Form.Item name="name" label="Name" rules={[{ required: true, message: "Please enter name!" }]}>
+                <Input placeholder={`Enter ${service.label.toLowerCase()} name`} />
+              </Form.Item>
 
-      {/* Statistics Cards */}
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
-            <Statistic title="Total Users" value={stats.totalUsers} prefix={<UserOutlined />} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
-            <Statistic title="Total Providers" value={stats.totalProviders} prefix={<TeamOutlined />} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
-            <Statistic title="Total Venues" value={stats.totalVenues} prefix={<HomeOutlined />} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
-            <Statistic
-              title="Pending Venues"
-              value={stats.pendingVenues}
-              valueStyle={{ color: stats.pendingVenues > 0 ? "#faad14" : "#3f8600" }}
-              prefix={<HomeOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
-            <Statistic title="Total Catering Services" value={stats.totalCatering} prefix={<ShopOutlined />} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
-            <Statistic
-              title="Pending Catering"
-              value={stats.pendingCatering}
-              valueStyle={{ color: stats.pendingCatering > 0 ? "#faad14" : "#3f8600" }}
-              prefix={<ShopOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
-            <Statistic title="Total Photographers" value={stats.totalPhotographers} prefix={<CameraOutlined />} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
-            <Statistic
-              title="Pending Photographers"
-              value={stats.pendingPhotographers}
-              valueStyle={{ color: stats.pendingPhotographers > 0 ? "#faad14" : "#3f8600" }}
-              prefix={<CameraOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
-            <Statistic title="Total Designers" value={stats.totalDesigners} prefix={<PictureOutlined />} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={6}>
-          <Card>
-            <Statistic
-              title="Pending Designers"
-              value={stats.pendingDesigners}
-              valueStyle={{ color: stats.pendingDesigners > 0 ? "#faad14" : "#3f8600" }}
-              prefix={<PictureOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
+              <Form.Item name="description" label="Description" rules={[{ required: true, message: "Please enter description!" }]}>
+                <TextArea rows={4} placeholder={`Describe your ${service.label.toLowerCase()}`} />
+              </Form.Item>
 
-      {/* Tabs for different dashboard sections */}
-      <Tabs defaultActiveKey="bookings" style={{ marginTop: 24 }}>
-        <TabPane tab="Recent Bookings" key="bookings">
-          <Table columns={bookingColumns} dataSource={recentBookings} rowKey="id" pagination={{ pageSize: 5 }} />
-        </TabPane>
+              <Form.Item name="location" label="Location" rules={[{ required: true, message: "Please enter location!" }]}>
+                <Input placeholder="Enter location" />
+              </Form.Item>
 
-        <TabPane tab="Analytics" key="analytics">
-          <div style={{ marginBottom: 16 }}>
-            <span style={{ marginRight: 8 }}>Timeframe:</span>
-            <Select value={timeframe} onChange={setTimeframe} style={{ width: 120 }}>
-              <Option value="week">Last Week</Option>
-              <Option value="month">Last Month</Option>
-              <Option value="quarter">Last Quarter</Option>
-              <Option value="year">Last Year</Option>
-            </Select>
-          </div>
+              {activeTab === "venue" && (
+                <>
+                  <Form.Item name="capacity" label="Maximum Capacity" rules={[{ required: true, message: "Please enter capacity!" }]}>
+                    <InputNumber min={1} style={{ width: "100%" }} placeholder="Max number of guests" />
+                  </Form.Item>
+                  <Form.Item name="price" label="Price (₱)" rules={[{ required: true, message: "Please enter price!" }]}>
+                    <InputNumber min={0} style={{ width: "100%" }} placeholder="Rental fee" />
+                  </Form.Item>
+                  <Form.Item name="amenities" label="Amenities">
+                    <Select mode="tags" placeholder="Enter amenities">
+                      <Option value="parking">Parking</Option>
+                      <Option value="wifi">WiFi</Option>
+                      <Option value="air-conditioning">Air Conditioning</Option>
+                      <Option value="sound-system">Sound System</Option>
+                    </Select>
+                  </Form.Item>
+                </>
+              )}
 
-          <Card title={`Bookings Overview - ${timeframe.charAt(0).toUpperCase() + timeframe.slice(1)}`}>
-            <ResponsiveContainer width="100%" height={400}>
-              <LineChart
-                data={chartData}
-                margin={{
-                  top: 5,
-                  right: 30,
-                  left: 20,
-                  bottom: 5,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="bookings" stroke="#8884d8" activeDot={{ r: 8 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </Card>
-        </TabPane>
+              {activeTab === "photographer" && (
+                <>
+                  <Form.Item name="hourlyRate" label="Hourly Rate (₱)" rules={[{ required: true, message: "Please enter hourly rate!" }]}>
+                    <InputNumber min={0} style={{ width: "100%" }} placeholder="Hourly rate" />
+                  </Form.Item>
+                  <Form.Item name="packages" label="Packages">
+                    <TextArea rows={4} placeholder="Describe your package options" />
+                  </Form.Item>
+                  <Form.Item name="photographyStyles" label="Photography Styles">
+                    <Select mode="tags" placeholder="Enter photography styles">
+                      <Option value="traditional">Traditional</Option>
+                      <Option value="photojournalistic">Photojournalistic</Option>
+                      <Option value="artistic">Artistic</Option>
+                      <Option value="candid">Candid</Option>
+                      <Option value="vintage">Vintage</Option>
+                    </Select>
+                  </Form.Item>
+                </>
+              )}
+
+              {activeTab === "designer" && (
+                <>
+                  <Form.Item name="price" label="Base Price (₱)" rules={[{ required: true, message: "Please enter base price!" }]}>
+                    <InputNumber min={0} style={{ width: "100%" }} placeholder="Starting price" />
+                  </Form.Item>
+                  <Form.Item name="designStyles" label="Design Styles">
+                    <Select mode="tags" placeholder="Enter design styles">
+                      <Option value="modern">Modern</Option>
+                      <Option value="rustic">Rustic</Option>
+                      <Option value="minimalist">Minimalist</Option>
+                      <Option value="bohemian">Bohemian</Option>
+                    </Select>
+                  </Form.Item>
+                </>
+              )}
+
+              {activeTab === "catering" && (
+                <>
+                  <Form.Item name="maxPeople" label="Maximum People" rules={[{ required: true, message: "Please enter max people!" }]}>
+                    <InputNumber min={1} style={{ width: "100%" }} placeholder="Max number of guests" />
+                  </Form.Item>
+                  <Form.Item name="pricePerPerson" label="Price Per Person (₱)" rules={[{ required: true, message: "Please enter price per person!" }]}>
+                    <InputNumber min={0} style={{ width: "100%" }} placeholder="Price per person" />
+                  </Form.Item>
+                  <Form.Item name="cuisineTypes" label="Cuisine Types">
+                    <Select mode="tags" placeholder="Enter cuisine types">
+                      <Option value="filipino">Filipino</Option>
+                      <Option value="chinese">Chinese</Option>
+                      <Option value="japanese">Japanese</Option>
+                      <Option value="italian">Italian</Option>
+                      <Option value="american">American</Option>
+                    </Select>
+                  </Form.Item>
+                </>
+              )}
+
+              <Form.Item name="images" label="Images">
+                <Upload {...uploadProps}>
+                  <Button icon={<UploadOutlined />}>Upload Images</Button>
+                </Upload>
+              </Form.Item>
+
+              <Form.Item>
+                <Button type="primary" htmlType="submit" loading={loading}>
+                  Add Service
+                </Button>
+              </Form.Item>
+            </Form>
+          </TabPane>
+        ))}
       </Tabs>
-    </div>
-  )
-}
+    </Card>
+  );
+};
 
-export default AdminDashboard
+export default AdminDashboardPage;
