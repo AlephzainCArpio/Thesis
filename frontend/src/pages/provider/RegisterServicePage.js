@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Card, Tabs, Form, Input, InputNumber, Button, Select, Upload, message } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 
@@ -13,38 +14,137 @@ const serviceTypes = [
   { key: "catering", label: "Catering" }
 ];
 
-const RegisterServicePage = ({ providerType, onFinish, loading, canRegister, uploadProps }) => {
+const RegisterServicePage = ({ providerType, onFinish, loading }) => {
   const [serviceType, setServiceType] = useState(providerType || "venue");
+  const [canRegister, setCanRegister] = useState(true); // Default to true for now
+  const [userData, setUserData] = useState(null);
 
-  // Ensure that the correct tab is selected based on providerType
+  // Fetch user data when component mounts
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await axios.get('/api/auth/me');
+        setUserData(response.data);
+        
+        // Check if user can register services
+        const userCanRegister = 
+          response.data && 
+          response.data.role === 'PROVIDER' && 
+          response.data.providerStatus === 'APPROVED';
+        
+        setCanRegister(userCanRegister);
+        console.log('User can register:', userCanRegister);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setCanRegister(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Update service type when provider type changes
   useEffect(() => {
     if (providerType) {
       setServiceType(providerType);
     }
   }, [providerType]);
 
+  // Debug logs to help troubleshoot
+  useEffect(() => {
+    console.log('Current state:', { 
+      serviceType, 
+      providerType, 
+      canRegister,
+      userData: userData ? `${userData.role}:${userData.providerStatus}` : 'not loaded'
+    });
+  }, [serviceType, providerType, canRegister, userData]);
+
   const handleTabChange = (key) => {
     if (!providerType) {
-      setServiceType(key); // Allow tab change only if providerType is not set
+      setServiceType(key);
+    }
+  };
+
+  // Prepare upload props
+  const uploadProps = {
+    beforeUpload: file => {
+      const isImage = file.type.startsWith('image/');
+      if (!isImage) {
+        message.error('You can only upload image files!');
+      }
+      const isLt5M = file.size / 1024 / 1024 < 5;
+      if (!isLt5M) {
+        message.error('Image must be smaller than 5MB!');
+      }
+      return isImage && isLt5M;
+    },
+    listType: 'picture',
+  };
+
+  const handleSubmit = async (values) => {
+    const formData = new FormData();
+    
+    // Add service type to form data
+    formData.append('serviceType', serviceType);
+    
+    // Add other form fields to FormData
+    for (const key in values) {
+      if (key === 'images') {
+        // Skip images for now - they're handled by Upload component
+        continue;
+      } else if (Array.isArray(values[key])) {
+        formData.append(key, JSON.stringify(values[key]));
+      } else {
+        formData.append(key, values[key]);
+      }
+    }
+    
+    // Add image files
+    if (values.images && values.images.fileList) {
+      values.images.fileList.forEach(fileItem => {
+        if (fileItem.originFileObj) {
+          formData.append('images', fileItem.originFileObj);
+        }
+      });
+    }
+
+    try {
+      console.log('Submitting form data...');
+      const response = await axios.post('/api/services', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status === 201) {
+        message.success('Service submitted successfully for approval');
+        if (onFinish) {
+          onFinish(response.data);
+        }
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Error submitting service';
+      message.error(errorMsg);
+      console.error('Service submission error:', error);
     }
   };
 
   return (
     <Card>
-      <Tabs 
-        activeKey={serviceType} 
-        onChange={handleTabChange} 
-        disabled={providerType !== null} // Disable tab switching if providerType is set
-      >
+      <Tabs activeKey={serviceType} onChange={handleTabChange} type="card">
         {serviceTypes.map((service) => (
           <TabPane 
             tab={service.label} 
             key={service.key} 
-            disabled={providerType && providerType !== service.key} // Disable tab if providerType does not match
+            disabled={providerType && providerType !== service.key}
           >
-            {/* The form content for each service type will go here */}
             {service.key === 'venue' && (
-              <Form name="register_venue" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
+              <Form 
+                name="register_venue" 
+                layout="vertical" 
+                onFinish={handleSubmit}
+              >
                 <Form.Item name="name" label="Venue Name" rules={[{ required: true, message: "Please enter venue name!" }]}>
                   <Input placeholder="Enter venue name" />
                 </Form.Item>
@@ -81,15 +181,28 @@ const RegisterServicePage = ({ providerType, onFinish, loading, canRegister, upl
                 </Form.Item>
 
                 <Form.Item>
-                  <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
+                  <Button 
+                    type="primary" 
+                    htmlType="submit" 
+                    loading={loading}
+                  >
                     Submit for Approval
                   </Button>
+                  {!canRegister && userData && (
+                    <div style={{ marginTop: '10px', color: 'red' }}>
+                      Note: You must be an approved provider to register services.
+                    </div>
+                  )}
                 </Form.Item>
               </Form>
             )}
 
             {service.key === 'photographer' && (
-              <Form name="register_photographer" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
+              <Form 
+                name="register_photographer" 
+                layout="vertical" 
+                onFinish={handleSubmit}
+              >
                 <Form.Item name="name" label="Business Name" rules={[{ required: true }]}>
                   <Input placeholder="Enter business name" />
                 </Form.Item>
@@ -131,15 +244,28 @@ const RegisterServicePage = ({ providerType, onFinish, loading, canRegister, upl
                 </Form.Item>
 
                 <Form.Item>
-                  <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
+                  <Button 
+                    type="primary" 
+                    htmlType="submit" 
+                    loading={loading}
+                  >
                     Submit for Approval
                   </Button>
+                  {!canRegister && userData && (
+                    <div style={{ marginTop: '10px', color: 'red' }}>
+                      Note: You must be an approved provider to register services.
+                    </div>
+                  )}
                 </Form.Item>
               </Form>
             )}
 
             {service.key === 'designer' && (
-              <Form name="register_designer" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
+              <Form 
+                name="register_designer" 
+                layout="vertical" 
+                onFinish={handleSubmit}
+              >
                 <Form.Item name="name" label="Business Name" rules={[{ required: true }]}>
                   <Input placeholder="Enter business name" />
                 </Form.Item>
@@ -172,15 +298,28 @@ const RegisterServicePage = ({ providerType, onFinish, loading, canRegister, upl
                 </Form.Item>
 
                 <Form.Item>
-                  <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
+                  <Button 
+                    type="primary" 
+                    htmlType="submit" 
+                    loading={loading}
+                  >
                     Submit for Approval
                   </Button>
+                  {!canRegister && userData && (
+                    <div style={{ marginTop: '10px', color: 'red' }}>
+                      Note: You must be an approved provider to register services.
+                    </div>
+                  )}
                 </Form.Item>
               </Form>
             )}
 
             {service.key === 'catering' && (
-              <Form name="register_catering" layout="vertical" onFinish={onFinish} disabled={!canRegister}>
+              <Form 
+                name="register_catering" 
+                layout="vertical" 
+                onFinish={handleSubmit}
+              >
                 <Form.Item name="name" label="Business Name" rules={[{ required: true }]}>
                   <Input placeholder="Enter business name" />
                 </Form.Item>
@@ -227,9 +366,18 @@ const RegisterServicePage = ({ providerType, onFinish, loading, canRegister, upl
                 </Form.Item>
 
                 <Form.Item>
-                  <Button type="primary" htmlType="submit" loading={loading} disabled={!canRegister}>
+                  <Button 
+                    type="primary" 
+                    htmlType="submit" 
+                    loading={loading}
+                  >
                     Submit for Approval
                   </Button>
+                  {!canRegister && userData && (
+                    <div style={{ marginTop: '10px', color: 'red' }}>
+                      Note: You must be an approved provider to register services.
+                    </div>
+                  )}
                 </Form.Item>
               </Form>
             )}

@@ -32,7 +32,6 @@ const MainLayout = () => {
     setMobileMenuVisible(false)
   }
 
-  // Navigation items for desktop menu
   const menuItems = [
     {
       key: currentUser ? "/user" : "/",
@@ -45,7 +44,6 @@ const MainLayout = () => {
     { key: "/user/designers", label: "Designers", icon: null },
   ]
 
-  // Additional navigation items for mobile menu
   const mobileMenuItems = currentUser
     ? [
         ...menuItems,
@@ -60,7 +58,6 @@ const MainLayout = () => {
         { key: "/register", label: "Register", icon: <UserAddOutlined /> },
       ]
 
-  // User dropdown menu items
   const userMenuItems = [
     {
       key: "/user/profile",
@@ -191,16 +188,16 @@ const MainLayout = () => {
       <Footer style={{ textAlign: "center" }}>Organiceee ©{new Date().getFullYear()} Created with ❤️</Footer>
 
       {/* CSS for responsive design */}
-      <style jsx>{`
+      <style>{`
         @media (max-width: 768px) {
           .desktop-menu {
             display: none !important;
           }
-          
+
           .mobile-menu-button {
             display: block !important;
           }
-          
+
           .ant-layout-content {
             padding: 0 20px !important;
           }

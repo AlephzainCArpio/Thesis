@@ -12,8 +12,10 @@ const LoginPage = () => {
   const onFinish = async (values) => {
     try {
       setLoading(true);
+
+      // Call the login function from the AuthContext
       const user = await login(values.email, values.password);
-      
+
       console.log("Login successful, user data:", user);
 
       if (!user) {
@@ -53,18 +55,29 @@ const LoginPage = () => {
 
   return (
     <div style={{ maxWidth: 400, margin: "0 auto", paddingTop: 50 }}>
-      <Card title="Login" variant="outlined"> 
+      <Card title="Login" variant="outlined">
         <Form name="login" initialValues={{ remember: true }} onFinish={onFinish}>
-          <Form.Item name="email" rules={[{ required: true, message: "Please input your email!" }]}>
+          <Form.Item
+            name="email"
+            rules={[{ required: true, message: "Please input your email!" }]}
+          >
             <Input prefix={<UserOutlined />} placeholder="Email" />
           </Form.Item>
 
-          <Form.Item name="password" rules={[{ required: true, message: "Please input your password!" }]}>
+          <Form.Item
+            name="password"
+            rules={[{ required: true, message: "Please input your password!" }]}
+          >
             <Input.Password prefix={<LockOutlined />} placeholder="Password" />
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" loading={loading} style={{ width: "100%" }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              style={{ width: "100%" }}
+            >
               Log in
             </Button>
             Or <Link to="/register">register now!</Link>

@@ -180,7 +180,7 @@ const registerService = async (req, res) => {
         type: serviceType,
         providerId: req.user.id,
         ...serviceData,
-        status: "PENDING", // Initial status
+        status: "PENDING", 
       },
     });
 
