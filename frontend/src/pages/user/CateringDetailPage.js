@@ -116,44 +116,7 @@ const CateringDetailPage = () => {
     }
   }
 
-  const handleInquirySubmit = async (values) => {
-    if (!currentUser) {
-      message.info("Please login to send inquiries")
-      return
-    }
-
-    try {
-      setInquirySubmitting(true)
-      await api.post(`/inquiries/catering/${id}`, {
-        ...values,
-        eventDate: values.eventDate.format("YYYY-MM-DD"),
-      })
-
-      setInquirySuccess(true)
-      form.resetFields()
-    } catch (error) {
-      console.error("Error submitting inquiry:", error)
-      message.error("Failed to send inquiry")
-    } finally {
-      setInquirySubmitting(false)
-    }
-  }
-
-  const resetInquiryModal = () => {
-    setInquiryModalVisible(false)
-    setTimeout(() => {
-      setInquirySuccess(false)
-    }, 300)
-  }
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: "center", padding: "100px 0" }}>
-        <Spin size="large" />
-        <p style={{ marginTop: 16 }}>Loading catering details...</p>
-      </div>
-    )
-  }
+  
 
   if (!catering) {
     return (
@@ -334,72 +297,6 @@ const CateringDetailPage = () => {
         </Col>
       </Row>
 
-      {/* Inquiry Modal */}
-      <Modal
-        title={inquirySuccess ? "Inquiry Sent" : "Send Inquiry"}
-        open={inquiryModalVisible}
-        onCancel={resetInquiryModal}
-        footer={null}
-      >
-        {inquirySuccess ? (
-          <Result
-            status="success"
-            title="Your inquiry has been sent successfully!"
-            subTitle="The catering provider will contact you soon."
-            extra={[
-              <Button type="primary" key="close" onClick={resetInquiryModal}>
-                Close
-              </Button>,
-            ]}
-          />
-        ) : (
-          <Form form={form} layout="vertical" onFinish={handleInquirySubmit}>
-            <Form.Item
-              name="eventType"
-              label="Event Type"
-              rules={[{ required: true, message: "Please select event type" }]}
-            >
-              <Select>
-                <Option value="wedding">Wedding</Option>
-                <Option value="birthday">Birthday</Option>
-                <Option value="corporate">Corporate Event</Option>
-                <Option value="conference">Conference</Option>
-                <Option value="other">Other</Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              name="eventDate"
-              label="Event Date"
-              rules={[{ required: true, message: "Please select event date" }]}
-            >
-              <DatePicker style={{ width: "100%" }} />
-            </Form.Item>
-
-            <Form.Item
-              name="guestCount"
-              label="Number of Guests"
-              rules={[{ required: true, message: "Please enter number of guests" }]}
-            >
-              <InputNumber min={1} max={catering.maxPeople} style={{ width: "100%" }} />
-            </Form.Item>
-
-            <Form.Item
-              name="message"
-              label="Message"
-              rules={[{ required: true, message: "Please enter your message" }]}
-            >
-              <TextArea rows={4} placeholder="Please include any specific requirements or questions you have." />
-            </Form.Item>
-
-            <Form.Item>
-              <Button type="primary" htmlType="submit" loading={inquirySubmitting} block>
-                Send Inquiry
-              </Button>
-            </Form.Item>
-          </Form>
-        )}
-      </Modal>
     </div>
   )
 }

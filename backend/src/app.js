@@ -13,6 +13,8 @@ const adminRoutes = require("./routes/adminRoutes");
 const publicRoutes = require("./routes/publicRoutes");
 const providerRoutes = require("./routes/providerRoutes");
 const recommendationRoute = require('./routes/recommendationRoutes');
+const serviceRoutes = require("./routes/serviceRoutes");
+
 const app = express();
 
 // Middlewares
@@ -33,7 +35,9 @@ app.use("/api/designers", designerRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/providers", providerRoutes);
-app.use('/api', recommendationRoute);
+app.use("/api/recommendation", recommendationRoute);
+app.use("/api/services", serviceRoutes);
+
 // Error handling
 app.use(errorHandler);
 

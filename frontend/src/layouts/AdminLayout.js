@@ -21,28 +21,9 @@ const AdminLayout = () => {
   const { currentUser, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [pendingCount, setPendingCount] = useState(0)
+  const [pendingCount] = useState(0)
 
-  // Fetch pending providers count
-  useEffect(() => {
-    const fetchPendingCount = async () => {
-      try {
-        const response = await api.get("/providers/pending") 
-        setPendingCount(response.data.length)
-      } catch (error) {
-        console.error("Error fetching pending providers:", error)
-      }
-    }
-
-    fetchPendingCount()
-
-    // Set up interval to refresh count
-    const interval = setInterval(fetchPendingCount, 60000) // Check every minute
-
-    return () => clearInterval(interval)
-  }, [])
-
-  const handleLogout = () => {
+   const handleLogout = () => {
     logout()
     navigate("/login")
   }

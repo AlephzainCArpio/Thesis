@@ -1,17 +1,18 @@
-const express = require('express');
-const router = express.Router();
-const { 
-  registerService, 
-  getServices, 
-  getServiceById, 
-  getProviderServices 
-} = require('../controllers/serviceController');
-const { protect } = require('../middleware/authMiddleware');
+const express = require("express");
+const { registerService, getServices, getServiceById, getProviderServices } = require("../controllers/serviceController");
 
-// Service routes
-router.post('/', protect, registerService);
-router.get('/', getServices);
-router.get('/provider', protect, getProviderServices);
-router.get('/:id', getServiceById);
+const router = express.Router();
+
+// POST: Register a new service
+router.post("/", registerService);
+
+// GET: Get all services
+router.get("/", getServices);
+
+// GET: Get provider's services
+router.get("/provider-services", getProviderServices);
+
+// GET: Get service by ID
+router.get("/:id", getServiceById);
 
 module.exports = router;

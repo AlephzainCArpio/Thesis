@@ -16,7 +16,7 @@ const serviceTypes = [
 
 const RegisterServicePage = ({ providerType, onFinish, loading }) => {
   const [serviceType, setServiceType] = useState(providerType || "venue");
-  const [canRegister, setCanRegister] = useState(true); // Default to true for now
+  const [canRegister, setCanRegister] = useState(true); 
   const [userData, setUserData] = useState(null);
 
   // Fetch user data when component mounts
