@@ -13,18 +13,31 @@ const adminRoutes = require("./routes/adminRoutes");
 const publicRoutes = require("./routes/publicRoutes");
 const providerRoutes = require("./routes/providerRoutes");
 const recommendationRoute = require('./routes/recommendationRoutes');
-const serviceRoutes = require("./routes/serviceRoutes");
+
+
+const fs = require("fs"); 
 
 const app = express();
 
 // Middlewares
-app.use(cors());
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true
+  }));
 app.use(express.json());
 app.use(morgan("dev"));
 
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+// Create uploads directories if they don't exist
+const uploadDirs = ['venues', 'catering', 'photographers', 'designers'];
+uploadDirs.forEach(dir => {
+  const fullPath = path.join(__dirname, `../uploads/${dir}`);
+  if (!fs.existsSync(fullPath)) {
+    fs.mkdirSync(fullPath, { recursive: true });
+  }
+});
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -36,7 +49,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/providers", providerRoutes);
 app.use("/api/recommendation", recommendationRoute);
-app.use("/api/services", serviceRoutes);
+
 
 // Error handling
 app.use(errorHandler);
