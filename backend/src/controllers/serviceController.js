@@ -35,23 +35,22 @@ const upload = multer({
 // Register a new service
 const registerService = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: "Unauthorized: User not authenticated" });
+    if (!req.user || req.user.role !== "ADMIN") {
+      return res.status(401).json({ message: "Unauthorized: Admin access required" });
     }
 
-    upload.array('images', 5)(req, res, async (err) => {
+    upload.array("images", 5)(req, res, async (err) => {
       if (err) {
         return res.status(400).json({ message: err.message });
       }
 
       const serviceData = {
-        userId: req.user.id,
         serviceType: req.body.serviceType,
         name: req.body.name,
         description: req.body.description,
         location: req.body.location,
-        status: 'PENDING',
-        images: req.files ? req.files.map(file => file.filename) : [],
+        status: "APPROVED", // Automatically mark as approved
+        images: req.files ? req.files.map((file) => file.filename) : [],
       };
 
       const service = await prisma.service.create({
@@ -69,6 +68,7 @@ const registerService = async (req, res) => {
 // Get all services
 const getServices = async (req, res) => {
   try {
+    // Fetch approved services from the database
     const services = await prisma.service.findMany({
       where: {
         status: 'APPROVED',
@@ -83,9 +83,12 @@ const getServices = async (req, res) => {
         },
       },
     });
+
+    // Respond with the list of services
     res.status(200).json(services);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error in getServices:", error); // Log the error
+    res.status(500).json({ message: "Internal server error while retrieving services" });
   }
 };
 
@@ -123,6 +126,16 @@ const getProviderServices = async (req, res) => {
     const services = await prisma.service.findMany({
       where: {
         userId: req.user.id,
+        status: 'APPROVED',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
       },
     });
     res.status(200).json(services);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Card, Tabs, Form, Input, InputNumber, Select, Upload, Button, message } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { Card, Modal, Form, Input, InputNumber, Select, Upload, Tabs, message } from "antd";
+import { PlusOutlined, UploadOutlined } from "@ant-design/icons";
 import axios from "axios";
 
 const { TabPane } = Tabs;
@@ -12,17 +12,20 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("venue");
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
+  // Fetch existing services
   useEffect(() => {
     fetchServices();
   }, []);
 
   const fetchServices = async () => {
     try {
-      const res = await axios.get("/api/services");
+      const res = await axios.get("/api/services"); // Ensure this endpoint exists in your backend
       setServices(res.data);
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching services:", error);
+      message.error("Failed to fetch services.");
     }
   };
 
@@ -67,8 +70,9 @@ const AdminDashboard = () => {
       message.success("Service added successfully!");
       fetchServices();
       form.resetFields();
+      setIsModalVisible(false);
     } catch (error) {
-      console.error(error);
+      console.error("Error adding service:", error);
       message.error("Failed to add service.");
     } finally {
       setLoading(false);
@@ -92,13 +96,12 @@ const AdminDashboard = () => {
       {/* SERVICES GRID */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "20px", marginBottom: "40px" }}>
         {services.map((service) => (
-          <div
+          <Card
             key={service.id}
             style={{
               backgroundColor: "#d1d5db",
               borderRadius: "8px",
               width: "200px",
-              padding: "10px",
               textAlign: "center",
             }}
           >
@@ -116,12 +119,34 @@ const AdminDashboard = () => {
             ) : (
               <div style={{ marginTop: "5px", color: "black", fontWeight: "bold" }}>Pending Request</div>
             )}
-          </div>
+          </Card>
         ))}
+
+        {/* ADD SERVICE CARD */}
+        <Card
+          onClick={() => setIsModalVisible(true)}
+          style={{
+            backgroundColor: "#d1d5db",
+            borderRadius: "8px",
+            width: "200px",
+            textAlign: "center",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <PlusOutlined style={{ fontSize: "32px", color: "#555" }} />
+        </Card>
       </div>
 
-      {/* ADD SERVICE CARD */}
-      <Card>
+      {/* ADD SERVICE MODAL */}
+      <Modal
+        title="Add Service"
+        visible={isModalVisible}
+        onCancel={() => setIsModalVisible(false)}
+        footer={null}
+      >
         <Tabs activeKey={activeTab} onChange={handleTabChange} type="card">
           {serviceTypes.map((service) => (
             <TabPane tab={service.label} key={service.key}>
@@ -215,20 +240,34 @@ const AdminDashboard = () => {
 
                 <Form.Item name="images" label="Images" valuePropName="fileList" getValueFromEvent={(e) => Array.isArray(e) ? e : e?.fileList}>
                   <Upload {...uploadProps}>
-                    <Button icon={<UploadOutlined />}>Upload Images</Button>
+                    <button style={{ background: "none", border: "none", cursor: "pointer" }}>
+                      <UploadOutlined /> Upload Images
+                    </button>
                   </Upload>
                 </Form.Item>
 
                 <Form.Item>
-                  <Button type="primary" htmlType="submit" loading={loading} block>
-                    Add Service
-                  </Button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    style={{
+                      backgroundColor: "#1890ff",
+                      border: "none",
+                      color: "white",
+                      padding: "10px",
+                      width: "100%",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {loading ? "Adding..." : "Add Service"}
+                  </button>
                 </Form.Item>
               </Form>
             </TabPane>
           ))}
         </Tabs>
-      </Card>
+      </Modal>
     </div>
   );
 };

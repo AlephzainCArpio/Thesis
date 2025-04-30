@@ -1,5 +1,10 @@
 const express = require("express");
-const { registerService, getServices, getServiceById, getProviderServices } = require("../controllers/serviceController");
+const {
+  registerService,
+  getServices,
+  getServiceById,
+  getProviderServices,
+} = require("../controllers/serviceController");
 
 const router = express.Router();
 

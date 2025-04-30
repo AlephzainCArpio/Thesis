@@ -7,6 +7,177 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id              String          @id @default(uuid())
+  email           String          @unique
+  password        String
+  name            String?
+  phone           String?
+  role            UserRole        @default(USER)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  providerStatus  ProviderStatus?
+  verificationDoc String?
+  serviceType     ServiceType?
+  caterings       Catering[]      @relation("CateringProvider")
+  designers       Designer[]      @relation("DesignerProvider")
+  favorites       Favorite[]
+  photographers   Photographer[]  @relation("PhotographerProvider")
+  profile         UserProfile?
+  venues          Venue[]         @relation("VenueProvider")
+  viewHistory     ViewHistory[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id          String  @id @default(uuid())
+  userId      String  @unique
+  location    String?
+  preferences String? @db.LongText
+  notifyEmail Boolean @default(true)
+  notifyPhone Boolean @default(false)
+  avatar      String?
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+model Venue {
+  id          String        @id @default(uuid())
+  name        String
+  description String        @db.Text
+  location    String
+  capacity    Int
+  price       Float
+  amenities   String?       @db.LongText
+  images      String?       @db.LongText
+  providerId  String
+  status      ServiceStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  favorites   Favorite[]
+  provider    User          @relation("VenueProvider", fields: [providerId], references: [id])
+  viewHistory ViewHistory[]
+
+  @@index([providerId], map: "venues_providerId_fkey")
+  @@map("venues")
+}
+
+model Catering {
+  id             String        @id @default(uuid())
+  name           String
+  description    String        @db.Text
+  location       String
+  maxPeople      Int
+  pricePerPerson Float
+  cuisineType    String
+  serviceType    String
+  dietaryOptions String?       @db.LongText
+  images         String?       @db.LongText
+  providerId     String
+  status         ServiceStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  provider       User          @relation("CateringProvider", fields: [providerId], references: [id])
+  favorites      Favorite[]
+  viewHistory    ViewHistory[]
+
+  @@index([providerId], map: "caterings_providerId_fkey")
+  @@map("caterings")
+}
+
+model Photographer {
+  id              String        @id @default(uuid())
+  name            String
+  description     String        @db.Text
+  location        String
+  style           String
+  experienceYears Int
+  priceRange      String
+  copyType        String
+  serviceType     String
+  portfolio       String?       @db.Text
+  providerId      String
+  status          ServiceStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  images          String?       @db.LongText
+  favorites       Favorite[]
+  provider        User          @relation("PhotographerProvider", fields: [providerId], references: [id])
+  viewHistory     ViewHistory[]
+
+  @@index([providerId], map: "photographers_providerId_fkey")
+  @@map("photographers")
+}
+
+model Designer {
+  id              String        @id @default(uuid())
+  name            String
+  description     String        @db.Text
+  location        String
+  style           String
+  priceRange      String
+  preferredVenues String?
+  eventTypes      String?
+  portfolio       String?       @db.Text
+  providerId      String
+  status          ServiceStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  images          String?       @db.LongText
+  provider        User          @relation("DesignerProvider", fields: [providerId], references: [id])
+  favorites       Favorite[]
+  viewHistory     ViewHistory[]
+
+  @@index([providerId], map: "designers_providerId_fkey")
+  @@map("designers")
+}
+
+model ViewHistory {
+  id             String        @id @default(uuid())
+  userId         String
+  venueId        String?
+  cateringId     String?
+  photographerId String?
+  designerId     String?
+  viewedAt       DateTime      @default(now())
+  catering       Catering?     @relation(fields: [cateringId], references: [id])
+  designer       Designer?     @relation(fields: [designerId], references: [id])
+  photographer   Photographer? @relation(fields: [photographerId], references: [id])
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  venue          Venue?        @relation(fields: [venueId], references: [id])
+
+  @@index([cateringId], map: "view_history_cateringId_fkey")
+  @@index([designerId], map: "view_history_designerId_fkey")
+  @@index([photographerId], map: "view_history_photographerId_fkey")
+  @@index([userId], map: "view_history_userId_fkey")
+  @@index([venueId], map: "view_history_venueId_fkey")
+  @@map("view_history")
+}
+
+model Favorite {
+  id             String        @id @default(uuid())
+  userId         String
+  venueId        String?
+  cateringId     String?
+  photographerId String?
+  designerId     String?
+  favoritedAt    DateTime      @default(now())
+  catering       Catering?     @relation(fields: [cateringId], references: [id])
+  designer       Designer?     @relation(fields: [designerId], references: [id])
+  photographer   Photographer? @relation(fields: [photographerId], references: [id])
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  venue          Venue?        @relation(fields: [venueId], references: [id])
+
+  @@index([cateringId], map: "favorites_cateringId_fkey")
+  @@index([designerId], map: "favorites_designerId_fkey")
+  @@index([photographerId], map: "favorites_photographerId_fkey")
+  @@index([userId], map: "favorites_userId_fkey")
+  @@index([venueId], map: "favorites_venueId_fkey")
+  @@map("favorites")
+}
+
 enum UserRole {
   USER
   PROVIDER
@@ -30,161 +201,4 @@ enum ServiceType {
   CATERING
   PHOTOGRAPHER
   DESIGNER
-}
-
-model User {
-  id              String         @id @default(uuid())
-  email           String         @unique
-  password        String
-  name            String?
-  phone           String?
-  role            UserRole       @default(USER)
-  providerStatus  ProviderStatus?
-  serviceType     ServiceType?   
-  verificationDoc String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  profile         UserProfile?
-  viewHistory     ViewHistory[]
-  favorites       Favorite[]
-  venues          Venue[]        @relation("VenueProvider")       
-  caterings       Catering[]     @relation("CateringProvider")    
-  photographers   Photographer[] @relation("PhotographerProvider")
-  designers       Designer[]     @relation("DesignerProvider")    
-
-  @@map("users")
-}
-
-model UserProfile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  location    String?
-  preferences Json?
-  notifyEmail Boolean  @default(true)
-  notifyPhone Boolean  @default(false)
-  avatar      String?
-
-  @@map("user_profiles")
-}
-
-model Venue {
-  id          String        @id @default(uuid())
-  name        String
-  description String        @db.Text
-  location    String
-  capacity    Int
-  price       Float
-  amenities   Json?
-  images      Json?       
-  providerId  String
-  provider    User          @relation("VenueProvider", fields: [providerId], references: [id])
-  status      ServiceStatus @default(PENDING)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  viewHistory ViewHistory[]
-  favorites   Favorite[]
-
-  @@map("venues")
-}
-
-model Catering {
-  id             String        @id @default(uuid())
-  name           String
-  description    String        @db.Text
-  location       String
-  maxPeople      Int
-  pricePerPerson Float
-  cuisineType    String
-  serviceType    String
-  dietaryOptions Json?
-  images         Json?       
-  providerId     String
-  provider       User          @relation("CateringProvider", fields: [providerId], references: [id])
-  status         ServiceStatus @default(PENDING)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  viewHistory    ViewHistory[]
-  favorites      Favorite[]
-
-  @@map("caterings")
-}
-
-model Photographer {
-  id              String        @id @default(uuid())
-  name            String
-  description     String        @db.Text
-  location        String
-  style           String
-  experienceYears Int
-  priceRange      String
-  copyType        String
-  serviceType     String
-  portfolio       String?       @db.Text
-  images          Json?      
-  providerId      String
-  provider        User          @relation("PhotographerProvider", fields: [providerId], references: [id])
-  status          ServiceStatus @default(PENDING)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  viewHistory     ViewHistory[]
-  favorites       Favorite[]
-
-  @@map("photographers")
-}
-
-model Designer {
-  id              String        @id @default(uuid())
-  name            String
-  description     String        @db.Text
-  location        String
-  style           String
-  priceRange      String
-  preferredVenues String?
-  eventTypes      String?
-  portfolio       String?       @db.Text
-  images          Json?     
-  providerId      String
-  provider        User          @relation("DesignerProvider", fields: [providerId], references: [id])
-  status          ServiceStatus @default(PENDING)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  viewHistory     ViewHistory[]
-  favorites       Favorite[]
-
-  @@map("designers")
-}
-
-model ViewHistory {
-  id             String        @id @default(uuid())
-  userId         String
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  venueId        String?
-  venue          Venue?        @relation(fields: [venueId], references: [id], onDelete: SetNull)
-  cateringId     String?
-  catering       Catering?     @relation(fields: [cateringId], references: [id], onDelete: SetNull)
-  photographerId String?
-  photographer   Photographer? @relation(fields: [photographerId], references: [id], onDelete: SetNull)
-  designerId     String?
-  designer       Designer?     @relation(fields: [designerId], references: [id], onDelete: SetNull)
-  viewedAt       DateTime      @default(now())
-
-  @@map("view_history")
-}
-
-model Favorite {
-  id             String        @id @default(uuid())
-  userId         String
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  venueId        String?
-  venue          Venue?        @relation(fields: [venueId], references: [id], onDelete: SetNull)
-  cateringId     String?
-  catering       Catering?     @relation(fields: [cateringId], references: [id], onDelete: SetNull)
-  photographerId String?
-  photographer   Photographer? @relation(fields: [photographerId], references: [id], onDelete: SetNull)
-  designerId     String?
-  designer       Designer?     @relation(fields: [designerId], references: [id], onDelete: SetNull)
-  favoritedAt    DateTime      @default(now())
-
-  @@map("favorites")
 }
