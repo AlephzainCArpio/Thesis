@@ -87,7 +87,7 @@ const AdminDashboard = () => {
           endpoint = '/api/venues';
           break;
         case 'CATERING':
-          endpoint = '/api/catering';
+          endpoint = '/api/caterings';
           break;
         case 'PHOTOGRAPHER':
           endpoint = '/api/photographers';
@@ -96,7 +96,7 @@ const AdminDashboard = () => {
           endpoint = '/api/designers';
           break;
         default:
-          break;
+          throw new Error("Unsupported service type");
       }
 
       await axios.post(`${API_URL}${endpoint}`, data, {
@@ -349,6 +349,17 @@ const AdminDashboard = () => {
                   rules={[{ required: true, message: 'Please enter price range' }]}
                 >
                   <Input placeholder="e.g., ₱5,000 - ₱10,000" />
+                </Form.Item>
+                <Form.Item
+                  name="copyType"
+                  label="Copy Type"
+                  rules={[{ required: true, message: 'Please select copy type' }]}
+                >
+                  <Select>
+                    <Option value="virtual">Virtual</Option>
+                    <Option value="physical">Physical</Option>
+                    <Option value="both">Both</Option>
+                  </Select>
                 </Form.Item>
                 <Form.Item name="portfolio" label="Portfolio URL">
                   <Input />

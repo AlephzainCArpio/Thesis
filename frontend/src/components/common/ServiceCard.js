@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import './ServiceCard.css';
 
+
 const ServiceCard = ({ service }) => {
   const [hovered, setHovered] = useState(false);
-  const imageUrl = `http://localhost:5000/uploads/${service.image}`; // Adjust as needed
+  if (!service) {
+    return null; 
+  }
+  const imageUrl = `http://localhost:5000/uploads/${service.image}`; 
 
   return (
     <div

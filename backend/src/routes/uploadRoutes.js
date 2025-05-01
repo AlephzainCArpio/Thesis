@@ -1,13 +1,37 @@
-const express = require("express")
-const { uploadFile, serveFile } = require("../controllers/uploadController")
-const { protect } = require("../middlewares/authMiddleware")
+const express = require('express');
+const router = express.Router();
+const { protect } = require('../middlewares/authMiddleware');
+const { handleUpload } = require('../middlewares/uploadMiddleware');
+const path = require('path');
 
-const router = express.Router()
+// Serve static files
+router.get('/:serviceType/:filename', (req, res) => {
+  const { serviceType, filename } = req.params;
+  const filePath = path.join(__dirname, `../../uploads/${serviceType}`, filename);
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      res.status(404).json({
+        status: 'error',
+        message: 'File not found'
+      });
+    }
+  });
+});
 
-// Route for uploading files
-router.post("/", protect, uploadFile)
+// Protected upload route
+router.post('/:serviceType', protect, handleUpload, (req, res) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'No files uploaded'
+    });
+  }
 
-// Route for serving files
-router.get("/:filename", serveFile)
+  res.status(200).json({
+    status: 'success',
+    message: 'Files uploaded successfully',
+    files: req.filePaths
+  });
+});
 
-module.exports = router
+module.exports = router;
