@@ -76,7 +76,7 @@ const getDesignerById = async (req, res) => {
 
 const createDesigner = async (req, res) => {
   try {
-    const { name, description, location, style, priceRange, preferredVenues, eventTypes, portfolio } = req.body
+    const { name, description, location, style, priceRange,eventTypes, portfolio } = req.body
 
     const designer = await prisma.designer.create({
       data: {
@@ -85,7 +85,6 @@ const createDesigner = async (req, res) => {
         location,
         style,
         priceRange,
-        preferredVenues,
         eventTypes,
         portfolio,
         providerId: req.user.id,
@@ -114,7 +113,7 @@ const updateDesigner = async (req, res) => {
       return res.status(403).json({ message: "Not authorized" })
     }
 
-    const { name, description, location, style, priceRange, preferredVenues, eventTypes, portfolio, status } = req.body
+    const { name, description, location, style, priceRange,eventTypes, portfolio, status } = req.body
 
     const updatedDesigner = await prisma.designer.update({
       where: { id: req.params.id },
@@ -124,7 +123,6 @@ const updateDesigner = async (req, res) => {
         location,
         style,
         priceRange,
-        preferredVenues,
         eventTypes,
         portfolio,
         status: req.user.role === "ADMIN" ? status : designer.status,

@@ -1,5 +1,18 @@
-import { useState, useEffect } from "react"
-import { Table, Button, Space, Tag, Drawer, Descriptions, Carousel, Modal, Form, Input, message } from "antd"
+import { useState, useEffect } from "react";
+import {
+  Table,
+  Button,
+  Space,
+  Tag,
+  Drawer,
+  Descriptions,
+  Carousel,
+  Modal,
+  Form,
+  Input,
+  message,
+  InputNumber,
+} from "antd";
 import {
   CheckOutlined,
   CloseOutlined,
@@ -7,183 +20,150 @@ import {
   DeleteOutlined,
   ExclamationCircleOutlined,
   EditOutlined,
-} from "@ant-design/icons"
-import api from "../../services/api"
+} from "@ant-design/icons";
+import api from "../../services/api";
 
-const { TextArea } = Input
-const { confirm } = Modal
+const { TextArea } = Input;
+const { confirm } = Modal;
 
 const AdminVenuesPage = () => {
-  const [venues, setVenues] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [selectedVenue, setSelectedVenue] = useState(null)
-  const [drawerVisible, setDrawerVisible] = useState(false)
-  const [rejectModalVisible, setRejectModalVisible] = useState(false)
-  const [editModalVisible, setEditModalVisible] = useState(false)
-  const [actionLoading, setActionLoading] = useState(false)
-  const [form] = Form.useForm()
-  const [editForm] = Form.useForm()
-  const [filteredInfo, setFilteredInfo] = useState({})
-  const [sortedInfo, setSortedInfo] = useState({})
+  const [venues, setVenues] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedVenue, setSelectedVenue] = useState(null);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [rejectModalVisible, setRejectModalVisible] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [form] = Form.useForm();
+  const [editForm] = Form.useForm();
+  const [filteredInfo, setFilteredInfo] = useState({});
+  const [sortedInfo, setSortedInfo] = useState({});
 
   useEffect(() => {
-    fetchVenues()
-  }, [])
+    fetchVenues();
+  }, []);
 
   const fetchVenues = async () => {
     try {
-      setLoading(true)
-      const response = await api.get("/admin/venues")
-      setVenues(response.data)
+      setLoading(true);
+      const response = await api.get("/admin/venues");
+      setVenues(response.data);
     } catch (error) {
-      message.error("Failed to fetch venues")
-      console.error(error)
+      message.error("Failed to fetch venues");
+      console.error(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const handleTableChange = (pagination, filters, sorter) => {
+    setFilteredInfo(filters);
+    setSortedInfo(sorter);
+  };
+
+  const getStatusTag = (status) =>
+    ({
+      PENDING: <Tag color="blue">Pending</Tag>,
+      APPROVED: <Tag color="green">Approved</Tag>,
+      REJECTED: <Tag color="red">Rejected</Tag>,
+    }[status] || <Tag>{status}</Tag>);
 
   const showVenueDetails = (venue) => {
-    setSelectedVenue(venue)
-    setDrawerVisible(true)
-  }
+    setSelectedVenue(venue);
+    setDrawerVisible(true);
+  };
+
+  const handleApprove = async (id) => {
+    try {
+      setActionLoading(true);
+      await api.put(`/admin/venues/${id}/approve`);
+      message.success("Venue approved");
+      fetchVenues();
+    } catch (error) {
+      message.error("Failed to approve venue");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const showRejectModal = (venue) => {
-    setSelectedVenue(venue)
-    setRejectModalVisible(true)
-    form.resetFields()
-  }
+    setSelectedVenue(venue);
+    setRejectModalVisible(true);
+    form.resetFields();
+  };
+
+  const handleReject = async () => {
+    try {
+      const values = await form.validateFields();
+      setActionLoading(true);
+      await api.put(`/admin/venues/${selectedVenue.id}/reject`, {
+        reason: values.reason,
+      });
+      message.success("Venue rejected");
+      fetchVenues();
+      setRejectModalVisible(false);
+    } catch (error) {
+      message.error("Failed to reject venue");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const showEditModal = (venue) => {
-    setSelectedVenue(venue)
-    setEditModalVisible(true)
-
-    // Parse the amenities JSON string to array
-    const amenities = venue.amenities ? JSON.parse(venue.amenities) : []
-
+    setSelectedVenue(venue);
+    setEditModalVisible(true);
     editForm.setFieldsValue({
-      ...venue,
-      amenities,
-    })
-  }
+      name: venue.name,
+      location: venue.location,
+      description: venue.description,
+      capacity: venue.capacity,
+      price: venue.price,
+      amenities: Array.isArray(venue.amenities)
+        ? venue.amenities.join(", ")
+        : venue.amenities || "",
+    });
+  };
 
-  const handleApprove = async (venueId) => {
-    confirm({
-      title: "Are you sure you want to approve this venue?",
-      icon: <ExclamationCircleOutlined />,
-      content: "Once approved, the venue will be visible to all users.",
-      onOk: async () => {
-        try {
-          setActionLoading(true)
-          await api.patch(`/admin/venues/${venueId}/approve`)
-          message.success("Venue approved successfully")
-          fetchVenues() // Refresh the list
-          setDrawerVisible(false)
-        } catch (error) {
-          message.error("Failed to approve venue")
-          console.error(error)
-        } finally {
-          setActionLoading(false)
-        }
-      },
-    })
-  }
-
-  const handleReject = async (values) => {
+  const handleEdit = async () => {
     try {
-      setActionLoading(true)
-      await api.patch(`/admin/venues/${selectedVenue.id}/reject`, {
-        reason: values.reason,
-      })
-      message.success("Venue rejected")
-      setRejectModalVisible(false)
-      fetchVenues() // Refresh the list
-      setDrawerVisible(false)
-    } catch (error) {
-      message.error("Failed to reject venue")
-      console.error(error)
-    } finally {
-      setActionLoading(false)
-    }
-  }
-
-  const handleEditVenue = async (values) => {
-    try {
-      setActionLoading(true)
-
-      // Format the amenities array to JSON string
-      const updatedValues = {
+      const values = await editForm.validateFields();
+      const updatedVenue = {
         ...values,
-        amenities: JSON.stringify(values.amenities),
-      }
-
-      await api.put(`/admin/venues/${selectedVenue.id}`, updatedValues)
-      message.success("Venue updated successfully")
-      fetchVenues() 
-      setEditModalVisible(false)
-
-      
-      if (drawerVisible) {
-        const updatedVenue = {
-          ...selectedVenue,
-          ...updatedValues,
-          amenities: values.amenities,
-        }
-        setSelectedVenue(updatedVenue)
-      }
+        amenities: values.amenities
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean),
+      };
+      setActionLoading(true);
+      await api.put(`/admin/venues/${selectedVenue.id}`, updatedVenue);
+      message.success("Venue updated");
+      fetchVenues();
+      setEditModalVisible(false);
     } catch (error) {
-      message.error("Failed to update venue")
-      console.error(error)
+      message.error("Failed to update venue");
     } finally {
-      setActionLoading(false)
+      setActionLoading(false);
     }
-  }
+  };
 
-  const handleDelete = async (venueId) => {
+  const handleDelete = (id) => {
     confirm({
       title: "Are you sure you want to delete this venue?",
       icon: <ExclamationCircleOutlined />,
-      content: "This action cannot be undone.",
-      okType: "danger",
       onOk: async () => {
         try {
-          await api.delete(`/admin/venues/${venueId}`)
-          message.success("Venue deleted successfully")
-          fetchVenues() 
-          setDrawerVisible(false)
+          setActionLoading(true);
+          await api.delete(`/admin/venues/${id}`);
+          message.success("Venue deleted");
+          fetchVenues();
         } catch (error) {
-          message.error("Failed to delete venue")
-          console.error(error)
+          message.error("Failed to delete venue");
+        } finally {
+          setActionLoading(false);
         }
       },
-    })
-  }
-
-  const handleTableChange = (pagination, filters, sorter) => {
-    setFilteredInfo(filters)
-    setSortedInfo(sorter)
-  }
-
-  const clearFilters = () => {
-    setFilteredInfo({})
-  }
-
-  const clearSorters = () => {
-    setSortedInfo({})
-  }
-
-  const getStatusTag = (status) => {
-    switch (status) {
-      case "PENDING":
-        return <Tag color="blue">Pending</Tag>
-      case "APPROVED":
-        return <Tag color="green">Approved</Tag>
-      case "REJECTED":
-        return <Tag color="red">Rejected</Tag>
-      default:
-        return <Tag>{status}</Tag>
-    }
-  }
+    });
+  };
 
   const columns = [
     {
@@ -192,12 +172,6 @@ const AdminVenuesPage = () => {
       key: "name",
       sorter: (a, b) => a.name.localeCompare(b.name),
       sortOrder: sortedInfo.columnKey === "name" && sortedInfo.order,
-      ellipsis: true,
-    },
-    {
-      title: "Provider",
-      dataIndex: ["provider", "name"],
-      key: "provider",
       ellipsis: true,
     },
     {
@@ -222,10 +196,23 @@ const AdminVenuesPage = () => {
       sortOrder: sortedInfo.columnKey === "price" && sortedInfo.order,
     },
     {
+      title: "Amenities",
+      dataIndex: "amenities",
+      key: "amenities",
+      render: (amenities) =>
+        Array.isArray(amenities)
+          ? amenities.map((amenity, index) => (
+              <Tag key={index} color="blue">
+                {amenity}
+              </Tag>
+            ))
+          : amenities || "No amenities",
+    },
+    {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => getStatusTag(status),
+      render: getStatusTag,
       filters: [
         { text: "Pending", value: "PENDING" },
         { text: "Approved", value: "APPROVED" },
@@ -239,34 +226,47 @@ const AdminVenuesPage = () => {
       key: "action",
       render: (_, record) => (
         <Space size="small">
-          <Button type="primary" icon={<EyeOutlined />} onClick={() => showVenueDetails(record)} size="small" />
+          <Button
+            type="primary"
+            icon={<EyeOutlined />}
+            onClick={() => showVenueDetails(record)}
+            size="small"
+          />
           {record.status === "PENDING" && (
             <>
-              <Button type="primary" icon={<CheckOutlined />} onClick={() => handleApprove(record.id)} size="small" />
-              <Button danger icon={<CloseOutlined />} onClick={() => showRejectModal(record)} size="small" />
+              <Button
+                type="primary"
+                icon={<CheckOutlined />}
+                onClick={() => handleApprove(record.id)}
+                size="small"
+              />
+              <Button
+                danger
+                icon={<CloseOutlined />}
+                onClick={() => showRejectModal(record)}
+                size="small"
+              />
             </>
           )}
-          <Button type="default" icon={<EditOutlined />} onClick={() => showEditModal(record)} size="small" />
-          <Button danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)} size="small" />
+          <Button
+            type="default"
+            icon={<EditOutlined />}
+            onClick={() => showEditModal(record)}
+            size="small"
+          />
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.id)}
+            size="small"
+          />
         </Space>
       ),
     },
-  ]
+  ];
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between" }}>
-        <div>
-          <Button onClick={clearFilters} style={{ marginRight: 8 }}>
-            Clear Filters
-          </Button>
-          <Button onClick={clearSorters}>Clear Sorters</Button>
-        </div>
-        <Button type="primary" onClick={() => fetchVenues()}>
-          Refresh
-        </Button>
-      </div>
-
       <Table
         columns={columns}
         dataSource={venues}
@@ -276,188 +276,122 @@ const AdminVenuesPage = () => {
         pagination={{ pageSize: 10 }}
       />
 
-      
+      {/* Drawer for venue details */}
       <Drawer
-        title={selectedVenue?.name}
+        title="Venue Details"
         placement="right"
         onClose={() => setDrawerVisible(false)}
         visible={drawerVisible}
-        width={600}
-        footer={
-          selectedVenue?.status === "PENDING" ? (
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <Button danger onClick={() => showRejectModal(selectedVenue)}>
-                Reject
-              </Button>
-              <Button type="primary" onClick={() => handleApprove(selectedVenue?.id)}>
-                Approve
-              </Button>
-            </div>
-          ) : null
-        }
+        width={500}
       >
         {selectedVenue && (
-          <>
-            
-            {selectedVenue.images && JSON.parse(selectedVenue.images).length > 0 ? (
-              <Carousel autoplay>
-                {JSON.parse(selectedVenue.images).map((image, index) => (
-                  <div key={index}>
+          <Descriptions column={1} bordered>
+            <Descriptions.Item label="Name">
+              {selectedVenue.name}
+            </Descriptions.Item>
+            <Descriptions.Item label="Location">
+              {selectedVenue.location}
+            </Descriptions.Item>
+            <Descriptions.Item label="Description">
+              {selectedVenue.description}
+            </Descriptions.Item>
+            <Descriptions.Item label="Capacity">
+              {selectedVenue.capacity}
+            </Descriptions.Item>
+            <Descriptions.Item label="Price">
+              ₱{selectedVenue.price?.toLocaleString()}
+            </Descriptions.Item>
+            <Descriptions.Item label="Amenities">
+              {Array.isArray(selectedVenue.amenities)
+                ? selectedVenue.amenities.map((a, i) => (
+                    <Tag key={i}>{a}</Tag>
+                  ))
+                : selectedVenue.amenities || "None"}
+            </Descriptions.Item>
+            <Descriptions.Item label="Images">
+              {selectedVenue.images?.length > 0 ? (
+                <Carousel autoplay>
+                  {selectedVenue.images.map((img, i) => (
                     <img
-                      src={image}
-                      alt={`${selectedVenue.name} ${index + 1}`}
-                      style={{ width: "100%", height: 300, objectFit: "cover" }}
+                      key={i}
+                      src={`/uploads/${img}`}
+                      alt={`venue-${i}`}
+                      style={{ width: "100%", height: "200px", objectFit: "cover" }}
                     />
-                  </div>
-                ))}
-              </Carousel>
-            ) : (
-              <div
-                style={{
-                  width: "100%",
-                  height: 200,
-                  backgroundColor: "#f0f0f0",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                No images available
-              </div>
-            )}
-
-            <Descriptions title="Venue Information" layout="vertical" bordered style={{ marginTop: 16 }}>
-              <Descriptions.Item label="Name" span={3}>
-                {selectedVenue.name}
-              </Descriptions.Item>
-              <Descriptions.Item label="Provider" span={3}>
-                {selectedVenue.provider?.name || "Unknown Provider"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Provider Email" span={3}>
-                {selectedVenue.provider?.email || "Email not available"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Provider Phone" span={3}>
-                {selectedVenue.provider?.phone || "Phone not available"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Location" span={3}>
-                {selectedVenue.location}
-              </Descriptions.Item>
-              <Descriptions.Item label="Capacity" span={1}>
-                {selectedVenue.capacity} guests
-              </Descriptions.Item>
-              <Descriptions.Item label="Price" span={2}>
-                ₱{selectedVenue.price?.toLocaleString() || "0"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Status" span={3}>
-                {getStatusTag(selectedVenue.status)}
-                {selectedVenue.rejectionReason && (
-                  <div style={{ marginTop: 8 }}>
-                    <strong>Rejection Reason:</strong> {selectedVenue.rejectionReason}
-                  </div>
-                )}
-              </Descriptions.Item>
-              <Descriptions.Item label="Amenities" span={3}>
-                {selectedVenue.amenities
-                  ? typeof selectedVenue.amenities === "string"
-                    ? JSON.parse(selectedVenue.amenities).map((amenity, index) => (
-                        <Tag key={index} color="blue" style={{ margin: "2px" }}>
-                          {amenity}
-                        </Tag>
-                      ))
-                    : selectedVenue.amenities.map((amenity, index) => (
-                        <Tag key={index} color="blue" style={{ margin: "2px" }}>
-                          {amenity}
-                        </Tag>
-                      ))
-                  : "No amenities listed"}
-              </Descriptions.Item>
-              <Descriptions.Item label="Description" span={3}>
-                {selectedVenue.description}
-              </Descriptions.Item>
-            </Descriptions>
-
-            <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between" }}>
-              <Button danger onClick={() => handleDelete(selectedVenue.id)}>
-                Delete Venue
-              </Button>
-              <Button type="primary" onClick={() => showEditModal(selectedVenue)}>
-                Edit Venue
-              </Button>
-            </div>
-          </>
+                  ))}
+                </Carousel>
+              ) : (
+                "No images"
+              )}
+            </Descriptions.Item>
+          </Descriptions>
         )}
       </Drawer>
 
-      
+      {/* Reject Modal */}
       <Modal
         title="Reject Venue"
         visible={rejectModalVisible}
+        onOk={handleReject}
+        confirmLoading={actionLoading}
         onCancel={() => setRejectModalVisible(false)}
-        footer={null}
+        okText="Reject"
+        okButtonProps={{ danger: true }}
       >
-        <Form form={form} layout="vertical" onFinish={handleReject}>
+        <Form form={form} layout="vertical">
           <Form.Item
             name="reason"
-            label="Reason for Rejection"
-            rules={[{ required: true, message: "Please provide a reason for rejection" }]}
+            label="Reason for rejection"
+            rules={[{ required: true, message: "Please enter a reason" }]}
           >
-            <TextArea rows={4} placeholder="Explain why this venue is being rejected" />
-          </Form.Item>
-
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={actionLoading}>
-              Submit
-            </Button>
+            <TextArea rows={3} />
           </Form.Item>
         </Form>
       </Modal>
 
-      
+      {/* Edit Modal */}
       <Modal
         title="Edit Venue"
         visible={editModalVisible}
+        onOk={handleEdit}
+        confirmLoading={actionLoading}
         onCancel={() => setEditModalVisible(false)}
-        footer={null}
-        width={700}
       >
-        <Form form={editForm} layout="vertical" onFinish={handleEditVenue}>
-          <Form.Item name="name" label="Venue Name" rules={[{ required: true, message: "Please enter venue name!" }]}>
-            <Input placeholder="Enter venue name" />
-          </Form.Item>
-
+        <Form form={editForm} layout="vertical">
           <Form.Item
-            name="description"
-            label="Description"
-            rules={[{ required: true, message: "Please enter description!" }]}
+            name="name"
+            label="Name"
+            rules={[{ required: true, message: "Please enter a name" }]}
           >
-            <TextArea rows={4} placeholder="Describe your venue" />
+            <Input />
           </Form.Item>
-
-          <Form.Item name="location" label="Location" rules={[{ required: true, message: "Please enter location!" }]}>
-            <Input placeholder="Full address" />
-          </Form.Item>
-
           <Form.Item
-            name="capacity"
-            label="Maximum Capacity"
-            rules={[{ required: true, message: "Please enter capacity!" }]}
+            name="location"
+            label="Location"
+            rules={[{ required: true, message: "Please enter a location" }]}
           >
-            <Input type="number" min={1} placeholder="Max number of guests" />
+            <Input />
           </Form.Item>
-
-          <Form.Item name="price" label="Price (₱)" rules={[{ required: true, message: "Please enter price!" }]}>
-            <Input type="number" min={0} placeholder="Rental fee" />
+          <Form.Item name="description" label="Description">
+            <TextArea rows={3} />
           </Form.Item>
-
-          <Form.Item>
-            <Button type="primary" htmlType="submit" loading={actionLoading}>
-              Update Venue
-            </Button>
+          <Form.Item name="capacity" label="Capacity">
+            <InputNumber min={0} style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item name="price" label="Price">
+            <InputNumber
+              min={0}
+              style={{ width: "100%" }}
+              formatter={(value) => `₱ ${value}`}
+            />
+          </Form.Item>
+          <Form.Item name="amenities" label="Amenities (comma separated)">
+            <Input />
           </Form.Item>
         </Form>
       </Modal>
     </div>
-  )
-}
+  );
+};
 
-export default AdminVenuesPage
+export default AdminVenuesPage;

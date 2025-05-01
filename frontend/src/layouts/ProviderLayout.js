@@ -51,20 +51,30 @@ const ProviderLayout = ({ children }) => {
     }
   }
 
-  const userMenu = (
-    <Menu>
-      <Menu.Item key="profile" icon={<ProfileOutlined />}>
-        <Link to="/provider/profile">My Profile</Link>
-      </Menu.Item>
-      <Menu.Item key="settings" icon={<SettingOutlined />}>
-        <Link to="/provider/settings">Settings</Link>
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="logout" icon={<LogoutOutlined />} onClick={handleLogout}>
-        Logout
-      </Menu.Item>
-    </Menu>
-  )
+  // Update userMenu with 'items' prop
+  const userMenuItems = [
+    {
+      key: "profile",
+      icon: <ProfileOutlined />,
+      label: <Link to="/provider/profile">My Profile</Link>,
+    },
+    {
+      key: "settings",
+      icon: <SettingOutlined />,
+      label: <Link to="/provider/settings">Settings</Link>,
+    },
+    {
+      key: "divider",
+      type: "divider",
+    },
+    {
+      key: "logout",
+      icon: <LogoutOutlined />,
+      label: <span onClick={handleLogout}>Logout</span>,
+    },
+  ]
+
+  const userMenu = <Menu items={userMenuItems} />
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
@@ -112,7 +122,9 @@ const ProviderLayout = ({ children }) => {
             <Avatar style={{ marginRight: 24, cursor: "pointer" }} icon={<ProfileOutlined />} />
           </Dropdown>
         </Header>
-        <Content style={{ margin: "24px 16px", padding: 24, background: "#fff" }}>{children}</Content>
+        <Content style={{ margin: "24px 16px", padding: 24, background: "#fff" }}>
+          {children}
+        </Content>
         <Footer style={{ textAlign: "center" }}>© 2025 Organiceee. All rights reserved.</Footer>
       </Layout>
     </Layout>

@@ -4,6 +4,7 @@ const { PrismaClient } = require("@prisma/client");
 const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
+
 const prisma = new PrismaClient();
 
 // Configure multer for file storage
@@ -11,7 +12,6 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadsDir = path.join(__dirname, "../../uploads/verification");
 
-    // Create directory if it doesn't exist
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -19,7 +19,7 @@ const storage = multer.diskStorage({
     cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
     cb(null, `verification-${uniqueSuffix}${ext}`);
   },
@@ -47,7 +47,6 @@ const generateToken = (id) => {
 // Register route
 const register = async (req, res) => {
   try {
-    // Handle file upload
     upload.single("verificationDocument")(req, res, async (err) => {
       if (err) {
         return res.status(400).json({ message: err.message });
@@ -55,23 +54,15 @@ const register = async (req, res) => {
 
       const { name, email, password, role, phone, serviceType } = req.body;
 
-      // Check if user already exists
-      const userExists = await prisma.user.findUnique({
-        where: { email },
-      });
-
+      const userExists = await prisma.user.findUnique({ where: { email } });
       if (userExists) {
-        if (req.file) {
-          fs.unlinkSync(req.file.path);
-        }
+        if (req.file) fs.unlinkSync(req.file.path);
         return res.status(400).json({ message: "User already exists" });
       }
 
-      // Hash password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(password, salt);
 
-      // Prepare user data
       const userData = {
         name,
         email,
@@ -81,7 +72,6 @@ const register = async (req, res) => {
         profile: { create: {} },
       };
 
-      // Add provider-specific data
       if (role === "PROVIDER") {
         if (!req.file) {
           return res.status(400).json({
@@ -91,10 +81,9 @@ const register = async (req, res) => {
 
         userData.providerStatus = "PENDING";
         userData.verificationDoc = req.file.filename;
-        userData.serviceType = serviceType;
+        userData.serviceType = serviceType; 
       }
 
-      // Create user
       const user = await prisma.user.create({ data: userData });
 
       if (user) {
@@ -104,12 +93,11 @@ const register = async (req, res) => {
           email: user.email,
           role: user.role,
           providerStatus: user.providerStatus,
+          providerType: user.serviceType || null, 
           token: generateToken(user.id),
         });
       } else {
-        if (req.file) {
-          fs.unlinkSync(req.file.path);
-        }
+        if (req.file) fs.unlinkSync(req.file.path);
         res.status(400).json({ message: "Invalid user data" });
       }
     });
@@ -123,10 +111,7 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check for user email
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await prisma.user.findUnique({ where: { email } });
 
     if (user && (await bcrypt.compare(password, user.password))) {
       res.json({
@@ -135,6 +120,7 @@ const login = async (req, res) => {
         email: user.email,
         role: user.role,
         providerStatus: user.providerStatus,
+        providerType: user.serviceType || null,
         token: generateToken(user.id),
       });
     } else {
@@ -159,6 +145,7 @@ const getMe = async (req, res) => {
       email: user.email,
       role: user.role,
       providerStatus: user.providerStatus,
+      providerType: user.serviceType || null,
       profile: user.profile,
     });
   } catch (error) {

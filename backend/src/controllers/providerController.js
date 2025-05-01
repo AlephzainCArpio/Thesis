@@ -1,7 +1,7 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 // Generate JWT
 const generateToken = (id) => {
@@ -10,28 +10,21 @@ const generateToken = (id) => {
   });
 };
 
+// Register User
 const register = async (req, res) => {
   try {
     const { name, email, password, role, phone, providerType } = req.body;
 
-    // Check if user exists
-    const userExists = await prisma.user.findUnique({
-      where: { email },
-    });
-
+    const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Set verification status based on role
-    const verificationStatus =
-      role === "PROVIDER" ? "PENDING_DOCUMENT" : "NOT_REQUIRED";
+    const verificationStatus = role === "PROVIDER" ? "PENDING_DOCUMENT" : "NOT_REQUIRED";
 
-    // Create user
     const user = await prisma.user.create({
       data: {
         name,
@@ -41,39 +34,30 @@ const register = async (req, res) => {
         phone,
         providerType: providerType || null,
         verificationStatus,
-        profile: {
-          create: {},
-        },
+        profile: { create: {} },
       },
     });
 
-    if (user) {
-      res.status(201).json({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        providerType: user.providerType,
-        verificationStatus: user.verificationStatus,
-        token: generateToken(user.id),
-      });
-    } else {
-      res.status(400).json({ message: "Invalid user data" });
-    }
+    res.status(201).json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      providerType: user.providerType,
+      verificationStatus: user.verificationStatus,
+      token: generateToken(user.id),
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// Login User
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check for user email
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
+    const user = await prisma.user.findUnique({ where: { email } });
     if (user && (await bcrypt.compare(password, user.password))) {
       res.json({
         id: user.id,
@@ -92,6 +76,7 @@ const login = async (req, res) => {
   }
 };
 
+// Get current user
 const getMe = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -116,9 +101,7 @@ const getMe = async (req, res) => {
 // Get Provider Type
 const getProviderType = async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-    });
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -134,9 +117,7 @@ const getProviderType = async (req, res) => {
 const validateServiceRegistration = async (req, res) => {
   try {
     const { serviceType } = req.body;
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-    });
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -163,9 +144,8 @@ const validateServiceRegistration = async (req, res) => {
 const registerService = async (req, res) => {
   try {
     const { serviceType, ...serviceData } = req.body;
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-    });
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -180,7 +160,7 @@ const registerService = async (req, res) => {
         type: serviceType,
         providerId: req.user.id,
         ...serviceData,
-        status: "PENDING", 
+        status: "PENDING", // Submitted for approval
       },
     });
 
@@ -190,6 +170,35 @@ const registerService = async (req, res) => {
   }
 };
 
+// Register Provider with document
+const registerProviderWithDocument = async (req, res) => {
+  const { email, serviceType } = req.body;
+  const verificationDoc = req.file?.filename;
+
+  try {
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+
+    if (existingUser && existingUser.providerType) {
+      return res.status(400).json({ error: 'Provider can only register one service type.' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { email },
+      data: {
+        role: 'PENDING_PROVIDER',
+        providerType: serviceType,
+        verificationDoc,
+        verificationStatus: 'PENDING_DOCUMENT',
+      },
+    });
+
+    res.status(200).json({ message: 'Registration submitted successfully. Pending approval.', user: updatedUser });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to register as provider', details: err.message });
+  }
+};
+
+
 module.exports = {
   register,
   login,
@@ -197,4 +206,6 @@ module.exports = {
   getProviderType,
   validateServiceRegistration,
   registerService,
+  registerProviderWithDocument,
 };
+

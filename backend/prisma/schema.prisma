@@ -118,7 +118,6 @@ model Designer {
   location        String
   style           String
   priceRange      String
-  preferredEvent String?
   eventTypes      String?
   portfolio       String?       @db.Text
   providerId      String
