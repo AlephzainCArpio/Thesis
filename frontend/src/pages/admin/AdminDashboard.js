@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Card, Modal, Form, Input, InputNumber, Select, Upload, Tabs, message, Spin } from "antd";
-import { PlusOutlined, UploadOutlined } from "@ant-design/icons";
+import { PlusOutlined } from "@ant-design/icons";
 import axios from "axios";
 
 const { TabPane } = Tabs;
@@ -20,12 +20,12 @@ const AdminDashboard = () => {
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   const fetchServices = useCallback(async () => {
     try {
       setPageLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const config = {
         headers: { Authorization: `Bearer ${token}` }
       };
@@ -58,12 +58,12 @@ const AdminDashboard = () => {
   const handleSubmit = async (values) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const data = new FormData();
 
       // Add common fields
-      Object.keys(values).forEach(key => {
-        if (key !== 'images') {
+      Object.keys(values).forEach((key) => {
+        if (key !== "images") {
           if (Array.isArray(values[key])) {
             data.append(key, JSON.stringify(values[key]));
           } else if (values[key] !== undefined && values[key] !== null) {
@@ -71,6 +71,11 @@ const AdminDashboard = () => {
           }
         }
       });
+
+      // Add serviceType for specific models
+      if (activeTab === "CATERING" || activeTab === "PHOTOGRAPHER") {
+        data.append("serviceType", activeTab);
+      }
 
       // Handle file uploads
       if (values.images && values.images.length > 0) {
@@ -81,19 +86,19 @@ const AdminDashboard = () => {
         });
       }
 
-      let endpoint = '';
+      let endpoint = "";
       switch (activeTab) {
-        case 'VENUE':
-          endpoint = '/api/venues';
+        case "VENUE":
+          endpoint = "/api/venues";
           break;
-        case 'CATERING':
-          endpoint = '/api/caterings';
+        case "CATERING":
+          endpoint = "/api/catering";
           break;
-        case 'PHOTOGRAPHER':
-          endpoint = '/api/photographers';
+        case "PHOTOGRAPHER":
+          endpoint = "/api/photographers";
           break;
-        case 'DESIGNER':
-          endpoint = '/api/designers';
+        case "DESIGNER":
+          endpoint = "/api/designers";
           break;
         default:
           throw new Error("Unsupported service type");
@@ -101,8 +106,8 @@ const AdminDashboard = () => {
 
       await axios.post(`${API_URL}${endpoint}`, data, {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`
         }
       });
 
@@ -126,7 +131,7 @@ const AdminDashboard = () => {
   ];
 
   const renderServiceCards = (type) => {
-    const serviceList = services[type.toLowerCase() + 's'];
+    const serviceList = services[type.toLowerCase() + "s"];
     if (!Array.isArray(serviceList)) return null;
 
     return serviceList.map((service) => (
@@ -144,9 +149,9 @@ const AdminDashboard = () => {
           <div style={{ height: 200, overflow: "hidden" }}>
             <img
               src={`${API_URL}/uploads/${type.toLowerCase()}s/${
-                Array.isArray(JSON.parse(service.images)) 
-                  ? JSON.parse(service.images)[0] 
-                  : 'default.jpg'
+                Array.isArray(JSON.parse(service.images))
+                  ? JSON.parse(service.images)[0]
+                  : "default.jpg"
               }`}
               alt={service.name}
               style={{
@@ -156,7 +161,7 @@ const AdminDashboard = () => {
               }}
               onError={(e) => {
                 e.target.onerror = null;
-                e.target.src = '/placeholder.jpg';
+                e.target.src = "/placeholder.jpg";
               }}
             />
           </div>
@@ -164,10 +169,17 @@ const AdminDashboard = () => {
         <div style={{ padding: 16 }}>
           <h3>{service.name}</h3>
           <p>{service.location}</p>
-          <p>Status: <span style={{
-            color: service.status === 'APPROVED' ? '#52c41a' : '#faad14',
-            fontWeight: 'bold'
-          }}>{service.status}</span></p>
+          <p>
+            Status:{" "}
+            <span
+              style={{
+                color: service.status === "APPROVED" ? "#52c41a" : "#faad14",
+                fontWeight: "bold"
+              }}
+            >
+              {service.status}
+            </span>
+          </p>
         </div>
       </Card>
     ));
@@ -175,13 +187,15 @@ const AdminDashboard = () => {
 
   if (pageLoading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        backgroundColor: "#f0f2f5"
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          backgroundColor: "#f0f2f5"
+        }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -190,12 +204,14 @@ const AdminDashboard = () => {
   return (
     <div style={{ padding: 24, backgroundColor: "#f0f2f5", minHeight: "100vh" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginBottom: 24 
-        }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 24
+          }}
+        >
           <h1 style={{ margin: 0 }}>Service Management</h1>
           <button
             onClick={() => setIsModalVisible(true)}
@@ -213,13 +229,15 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          {serviceTypes.map(type => (
+          {serviceTypes.map((type) => (
             <TabPane tab={type.label} key={type.key}>
-              <div style={{ 
-                display: "flex", 
-                flexWrap: "wrap", 
-                gap: "20px" 
-              }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "20px"
+                }}
+              >
                 {renderServiceCards(type.key)}
               </div>
             </TabPane>
@@ -236,15 +254,11 @@ const AdminDashboard = () => {
           footer={null}
           width={720}
         >
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleSubmit}
-          >
+          <Form form={form} layout="vertical" onFinish={handleSubmit}>
             <Form.Item
               name="name"
               label="Name"
-              rules={[{ required: true, message: 'Please enter name' }]}
+              rules={[{ required: true, message: "Please enter name" }]}
             >
               <Input />
             </Form.Item>
@@ -252,7 +266,7 @@ const AdminDashboard = () => {
             <Form.Item
               name="description"
               label="Description"
-              rules={[{ required: true, message: 'Please enter description' }]}
+              rules={[{ required: true, message: "Please enter description" }]}
             >
               <TextArea rows={4} />
             </Form.Item>
@@ -260,75 +274,81 @@ const AdminDashboard = () => {
             <Form.Item
               name="location"
               label="Location"
-              rules={[{ required: true, message: 'Please enter location' }]}
+              rules={[{ required: true, message: "Please enter location" }]}
             >
               <Input />
             </Form.Item>
 
-            {activeTab === 'VENUE' && (
+            {/* Conditional fields based on activeTab */}
+            {activeTab === "VENUE" && (
               <>
                 <Form.Item
                   name="capacity"
                   label="Capacity"
-                  rules={[{ required: true, message: 'Please enter capacity' }]}
+                  rules={[{ required: true, message: "Please enter capacity" }]}
                 >
-                  <InputNumber min={1} style={{ width: '100%' }} />
+                  <InputNumber min={1} style={{ width: "100%" }} />
                 </Form.Item>
                 <Form.Item
                   name="price"
-                  label="Price (₱)"
-                  rules={[{ required: true, message: 'Please enter price' }]}
+                  label="Price"
+                  rules={[{ required: true, message: "Please enter price" }]}
                 >
-                  <InputNumber min={0} style={{ width: '100%' }} />
+                  <InputNumber min={0} style={{ width: "100%" }} />
                 </Form.Item>
                 <Form.Item name="amenities" label="Amenities">
                   <Select mode="tags" placeholder="Enter amenities">
-                    <Option value="parking">Parking</Option>
                     <Option value="wifi">WiFi</Option>
-                    <Option value="aircon">Air Conditioning</Option>
+                    <Option value="parking">Parking</Option>
                     <Option value="catering">Catering Allowed</Option>
                   </Select>
                 </Form.Item>
               </>
             )}
 
-            {activeTab === 'CATERING' && (
+            {activeTab === "CATERING" && (
               <>
                 <Form.Item
                   name="maxPeople"
                   label="Maximum People"
-                  rules={[{ required: true, message: 'Please enter maximum capacity' }]}
+                  rules={[{ required: true, message: "Please enter max capacity" }]}
                 >
-                  <InputNumber min={1} style={{ width: '100%' }} />
+                  <InputNumber min={1} style={{ width: "100%" }} />
                 </Form.Item>
                 <Form.Item
                   name="pricePerPerson"
-                  label="Price Per Person (₱)"
-                  rules={[{ required: true, message: 'Please enter price per person' }]}
+                  label="Price Per Person"
+                  rules={[{ required: true, message: "Please enter price per person" }]}
                 >
-                  <InputNumber min={0} style={{ width: '100%' }} />
+                  <InputNumber min={0} style={{ width: "100%" }} />
                 </Form.Item>
                 <Form.Item
                   name="cuisineType"
                   label="Cuisine Type"
-                  rules={[{ required: true, message: 'Please select cuisine type' }]}
+                  rules={[{ required: true, message: "Please select cuisine type" }]}
                 >
                   <Select>
                     <Option value="filipino">Filipino</Option>
                     <Option value="chinese">Chinese</Option>
-                    <Option value="japanese">Japanese</Option>
-                    <Option value="western">Western</Option>
+                    <Option value="italian">Italian</Option>
+                  </Select>
+                </Form.Item>
+                <Form.Item name="dietaryOptions" label="Dietary Options">
+                  <Select mode="tags" placeholder="Enter dietary options">
+                    <Option value="vegetarian">Vegetarian</Option>
+                    <Option value="vegan">Vegan</Option>
+                    <Option value="gluten-free">Gluten-Free</Option>
                   </Select>
                 </Form.Item>
               </>
             )}
 
-            {activeTab === 'PHOTOGRAPHER' && (
+            {activeTab === "PHOTOGRAPHER" && (
               <>
                 <Form.Item
                   name="style"
                   label="Photography Style"
-                  rules={[{ required: true, message: 'Please select style' }]}
+                  rules={[{ required: true, message: "Please select a style" }]}
                 >
                   <Select>
                     <Option value="traditional">Traditional</Option>
@@ -339,21 +359,21 @@ const AdminDashboard = () => {
                 <Form.Item
                   name="experienceYears"
                   label="Years of Experience"
-                  rules={[{ required: true, message: 'Please enter years of experience' }]}
+                  rules={[{ required: true, message: "Please enter years of experience" }]}
                 >
-                  <InputNumber min={0} style={{ width: '100%' }} />
+                  <InputNumber min={0} style={{ width: "100%" }} />
                 </Form.Item>
                 <Form.Item
                   name="priceRange"
                   label="Price Range"
-                  rules={[{ required: true, message: 'Please enter price range' }]}
+                  rules={[{ required: true, message: "Please enter a price range" }]}
                 >
-                  <Input placeholder="e.g., ₱5,000 - ₱10,000" />
+                  <Input placeholder="e.g., 5000-10000" />
                 </Form.Item>
                 <Form.Item
                   name="copyType"
                   label="Copy Type"
-                  rules={[{ required: true, message: 'Please select copy type' }]}
+                  rules={[{ required: true, message: "Please select a copy type" }]}
                 >
                   <Select>
                     <Option value="virtual">Virtual</Option>
@@ -362,42 +382,39 @@ const AdminDashboard = () => {
                   </Select>
                 </Form.Item>
                 <Form.Item name="portfolio" label="Portfolio URL">
-                  <Input />
+                  <Input placeholder="Enter portfolio link" />
                 </Form.Item>
               </>
             )}
 
-            {activeTab === 'DESIGNER' && (
+            {activeTab === "DESIGNER" && (
               <>
                 <Form.Item
                   name="style"
                   label="Design Style"
-                  rules={[{ required: true, message: 'Please select style' }]}
+                  rules={[{ required: true, message: "Please select a style" }]}
                 >
                   <Select>
                     <Option value="modern">Modern</Option>
                     <Option value="classic">Classic</Option>
                     <Option value="minimalist">Minimalist</Option>
-                    <Option value="rustic">Rustic</Option>
                   </Select>
                 </Form.Item>
                 <Form.Item
                   name="priceRange"
                   label="Price Range"
-                  rules={[{ required: true, message: 'Please enter price range' }]}
+                  rules={[{ required: true, message: "Please enter a price range" }]}
                 >
-                  <Input placeholder="e.g., ₱20,000 - ₱50,000" />
+                  <Input placeholder="e.g., 20000-50000" />
                 </Form.Item>
                 <Form.Item name="eventTypes" label="Event Types">
                   <Select mode="tags" placeholder="Enter event types">
                     <Option value="wedding">Wedding</Option>
                     <Option value="corporate">Corporate</Option>
-                    <Option value="birthday">Birthday</Option>
-                    <Option value="social">Social Events</Option>
                   </Select>
                 </Form.Item>
                 <Form.Item name="portfolio" label="Portfolio URL">
-                  <Input />
+                  <Input placeholder="Enter portfolio link" />
                 </Form.Item>
               </>
             )}
@@ -406,7 +423,7 @@ const AdminDashboard = () => {
               name="images"
               label="Images"
               valuePropName="fileList"
-              getValueFromEvent={(e) => Array.isArray(e) ? e : e?.fileList}
+              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
             >
               <Upload
                 listType="picture-card"
@@ -427,17 +444,17 @@ const AdminDashboard = () => {
                 type="submit"
                 disabled={loading}
                 style={{
-                  width: '100%',
+                  width: "100%",
                   height: 40,
-                  background: '#1890ff',
-                  color: 'white',
-                  border: 'none',
+                  background: "#1890ff",
+                  color: "white",
+                  border: "none",
                   borderRadius: 4,
-                  cursor: loading ? 'not-allowed' : 'pointer',
+                  cursor: loading ? "not-allowed" : "pointer",
                   opacity: loading ? 0.7 : 1
                 }}
               >
-                {loading ? 'Adding...' : 'Add Service'}
+                {loading ? "Adding..." : "Add Service"}
               </button>
             </Form.Item>
           </Form>

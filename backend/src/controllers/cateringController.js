@@ -80,8 +80,33 @@ const getCateringById = async (req, res) => {
 
 const createCatering = async (req, res) => {
   try {
-    const { name, description, location, maxPeople, pricePerPerson, cuisineType, serviceType, dietaryOptions, images } =
-      req.body
+    const {
+      name,
+      description,
+      location,
+      maxPeople,
+      pricePerPerson,
+      cuisineType,
+      serviceType,
+      dietaryOptions,
+      images,
+    } = req.body;
+
+    console.log("Request body:", req.body); // Log incoming request data
+    console.log("User ID:", req.user.id);
+    console.log("User Role:", req.user.role);
+
+    if (
+      !name ||
+      !description ||
+      !location ||
+      !maxPeople ||
+      !pricePerPerson ||
+      !cuisineType ||
+      !serviceType
+    ) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
 
     const catering = await prisma.catering.create({
       data: {
@@ -92,18 +117,19 @@ const createCatering = async (req, res) => {
         pricePerPerson: Number.parseFloat(pricePerPerson),
         cuisineType,
         serviceType,
-        dietaryOptions,
-        images,
+        dietaryOptions: dietaryOptions ? JSON.stringify(dietaryOptions) : null,
+        images: images || null,
         providerId: req.user.id,
         status: req.user.role === "ADMIN" ? "APPROVED" : "PENDING",
       },
-    })
+    });
 
-    res.status(201).json(catering)
+    res.status(201).json(catering);
   } catch (error) {
-    res.status(500).json({ message: error.message })
+    console.error("Error creating catering:", error); // Log the full error
+    res.status(500).json({ message: error.message });
   }
-}
+};
 
 const updateCatering = async (req, res) => {
   try {
@@ -115,7 +141,7 @@ const updateCatering = async (req, res) => {
       return res.status(404).json({ message: "Catering not found" })
     }
 
-    // Check if user is provider of this catering or an admin
+    
     if (catering.providerId !== req.user.id && req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Not authorized" })
     }
@@ -165,7 +191,7 @@ const deleteCatering = async (req, res) => {
       return res.status(404).json({ message: "Catering not found" })
     }
 
-    // Check if user is provider of this catering or an admin
+    
     if (catering.providerId !== req.user.id && req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Not authorized" })
     }
