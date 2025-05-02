@@ -6,6 +6,15 @@ import api from "../../services/api"
 const { Title, Paragraph } = Typography
 const { Meta } = Card
 
+// Safe JSON parse function
+const safeParse = (str) => {
+  try {
+    return str && str !== "" ? JSON.parse(str) : []
+  } catch (err) {
+    return []
+  }
+}
+
 const CateringListPage = () => {
   const [caterings, setCaterings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -27,12 +36,9 @@ const CateringListPage = () => {
   }
 
   const renderCateringCard = (catering) => {
-    // Parse images from JSON string
-    const images = catering.images ? JSON.parse(catering.images) : []
+    const images = safeParse(catering.images)
+    const dietaryOptions = safeParse(catering.dietaryOptions)
     const firstImage = images.length > 0 ? images[0] : "/placeholder.svg?height=200&width=300"
-
-    // Parse dietary options from JSON string
-    const dietaryOptions = catering.dietaryOptions ? JSON.parse(catering.dietaryOptions) : []
 
     return (
       <Col xs={24} sm={12} lg={8} key={catering.id}>
@@ -42,7 +48,7 @@ const CateringListPage = () => {
             <div style={{ height: 200, overflow: "hidden" }}>
               <img
                 alt={catering.name}
-                src={firstImage || "/placeholder.svg"}
+                src={firstImage}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             </div>
@@ -76,7 +82,6 @@ const CateringListPage = () => {
       <Title level={2}>Find Your Perfect Catering Service</Title>
       <Paragraph>Browse through our collection of catering services for your special event.</Paragraph>
 
-      {/* Caterings List */}
       {loading ? (
         <div style={{ textAlign: "center", padding: "50px 0" }}>
           <Spin size="large" />

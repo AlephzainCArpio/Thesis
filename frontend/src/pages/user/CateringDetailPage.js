@@ -6,60 +6,43 @@ import {
   Button,
   Typography,
   Carousel,
-  Descriptions,
   Tag,
   Divider,
   Spin,
-  message,
-  Modal,
-  Form,
-  Input,
-  DatePicker,
-  InputNumber,
-  Result,
-  Select,
+  Descriptions
 } from "antd"
 import {
   EnvironmentOutlined,
   TeamOutlined,
   DollarOutlined,
   CheckCircleOutlined,
-  PhoneOutlined,
-  MailOutlined,
-  HeartOutlined,
-  HeartFilled,
-  CalendarOutlined,
   CoffeeOutlined,
+  MailOutlined,
+  PhoneOutlined
 } from "@ant-design/icons"
 import { useParams, useNavigate } from "react-router-dom"
 import api from "../../services/api"
-import { useAuth } from "../../contexts/AuthContext"
 
 const { Title, Paragraph } = Typography
-const { TextArea } = Input
-const { Option } = Select
+
+
+const safeParse = (str) => {
+  try {
+    return str && str !== "" ? JSON.parse(str) : []
+  } catch (err) {
+    return []
+  }
+}
 
 const CateringDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { currentUser } = useAuth()
-
   const [catering, setCatering] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [isFavorite, setIsFavorite] = useState(false)
-  const [inquiryModalVisible, setInquiryModalVisible] = useState(false)
-  const [inquirySubmitting, setInquirySubmitting] = useState(false)
-  const [inquirySuccess, setInquirySuccess] = useState(false)
-  const [form] = Form.useForm()
 
   useEffect(() => {
     fetchCateringDetails()
-    if (currentUser) {
-      checkIfFavorite()
-      // Record view if user is logged in
-      recordView()
-    }
-  }, [id, currentUser])
+  }, [id])
 
   const fetchCateringDetails = async () => {
     try {
@@ -68,82 +51,32 @@ const CateringDetailPage = () => {
       setCatering(response.data)
     } catch (error) {
       console.error("Error fetching catering details:", error)
-      message.error("Failed to load catering details")
-      // Redirect to catering list if catering not found
-      if (error.response && error.response.status === 404) {
-        navigate("/user/catering")
-      }
     } finally {
       setLoading(false)
     }
   }
 
-  const checkIfFavorite = async () => {
-    try {
-      const response = await api.get(`/users/favorites/check?cateringId=${id}`)
-      setIsFavorite(response.data.isFavorite)
-    } catch (error) {
-      console.error("Error checking favorite status:", error)
-    }
-  }
-
-  const recordView = async () => {
-    try {
-      await api.post(`/catering/${id}/view`)
-    } catch (error) {
-      console.error("Error recording view:", error)
-    }
-  }
-
-  const toggleFavorite = async () => {
-    if (!currentUser) {
-      message.info("Please login to save favorites")
-      return
-    }
-
-    try {
-      if (isFavorite) {
-        await api.delete(`/users/favorites/catering/${id}`)
-        message.success("Removed from favorites")
-      } else {
-        await api.post(`/users/favorites`, { cateringId: id })
-        message.success("Added to favorites")
-      }
-      setIsFavorite(!isFavorite)
-    } catch (error) {
-      console.error("Error updating favorite:", error)
-      message.error("Failed to update favorites")
-    }
-  }
-
-  
-
-  if (!catering) {
+  if (loading) {
     return (
-      <Result
-        status="404"
-        title="Catering Service Not Found"
-        subTitle="Sorry, the catering service you are looking for does not exist or has been removed."
-        extra={
-          <Button type="primary" onClick={() => navigate("/user/catering")}>
-            Back to Catering Services
-          </Button>
-        }
-      />
+      <div style={{ textAlign: "center", padding: "50px 0" }}>
+        <Spin size="large" />
+      </div>
     )
   }
 
-  // Parse images from JSON string
-  const images = catering.images ? JSON.parse(catering.images) : []
+  if (!catering) {
+    return null
+  }
 
-  // Parse dietary options from JSON string
-  const dietaryOptions = catering.dietaryOptions ? JSON.parse(catering.dietaryOptions) : []
+ 
+  const images = safeParse(catering.images)
+  const dietaryOptions = safeParse(catering.dietaryOptions)
 
   return (
     <div className="catering-detail-page">
       <Row gutter={[24, 24]}>
         <Col xs={24} md={16}>
-          {/* Catering Images */}
+          {/* Images */}
           <Card style={{ marginBottom: 24 }}>
             {images.length > 0 ? (
               <Carousel autoplay>
@@ -174,21 +107,9 @@ const CateringDetailPage = () => {
             )}
           </Card>
 
-          {/* Catering Details */}
+          {/* Main Details */}
           <Card>
-            <div
-              style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}
-            >
-              <Title level={2} style={{ margin: 0 }}>
-                {catering.name}
-              </Title>
-              <Button
-                type="text"
-                icon={isFavorite ? <HeartFilled style={{ color: "#ff4d4f" }} /> : <HeartOutlined />}
-                onClick={toggleFavorite}
-                size="large"
-              />
-            </div>
+            <Title level={2}>{catering.name}</Title>
 
             <Paragraph>
               <EnvironmentOutlined /> {catering.location}
@@ -233,9 +154,6 @@ const CateringDetailPage = () => {
             <Divider orientation="left">Description</Divider>
             <Paragraph>{catering.description}</Paragraph>
 
-            <Divider orientation="left">Service Type</Divider>
-            <Paragraph>{catering.serviceType}</Paragraph>
-
             <Divider orientation="left">Dietary Options</Divider>
             <div>
               {dietaryOptions.map((option, index) => (
@@ -248,8 +166,7 @@ const CateringDetailPage = () => {
         </Col>
 
         <Col xs={24} md={8}>
-          {/* Provider Info */}
-          <Card title="Catering Provider" style={{ marginBottom: 24 }}>
+        <Card title="Catering Provider" style={{ marginBottom: 24 }}>
             <Descriptions column={1}>
               <Descriptions.Item label="Name">{catering.provider?.name || "N/A"}</Descriptions.Item>
               <Descriptions.Item label="Email">
@@ -259,19 +176,10 @@ const CateringDetailPage = () => {
                 <PhoneOutlined /> {catering.provider?.phone || "N/A"}
               </Descriptions.Item>
             </Descriptions>
-            <Button
-              type="primary"
-              block
-              icon={<CalendarOutlined />}
-              onClick={() => setInquiryModalVisible(true)}
-              style={{ marginTop: 16 }}
-            >
-              Send Inquiry
-            </Button>
           </Card>
 
           {/* Location */}
-          <Card title="Location">
+          <Card title="Location"> 
             <div
               style={{
                 height: "200px",
@@ -296,7 +204,6 @@ const CateringDetailPage = () => {
           </Card>
         </Col>
       </Row>
-
     </div>
   )
 }

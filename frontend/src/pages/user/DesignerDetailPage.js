@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Card, Row, Col, Typography, Button, Descriptions, Tag, Image, Spin, notification, Divider, Rate } from "antd"
-import { DollarOutlined, EnvironmentOutlined, CalendarOutlined, CheckCircleOutlined } from "@ant-design/icons"
+import { Card, Row, Col, Typography, Descriptions, Tag, Image, Spin, Divider,Button } from "antd"
+import { EnvironmentOutlined, MailOutlined,
+  PhoneOutlined} from "@ant-design/icons"
 import api from "../../services/api"
 
 const { Title, Text, Paragraph } = Typography
@@ -18,10 +19,6 @@ const DesignerDetailPage = () => {
         const response = await api.get(`/designers/${id}`)
         setDesigner(response.data)
       } catch (error) {
-        notification.error({
-          message: "Error",
-          description: "Failed to load designer details.",
-        })
         console.error("Error fetching designer:", error)
       } finally {
         setLoading(false)
@@ -30,16 +27,6 @@ const DesignerDetailPage = () => {
 
     fetchDesigner()
   }, [id])
-
-  const handleBooking = () => {
-    // Implement booking functionality
-    notification.success({
-      message: "Booking Initiated",
-      description: `You've started booking ${designer.name}. Complete your event details to confirm.`,
-    })
-    // Navigate to booking page or open modal
-    // navigate('/booking', { state: { service: designer, type: 'designer' } })
-  }
 
   if (loading) {
     return (
@@ -50,15 +37,11 @@ const DesignerDetailPage = () => {
   }
 
   if (!designer) {
-    return (
-      <div style={{ textAlign: "center", padding: 50 }}>
-        <Title level={3}>Designer not found</Title>
-        <Button type="primary" onClick={() => navigate("/designers")}>
-          Back to Designers
-        </Button>
-      </div>
-    )
+    return null
   }
+
+  const portfolioImages = designer.portfolio ? JSON.parse(designer.portfolio) : []
+  const eventTypes = designer.eventTypes ? JSON.parse(designer.eventTypes) : []
 
   return (
     <div style={{ padding: 24 }}>
@@ -66,12 +49,6 @@ const DesignerDetailPage = () => {
         <Col xs={24} lg={16}>
           <Card bordered={false} style={{ marginBottom: 24 }}>
             <Title level={2}>{designer.name}</Title>
-            <div style={{ marginBottom: 16 }}>
-              <Rate disabled defaultValue={designer.rating || 4.5} allowHalf />
-              <Text type="secondary" style={{ marginLeft: 8 }}>
-                {designer.rating || 4.5}/5
-              </Text>
-            </div>
 
             <Paragraph style={{ fontSize: 16 }}>
               <EnvironmentOutlined style={{ marginRight: 8 }} />
@@ -87,13 +64,13 @@ const DesignerDetailPage = () => {
 
             <Title level={4}>Portfolio</Title>
             <div style={{ marginBottom: 24 }}>
-              {designer.images && designer.images.length > 0 ? (
+              {portfolioImages.length > 0 ? (
                 <Image.PreviewGroup>
                   <Row gutter={[16, 16]}>
-                    {designer.images.map((image, index) => (
+                    {portfolioImages.map((image, index) => (
                       <Col xs={12} sm={8} md={6} key={index}>
                         <Image
-                          src={image || "/placeholder.svg"}
+                          src={image}
                           alt={`Portfolio ${index + 1}`}
                           style={{ objectFit: "cover", height: 150 }}
                         />
@@ -108,66 +85,51 @@ const DesignerDetailPage = () => {
 
             <Divider />
 
-            <Title level={4}>Design Specialties</Title>
+            <Descriptions title="Professional Details" column={1}>
+              <Descriptions.Item label="Design Style">{designer.style}</Descriptions.Item>
+              <Descriptions.Item label="Price Range">{designer.priceRange}</Descriptions.Item>
+            </Descriptions>
+
+            <Divider />
+
+            <Title level={4}>Event Types</Title>
             <div style={{ marginBottom: 16 }}>
-              {designer.eventTypes &&
-                designer.eventTypes.map((type) => (
-                  <Tag color="blue" key={type} style={{ marginBottom: 8 }}>
-                    {type}
-                  </Tag>
-                ))}
+              {eventTypes.map((type) => (
+                <Tag color="blue" key={type} style={{ marginBottom: 8 }}>
+                  {type}
+                </Tag>
+              ))}
             </div>
           </Card>
         </Col>
 
         <Col xs={24} lg={8}>
-          <Card title="Booking Information" bordered={false} style={{ marginBottom: 24 }}>
-            <Descriptions column={1} style={{ marginBottom: 16 }}>
-              <Descriptions.Item label="Price">
-                <Text strong style={{ fontSize: 18 }}>
-                  <DollarOutlined /> ${designer.price}
-                </Text>
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Experience">{designer.experience || "5+ years"}</Descriptions.Item>
-
-              <Descriptions.Item label="Design Style">
-                {designer.style || "Contemporary, Elegant, Minimalist"}
-              </Descriptions.Item>
-
-              <Descriptions.Item label="Services">
-                <ul style={{ paddingLeft: 20, margin: 0 }}>
-                  {(
-                    designer.services || [
-                      "Event theme design",
-                      "Decor planning",
-                      "Floral arrangements",
-                      "Lighting design",
-                    ]
-                  ).map((service, index) => (
-                    <li key={index}>
-                      <CheckCircleOutlined style={{ color: "#52c41a", marginRight: 8 }} />
-                      {service}
-                    </li>
-                  ))}
-                </ul>
-              </Descriptions.Item>
-            </Descriptions>
-
-            <Button type="primary" size="large" block icon={<CalendarOutlined />} onClick={handleBooking}>
-              Book Now
-            </Button>
-
-            <Button style={{ marginTop: 16 }} block onClick={() => navigate("/designers")}>
-              Back to Designers
-            </Button>
-          </Card>
-
-          <Card title="Contact Information" bordered={false}>
+        <Card title="Designer Provider" style={{ marginBottom: 24 }}>
             <Descriptions column={1}>
-              <Descriptions.Item label="Email">{designer.email || "contact@example.com"}</Descriptions.Item>
-              <Descriptions.Item label="Phone">{designer.phone || "(123) 456-7890"}</Descriptions.Item>
+              <Descriptions.Item label="Name">{designer.provider?.name || "N/A"}</Descriptions.Item>
+              <Descriptions.Item label="Email">
+                <MailOutlined /> {designer .provider?.email || "N/A"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Phone">
+                <PhoneOutlined /> {designer.provider?.phone || "N/A"}
+              </Descriptions.Item>
             </Descriptions>
+          </Card>
+          {/* Location */}
+          <Card title="Location">
+            <div style={{ height: "200px", background: "#f0f0f0", display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <EnvironmentOutlined style={{ fontSize: 32 }} />
+              <p style={{ marginLeft: 8 }}>{designer.location}</p>
+            </div>
+            <Button
+              type="link"
+              block
+              href={`https://maps.google.com/?q=${encodeURIComponent(designer.location)}`}
+              target="_blank"
+              style={{ marginTop: 16 }}
+            >
+              View on Google Maps
+            </Button>
           </Card>
         </Col>
       </Row>

@@ -32,10 +32,15 @@ const PhotographerListPage = () => {
   }
 
   const renderPhotographerCard = (photographer) => {
-    // Parse images from JSON string
-    const images = photographer.portfolio ? JSON.parse(photographer.portfolio) : []
+    // Parse images from JSON string if it's a string, otherwise use empty array
+    let images = []
+    try {
+      images = photographer.portfolio ? JSON.parse(photographer.portfolio) : []
+    } catch (error) {
+      console.error('Error parsing portfolio:', error)
+    }
     const firstImage = images.length > 0 ? images[0] : "/placeholder.svg?height=200&width=300"
-
+  
     return (
       <Col xs={24} sm={12} md={8} key={photographer.id}>
         <Card

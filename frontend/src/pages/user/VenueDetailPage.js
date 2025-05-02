@@ -11,13 +11,7 @@ import {
   Divider,
   Spin,
   message,
-  Modal,
-  Form,
-  Input,
-  DatePicker,
-  InputNumber,
   Result,
-  Select,
 } from "antd"
 import {
   EnvironmentOutlined,
@@ -28,15 +22,12 @@ import {
   MailOutlined,
   HeartOutlined,
   HeartFilled,
-  CalendarOutlined,
 } from "@ant-design/icons"
 import { useParams, useNavigate } from "react-router-dom"
 import api from "../../services/api"
 import { useAuth } from "../../contexts/AuthContext"
 
 const { Title, Paragraph } = Typography
-const { TextArea } = Input
-const { Option } = Select
 
 const VenueDetailPage = () => {
   const { id } = useParams()
@@ -46,16 +37,11 @@ const VenueDetailPage = () => {
   const [venue, setVenue] = useState(null)
   const [loading, setLoading] = useState(true)
   const [isFavorite, setIsFavorite] = useState(false)
-  const [inquiryModalVisible, setInquiryModalVisible] = useState(false)
-  const [inquirySubmitting, setInquirySubmitting] = useState(false)
-  const [inquirySuccess, setInquirySuccess] = useState(false)
-  const [form] = Form.useForm()
 
   useEffect(() => {
     fetchVenueDetails()
     if (currentUser) {
       checkIfFavorite()
-      // Record view if user is logged in
       recordView()
     }
   }, [id, currentUser])
@@ -68,7 +54,6 @@ const VenueDetailPage = () => {
     } catch (error) {
       console.error("Error fetching venue details:", error)
       message.error("Failed to load venue details")
-      // Redirect to venues list if venue not found
       if (error.response && error.response.status === 404) {
         navigate("/user/venues")
       }
@@ -115,36 +100,6 @@ const VenueDetailPage = () => {
     }
   }
 
-  const handleInquirySubmit = async (values) => {
-    if (!currentUser) {
-      message.info("Please login to send inquiries")
-      return
-    }
-
-    try {
-      setInquirySubmitting(true)
-      await api.post(`/inquiries/venue/${id}`, {
-        ...values,
-        eventDate: values.eventDate.format("YYYY-MM-DD"),
-      })
-
-      setInquirySuccess(true)
-      form.resetFields()
-    } catch (error) {
-      console.error("Error submitting inquiry:", error)
-      message.error("Failed to send inquiry")
-    } finally {
-      setInquirySubmitting(false)
-    }
-  }
-
-  const resetInquiryModal = () => {
-    setInquiryModalVisible(false)
-    setTimeout(() => {
-      setInquirySuccess(false)
-    }, 300)
-  }
-
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: "100px 0" }}>
@@ -169,17 +124,13 @@ const VenueDetailPage = () => {
     )
   }
 
-  
   const images = venue.images ? JSON.parse(venue.images) : []
-
-  
   const amenities = venue.amenities ? JSON.parse(venue.amenities) : []
 
   return (
     <div className="venue-detail-page">
       <Row gutter={[24, 24]}>
         <Col xs={24} md={16}>
-        
           <Card style={{ marginBottom: 24 }}>
             {images.length > 0 ? (
               <Carousel autoplay>
@@ -210,10 +161,14 @@ const VenueDetailPage = () => {
             )}
           </Card>
 
-          
           <Card>
             <div
-              style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                marginBottom: 16,
+              }}
             >
               <Title level={2} style={{ margin: 0 }}>
                 {venue.name}
@@ -270,7 +225,6 @@ const VenueDetailPage = () => {
         </Col>
 
         <Col xs={24} md={8}>
-          
           <Card title="Venue Provider" style={{ marginBottom: 24 }}>
             <Descriptions column={1}>
               <Descriptions.Item label="Name">{venue.provider?.name || "N/A"}</Descriptions.Item>
@@ -281,18 +235,8 @@ const VenueDetailPage = () => {
                 <PhoneOutlined /> {venue.provider?.phone || "N/A"}
               </Descriptions.Item>
             </Descriptions>
-            <Button
-              type="primary"
-              block
-              icon={<CalendarOutlined />}
-              onClick={() => setInquiryModalVisible(true)}
-              style={{ marginTop: 16 }}
-            >
-              Send Inquiry
-            </Button>
           </Card>
 
-          {/* Location */}
           <Card title="Location">
             <div
               style={{
@@ -318,73 +262,6 @@ const VenueDetailPage = () => {
           </Card>
         </Col>
       </Row>
-
-      {/* Inquiry Modal */}
-      <Modal
-        title={inquirySuccess ? "Inquiry Sent" : "Send Inquiry"}
-        open={inquiryModalVisible}
-        onCancel={resetInquiryModal}
-        footer={null}
-      >
-        {inquirySuccess ? (
-          <Result
-            status="success"
-            title="Your inquiry has been sent successfully!"
-            subTitle="The venue provider will contact you soon."
-            extra={[
-              <Button type="primary" key="close" onClick={resetInquiryModal}>
-                Close
-              </Button>,
-            ]}
-          />
-        ) : (
-          <Form form={form} layout="vertical" onFinish={handleInquirySubmit}>
-            <Form.Item
-              name="eventType"
-              label="Event Type"
-              rules={[{ required: true, message: "Please select event type" }]}
-            >
-              <Select>
-                <Option value="wedding">Wedding</Option>
-                <Option value="birthday">Birthday</Option>
-                <Option value="corporate">Corporate Event</Option>
-                <Option value="conference">Conference</Option>
-                <Option value="other">Other</Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              name="eventDate"
-              label="Event Date"
-              rules={[{ required: true, message: "Please select event date" }]}
-            >
-              <DatePicker style={{ width: "100%" }} />
-            </Form.Item>
-
-            <Form.Item
-              name="guestCount"
-              label="Number of Guests"
-              rules={[{ required: true, message: "Please enter number of guests" }]}
-            >
-              <InputNumber min={1} max={venue.capacity} style={{ width: "100%" }} />
-            </Form.Item>
-
-            <Form.Item
-              name="message"
-              label="Message"
-              rules={[{ required: true, message: "Please enter your message" }]}
-            >
-              <TextArea rows={4} placeholder="Please include any specific requirements or questions you have." />
-            </Form.Item>
-
-            <Form.Item>
-              <Button type="primary" htmlType="submit" loading={inquirySubmitting} block>
-                Send Inquiry
-              </Button>
-            </Form.Item>
-          </Form>
-        )}
-      </Modal>
     </div>
   )
 }
