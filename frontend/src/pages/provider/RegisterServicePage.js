@@ -22,49 +22,43 @@ const RegisterServicePage = () => {
   const handleFormSubmit = async (values) => {
     setSubmitting(true);
     try {
-      console.log('Form values:', values);
-      
-      // Create a FormData object
       const formData = new FormData();
       
-      // Add provider type
+      // Add service type
       formData.append('serviceType', providerType);
       
-      // Add all form fields except images
+      // Format numeric values
+      if (values.experienceYears) {
+        formData.append('experienceYears', parseInt(values.experienceYears));
+      }
+      if (values.priceRange) {
+        formData.append('priceRange', values.priceRange.toString());
+      }
+      
+      // Add all other fields
       Object.keys(values).forEach(key => {
         if (key !== 'images') {
-          // Handle arrays by converting to JSON strings
           if (Array.isArray(values[key])) {
             formData.append(key, JSON.stringify(values[key]));
           } else if (values[key] !== undefined && values[key] !== null) {
-            formData.append(key, values[key]);
+            formData.append(key, values[key].toString());
           }
         }
       });
       
-      // Log the form data to check values
-      console.log('Provider Type:', providerType);
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-      }
-      
       // Add images
-      if (values.images && values.images.length > 0) {
-        values.images.forEach((file, index) => {
-          // Make sure we're getting the actual file object
+      if (values.images?.length > 0) {
+        values.images.forEach((file) => {
           if (file.originFileObj) {
             formData.append('images', file.originFileObj);
           }
         });
       }
       
-      // Submit the form data
       const response = await submitServiceData(formData);
-      console.log('Service registered successfully:', response);
       message.success('Service registered successfully! Awaiting admin approval.');
     } catch (error) {
-      console.error('Service registration error:', error);
-      message.error(`Failed to register service: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+      message.error(error.response?.data?.message || 'Failed to register service');
     } finally {
       setSubmitting(false);
     }

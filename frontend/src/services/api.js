@@ -1,43 +1,45 @@
-// services/api.js
-import axios from 'axios';
+import axios from "axios";
 
-// Create Axios instance
+// Create an axios instance with default config
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  timeout: 10000, // Optional: 10s timeout
 });
 
-// Request interceptor to add token
+// Request interceptor for adding auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
-// Response interceptor to handle 401 errors
+// Response interceptor for handling errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
+    // Handle unauthorized errors (token expired)
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      // Redirect to login if needed
+      if (!window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
       }
     }
     return Promise.reject(error);
   }
 );
-
-// Function to submit service data with images (multipart/form-data)
 export const submitServiceData = async (formData) => {
   try {
     const token = localStorage.getItem('token');
@@ -60,5 +62,4 @@ export const submitServiceData = async (formData) => {
     throw error;
   }
 };
-
 export default api;

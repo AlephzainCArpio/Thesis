@@ -1,4 +1,3 @@
-// Enhanced AuthContext.js with improved token handling and request interceptors
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import api from '../services/api';
 
@@ -13,40 +12,6 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Setup axios interceptors for handling auth
-  useEffect(() => {
-    // Request interceptor - add token to every request
-    const requestInterceptor = api.interceptors.request.use(
-      config => {
-        const token = localStorage.getItem('token');
-        if (token) {
-          config.headers['Authorization'] = `Bearer ${token}`;
-        }
-        return config;
-      },
-      error => Promise.reject(error)
-    );
-
-    // Response interceptor - handle token expiration
-    const responseInterceptor = api.interceptors.response.use(
-      response => response,
-      error => {
-        // Handle 401 errors (unauthorized) by logging out
-        if (error.response && error.response.status === 401) {
-          console.log('Token expired or invalid, logging out');
-          logout();
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    // Clean up interceptors on unmount
-    return () => {
-      api.interceptors.request.eject(requestInterceptor);
-      api.interceptors.response.eject(responseInterceptor);
-    };
-  }, []);
-
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
@@ -54,33 +19,19 @@ export function AuthProvider({ children }) {
         const token = localStorage.getItem('token');
         
         if (token) {
+          // Set the token on API calls
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
           // Fetch current user
           const response = await api.get('/auth/me');
-          console.log('Current user data:', response.data);
-          
-          // Ensure we have providerType if user is a provider
-          if (response.data.role && 
-              (response.data.role === 'PROVIDER' || response.data.role === 'PENDING_PROVIDER') && 
-              !response.data.providerType) {
-            // Fetch provider type if not included in user data
-            try {
-              const providerData = await api.get('/providers/type');
-              setCurrentUser({
-                ...response.data,
-                providerType: providerData.data.providerType
-              });
-            } catch (providerErr) {
-              console.error('Error fetching provider type:', providerErr);
-              setCurrentUser(response.data);
-            }
-          } else {
-            setCurrentUser(response.data);
-          }
+          console.log('Current user data:', response.data); // Log for debugging
+          setCurrentUser(response.data);
         }
       } catch (err) {
         console.error('Authentication check failed:', err);
         // Clear token if validation fails
         localStorage.removeItem('token');
+        api.defaults.headers.common['Authorization'] = null;
       } finally {
         setLoading(false);
       }
@@ -95,34 +46,17 @@ export function AuthProvider({ children }) {
       setError(null);
       
       const response = await api.post('/auth/login', { email, password });
-      console.log('Login API response:', response.data);
+      console.log('Login API response:', response.data); // Debug log
       
       const { token, user } = response.data;
       
-      // Save token
+      // Save token and set headers
       localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
-      // Fetch provider type if user is a provider
-      if (user.role && (user.role === 'PROVIDER' || user.role === 'PENDING_PROVIDER') && !user.providerType) {
-        try {
-          const providerData = await api.get('/providers/type');
-          setCurrentUser({
-            ...user,
-            providerType: providerData.data.providerType
-          });
-          return {
-            ...user,
-            providerType: providerData.data.providerType
-          };
-        } catch (providerErr) {
-          console.error('Error fetching provider type:', providerErr);
-          setCurrentUser(user);
-          return user;
-        }
-      } else {
-        setCurrentUser(user);
-        return user;
-      }
+      setCurrentUser(user); // Ensure the user object is set
+      console.log('User after login:', user); // Debug log
+      return user;
     } catch (err) {
       console.error('Login error details:', err);
       setError(err.response?.data?.message || 'Login failed');
@@ -140,8 +74,9 @@ export function AuthProvider({ children }) {
       const response = await api.post('/auth/register', userData);
       const { token, user } = response.data;
       
-      // Save token
+      // Save token and set headers
       localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setCurrentUser(user);
       return user;
@@ -155,6 +90,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('token');
+    api.defaults.headers.common['Authorization'] = null;
     setCurrentUser(null);
   };
 
@@ -174,11 +110,6 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Helper function to get fresh auth token
-  const getAuthToken = () => {
-    return localStorage.getItem('token');
-  };
-
   const value = {
     currentUser,
     loading,
@@ -186,8 +117,7 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
-    updateProfile,
-    getAuthToken
+    updateProfile
   };
 
   return (

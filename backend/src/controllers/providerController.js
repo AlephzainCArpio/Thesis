@@ -164,35 +164,96 @@ const registerService = async (req, res) => {
   try {
     const { serviceType, ...serviceData } = req.body;
 
-    // Get the current user based on the logged-in user
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Ensure the service type matches the provider's type
     if (user.providerType !== serviceType) {
-      return res.status(400).json({ message: "Service type does not match your provider type." });
+      return res.status(400).json({
+        message: `You are registered as a ${user.providerType} provider. Cannot register ${serviceType} service.`,
+      });
     }
 
-    // Create the new service for the provider
-    const newService = await prisma.service.create({
-      data: {
-        type: serviceType,
-        providerId: req.user.id,
-        ...serviceData,
-        status: "PENDING", // Service is submitted for admin approval
-      },
-    });
+    let createdService;
+    switch (serviceType) {
+      case 'PHOTOGRAPHER':
+        createdService = await prisma.photographer.create({
+          data: {
+            providerId: user.id,
+            name: serviceData.name,
+            description: serviceData.description,
+            location: serviceData.location,
+            style: serviceData.style,
+            experienceYears: parseInt(serviceData.experienceYears),
+            priceRange: serviceData.priceRange,
+            copyType: serviceData.copyType,
+            portfolio: serviceData.portfolio || null,
+            images: JSON.stringify(serviceData.images || []),
+            status: 'PENDING',
+            serviceType,
+          },
+        });
+        break;
 
-    // Respond with success message and the newly created service
-    res.status(201).json({ message: "Service submitted for approval", newService });
+      case 'VENUE':
+        createdService = await prisma.venue.create({
+          data: {
+            providerId: user.id,
+            name: serviceData.name,
+            description: serviceData.description,
+            location: serviceData.location,
+            capacity: parseInt(serviceData.capacity),
+            price: parseFloat(serviceData.price),
+            amenities: JSON.stringify(serviceData.amenities || []),
+            images: JSON.stringify(serviceData.images || []),
+            status: 'PENDING',
+            serviceType,
+          },
+        });
+        break;
+
+      case 'CATERING':
+        createdService = await prisma.catering.create({
+          data: {
+            providerId: user.id,
+            name: serviceData.name,
+            description: serviceData.description,
+            location: serviceData.location,
+            maxPeople: parseInt(serviceData.maxPeople),
+            pricePerPerson: parseFloat(serviceData.pricePerPerson),
+            dietaryOptions: JSON.stringify(serviceData.dietaryOptions || []),
+            images: JSON.stringify(serviceData.images || []),
+            status: 'PENDING',
+            serviceType,
+          },
+        });
+        break;
+
+      case 'DESIGNER':
+        createdService = await prisma.designer.create({
+          data: {
+            providerId: user.id,
+            name: serviceData.name,
+            description: serviceData.description,
+            location: serviceData.location,
+            eventTypes: JSON.stringify(serviceData.eventTypes || []),
+            images: JSON.stringify(serviceData.images || []),
+            status: 'PENDING',
+            serviceType,
+          },
+        });
+        break;
+
+      default:
+        return res.status(400).json({ message: 'Invalid service type' });
+    }
+
+    res.status(201).json({ message: "Service submitted for approval", service: createdService });
   } catch (error) {
-    console.error("Error in registerService:", error); // Log the error
+    console.error("Error in registerService:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
 module.exports = {
   register,
   login,

@@ -34,38 +34,98 @@ router.get('/auth-test', (req, res) => {
 });
 
 // Register provider with service type and verification document
-router.post('/register-provider', upload.single('verificationDoc'), async (req, res) => {
-  const { email, serviceType } = req.body;
-  const verificationDoc = req.file?.filename;
-  
+router.post('/register-service', upload.array('images', 5), async (req, res) => {
   try {
-    // Ensure we use the authenticated user's email, not from the body
-    const userEmail = req.user.email;
-    
-    // Check if the user already has a service type
-    const existingUser = await prisma.user.findUnique({
-      where: { email: userEmail },
-    });
+    const userId = req.user.id;
+    const { serviceType, ...serviceData } = req.body;
 
-    if (existingUser && existingUser.providerType) {
-      return res.status(400).json({ error: 'Provider can only register one service type.' });
+    // Process uploaded files
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      imageUrls = req.files.map(file => `/uploads/${file.filename}`);
     }
 
-    // Update user with service type and verification document
-    const updatedUser = await prisma.user.update({
-      where: { email: userEmail },
-      data: {
-        role: 'PENDING_PROVIDER',
-        providerType: serviceType, // Dynamically assigning the provider type
-        verificationDoc,
-        verificationStatus: 'PENDING_DOCUMENT', // Assuming this status for pending providers
-      },
-    });
+    // Convert imageUrls array to string for storage
+    const imagesString = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null;
 
-    res.status(200).json({ message: 'Registration submitted successfully. Pending approval.', user: updatedUser });
-  } catch (err) {
-    console.error("Error in register-provider:", err);
-    res.status(500).json({ error: 'Failed to register as provider', details: err.message });
+    let newService;
+    
+    // Create service based on type
+    switch(serviceType) {
+      case 'PHOTOGRAPHER':
+        newService = await prisma.photographer.create({
+          data: {
+            ...serviceData,
+            images: imagesString,
+            providerId: userId,
+            status: 'PENDING',
+            serviceType: serviceType,
+            // Ensure required fields are present
+            name: serviceData.name,
+            description: serviceData.description,
+            location: serviceData.location,
+            style: serviceData.style,
+            experienceYears: parseInt(serviceData.experienceYears),
+            priceRange: serviceData.priceRange,
+            copyType: serviceData.copyType,
+            portfolio: serviceData.portfolio || null
+          }
+        });
+        break;
+
+      case 'VENUE':
+        newService = await prisma.venue.create({
+          data: {
+            ...serviceData,
+            images: imagesString,
+            providerId: userId,
+            status: 'PENDING',
+            capacity: parseInt(serviceData.capacity),
+            price: parseFloat(serviceData.price),
+            amenities: serviceData.amenities ? JSON.stringify(serviceData.amenities) : null
+          }
+        });
+        break;
+
+      case 'CATERING':
+        newService = await prisma.catering.create({
+          data: {
+            ...serviceData,
+            images: imagesString,
+            providerId: userId,
+            status: 'PENDING',
+            maxPeople: parseInt(serviceData.maxPeople),
+            pricePerPerson: parseFloat(serviceData.pricePerPerson),
+            dietaryOptions: serviceData.dietaryOptions ? JSON.stringify(serviceData.dietaryOptions) : null
+          }
+        });
+        break;
+
+      case 'DESIGNER':
+        newService = await prisma.designer.create({
+          data: {
+            ...serviceData,
+            images: imagesString,
+            providerId: userId,
+            status: 'PENDING',
+            eventTypes: serviceData.eventTypes ? JSON.stringify(serviceData.eventTypes) : null
+          }
+        });
+        break;
+
+      default:
+        throw new Error(`Invalid service type: ${serviceType}`);
+    }
+
+    console.log("Service created successfully:", newService);
+    res.status(201).json({ message: 'Service submitted for approval', service: newService });
+  } catch (error) {
+    console.error("Error in register-service:", error);
+    res.status(500).json({ 
+      message: 'Failed to register service', 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
