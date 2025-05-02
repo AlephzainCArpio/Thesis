@@ -5,10 +5,10 @@ const prisma = new PrismaClient();
 const protect = async (req, res, next) => {
   let token;
 
-  // Check for token in authorization header
   if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     try {
       token = req.headers.authorization.split(" ")[1];
+      console.log("Token:", token);
 
       if (!token) {
         return res.status(401).json({ message: "Not authorized, no token" });
@@ -16,15 +16,22 @@ const protect = async (req, res, next) => {
 
       // Verify token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log("Decoded Token:", decoded);
 
       // Attach user to the request
       req.user = await prisma.user.findUnique({
         where: { id: decoded.id },
         select: { id: true, email: true, role: true },
       });
+      console.log("Authenticated User:", req.user);
+
+      if (!req.user) {
+        return res.status(401).json({ message: "User not found" });
+      }
 
       next();
     } catch (error) {
+      console.error("Error in protect middleware:", error);
       res.status(401).json({ message: "Not authorized, token failed" });
     }
   } else {

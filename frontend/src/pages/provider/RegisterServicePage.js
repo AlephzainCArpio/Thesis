@@ -1,27 +1,98 @@
-import React from 'react';
-import { Form, Input, InputNumber, Select, Upload } from 'antd';
+import React, { useState } from 'react';
+import { Form, Input, InputNumber, Select, Upload, message, Button } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, LoadingOutlined } from '@ant-design/icons';
+import { submitServiceData } from '../../services/api';
 
 const { Option } = Select;
 
 const RegisterServicePage = () => {
   const { currentUser } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
   const providerType = currentUser?.providerType;
+
+  if (!currentUser) {
+    return <div>Please log in to register a service.</div>;
+  }
 
   if (!providerType) {
     return <div>Error: Your provider type is not set. Please contact admin.</div>;
   }
 
+  const handleFormSubmit = async (values) => {
+    setSubmitting(true);
+    try {
+      console.log('Form values:', values);
+      
+      // Create a FormData object
+      const formData = new FormData();
+      
+      // Add provider type
+      formData.append('serviceType', providerType);
+      
+      // Add all form fields except images
+      Object.keys(values).forEach(key => {
+        if (key !== 'images') {
+          // Handle arrays by converting to JSON strings
+          if (Array.isArray(values[key])) {
+            formData.append(key, JSON.stringify(values[key]));
+          } else if (values[key] !== undefined && values[key] !== null) {
+            formData.append(key, values[key]);
+          }
+        }
+      });
+      
+      // Log the form data to check values
+      console.log('Provider Type:', providerType);
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+      }
+      
+      // Add images
+      if (values.images && values.images.length > 0) {
+        values.images.forEach((file, index) => {
+          // Make sure we're getting the actual file object
+          if (file.originFileObj) {
+            formData.append('images', file.originFileObj);
+          }
+        });
+      }
+      
+      // Submit the form data
+      const response = await submitServiceData(formData);
+      console.log('Service registered successfully:', response);
+      message.success('Service registered successfully! Awaiting admin approval.');
+    } catch (error) {
+      console.error('Service registration error:', error);
+      message.error(`Failed to register service: ${error.response?.data?.message || error.message || 'Unknown error'}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Function to normalize file list for Upload component
+  const normFile = (e) => {
+    if (Array.isArray(e)) {
+      return e;
+    }
+    return e?.fileList;
+  };
+
   return (
     <div style={{ padding: '2rem' }}>
-      <h2>Register Your Service</h2>
+      <h2>Register Your {providerType.charAt(0) + providerType.slice(1).toLowerCase()} Service</h2>
+      
+      {/* Debug info */}
+      <div style={{ marginBottom: '20px', padding: '10px', background: '#f5f5f5', borderRadius: '4px' }}>
+        <p><strong>Provider Type:</strong> {providerType}</p>
+        <p><strong>User ID:</strong> {currentUser.id}</p>
+      </div>
 
       {/* Form based on provider type */}
-      {providerType === 'VENUE' && <VenueForm />}
-      {providerType === 'CATERING' && <CateringForm />}
-      {providerType === 'PHOTOGRAPHER' && <PhotographerForm />}
-      {providerType === 'DESIGNER' && <DesignerForm />}
+      {providerType === 'VENUE' && <VenueForm onFinish={handleFormSubmit} normFile={normFile} submitting={submitting} />}
+      {providerType === 'CATERING' && <CateringForm onFinish={handleFormSubmit} normFile={normFile} submitting={submitting} />}
+      {providerType === 'PHOTOGRAPHER' && <PhotographerForm onFinish={handleFormSubmit} normFile={normFile} submitting={submitting} />}
+      {providerType === 'DESIGNER' && <DesignerForm onFinish={handleFormSubmit} normFile={normFile} submitting={submitting} />}
 
       {/* Optional fallback */}
       {!['PHOTOGRAPHER', 'VENUE', 'CATERING', 'DESIGNER'].includes(providerType) && (
@@ -30,44 +101,23 @@ const RegisterServicePage = () => {
     </div>
   );
 };
-
 // Venue form
-const VenueForm = () => {
+const VenueForm = ({ onFinish }) => {
   return (
-    <Form layout="vertical">
-      <Form.Item
-        name="name"
-        label="Venue Name"
-        rules={[{ required: true, message: "Please enter venue name" }]}
-      >
+    <Form layout="vertical" onFinish={onFinish}>
+      <Form.Item name="name" label="Venue Name" rules={[{ required: true, message: "Please enter venue name" }]}>
         <Input />
       </Form.Item>
-      <Form.Item
-        name="description"
-        label="Description"
-        rules={[{ required: true, message: "Please enter description" }]}
-      >
+      <Form.Item name="description" label="Description" rules={[{ required: true, message: "Please enter description" }]}>
         <Input.TextArea />
       </Form.Item>
-      <Form.Item
-        name="location"
-        label="Location"
-        rules={[{ required: true, message: "Please enter location" }]}
-      >
+      <Form.Item name="location" label="Location" rules={[{ required: true, message: "Please enter location" }]}>
         <Input />
       </Form.Item>
-      <Form.Item
-        name="capacity"
-        label="Capacity"
-        rules={[{ required: true, message: "Please enter capacity" }]}
-      >
+      <Form.Item name="capacity" label="Capacity" rules={[{ required: true, message: "Please enter capacity" }]}>
         <InputNumber min={1} style={{ width: "100%" }} />
       </Form.Item>
-      <Form.Item
-        name="price"
-        label="Price"
-        rules={[{ required: true, message: "Please enter price" }]}
-      >
+      <Form.Item name="price" label="Price" rules={[{ required: true, message: "Please enter price" }]}>
         <InputNumber min={0} style={{ width: "100%" }} />
       </Form.Item>
       <Form.Item name="amenities" label="Amenities">
@@ -83,13 +133,7 @@ const VenueForm = () => {
         valuePropName="fileList"
         getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
       >
-        <Upload
-          listType="picture-card"
-          multiple
-          beforeUpload={() => false}
-          accept="image/*"
-          maxCount={5}
-        >
+        <Upload listType="picture-card" multiple beforeUpload={() => false} accept="image/*" maxCount={5}>
           <div>
             <PlusOutlined />
             <div style={{ marginTop: 8 }}>Upload</div>
@@ -104,49 +148,25 @@ const VenueForm = () => {
 };
 
 // Catering form
-const CateringForm = () => {
+const CateringForm = ({ onFinish }) => {
   return (
-    <Form layout="vertical">
-      <Form.Item
-        name="name"
-        label="Catering Name"
-        rules={[{ required: true, message: "Please enter catering name" }]}
-      >
+    <Form layout="vertical" onFinish={onFinish}>
+      <Form.Item name="name" label="Catering Name" rules={[{ required: true, message: "Please enter catering name" }]}>
         <Input />
       </Form.Item>
-      <Form.Item
-        name="description"
-        label="Description"
-        rules={[{ required: true, message: "Please enter description" }]}
-      >
+      <Form.Item name="description" label="Description" rules={[{ required: true, message: "Please enter description" }]}>
         <Input.TextArea />
       </Form.Item>
-      <Form.Item
-        name="location"
-        label="Location"
-        rules={[{ required: true, message: "Please enter location" }]}
-      >
+      <Form.Item name="location" label="Location" rules={[{ required: true, message: "Please enter location" }]}>
         <Input />
       </Form.Item>
-      <Form.Item
-        name="maxPeople"
-        label="Maximum People"
-        rules={[{ required: true, message: "Please enter max capacity" }]}
-      >
+      <Form.Item name="maxPeople" label="Maximum People" rules={[{ required: true, message: "Please enter max capacity" }]}>
         <InputNumber min={1} style={{ width: "100%" }} />
       </Form.Item>
-      <Form.Item
-        name="pricePerPerson"
-        label="Price Per Person"
-        rules={[{ required: true, message: "Please enter price per person" }]}
-      >
+      <Form.Item name="pricePerPerson" label="Price Per Person" rules={[{ required: true, message: "Please enter price per person" }]}>
         <InputNumber min={0} style={{ width: "100%" }} />
       </Form.Item>
-      <Form.Item
-        name="cuisineType"
-        label="Cuisine Type"
-        rules={[{ required: true, message: "Please select cuisine type" }]}
-      >
+      <Form.Item name="cuisineType" label="Cuisine Type" rules={[{ required: true, message: "Please select cuisine type" }]}>
         <Select>
           <Option value="filipino">Filipino</Option>
           <Option value="chinese">Chinese</Option>
@@ -166,13 +186,7 @@ const CateringForm = () => {
         valuePropName="fileList"
         getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
       >
-        <Upload
-          listType="picture-card"
-          multiple
-          beforeUpload={() => false}
-          accept="image/*"
-          maxCount={5}
-        >
+        <Upload listType="picture-card" multiple beforeUpload={() => false} accept="image/*" maxCount={5}>
           <div>
             <PlusOutlined />
             <div style={{ marginTop: 8 }}>Upload</div>
@@ -187,60 +201,32 @@ const CateringForm = () => {
 };
 
 // Photographer form
-const PhotographerForm = () => {
+const PhotographerForm = ({ onFinish }) => {
   return (
-    <Form layout="vertical">
-      <Form.Item
-        name="name"
-        label="Photographer Name"
-        rules={[{ required: true, message: "Please enter photographer name" }]}
-      >
+    <Form layout="vertical" onFinish={onFinish}>
+      <Form.Item name="name" label="Photographer Name" rules={[{ required: true, message: "Please enter photographer name" }]}>
         <Input />
       </Form.Item>
-      <Form.Item
-        name="description"
-        label="Description"
-        rules={[{ required: true, message: "Please enter description" }]}
-      >
+      <Form.Item name="description" label="Description" rules={[{ required: true, message: "Please enter description" }]}>
         <Input.TextArea />
       </Form.Item>
-      <Form.Item
-        name="location"
-        label="Location"
-        rules={[{ required: true, message: "Please enter location" }]}
-      >
+      <Form.Item name="location" label="Location" rules={[{ required: true, message: "Please enter location" }]}>
         <Input />
       </Form.Item>
-      <Form.Item
-        name="style"
-        label="Photography Style"
-        rules={[{ required: true, message: "Please select a style" }]}
-      >
+      <Form.Item name="style" label="Photography Style" rules={[{ required: true, message: "Please select a style" }]}>
         <Select>
           <Option value="traditional">Traditional</Option>
           <Option value="photojournalistic">Photojournalistic</Option>
           <Option value="contemporary">Contemporary</Option>
         </Select>
       </Form.Item>
-      <Form.Item
-        name="experienceYears"
-        label="Years of Experience"
-        rules={[{ required: true, message: "Please enter years of experience" }]}
-      >
+      <Form.Item name="experienceYears" label="Years of Experience" rules={[{ required: true, message: "Please enter years of experience" }]}>
         <InputNumber min={0} style={{ width: "100%" }} />
       </Form.Item>
-      <Form.Item
-        name="priceRange"
-        label="Price Range"
-        rules={[{ required: true, message: "Please enter a price range" }]}
-      >
+      <Form.Item name="priceRange" label="Price Range" rules={[{ required: true, message: "Please enter a price range" }]}>
         <Input placeholder="e.g., 5000-10000" />
       </Form.Item>
-      <Form.Item
-        name="copyType"
-        label="Copy Type"
-        rules={[{ required: true, message: "Please select a copy type" }]}
-      >
+      <Form.Item name="copyType" label="Copy Type" rules={[{ required: true, message: "Please select a copy type" }]}>
         <Select>
           <Option value="virtual">Virtual</Option>
           <Option value="physical">Physical</Option>
@@ -256,13 +242,7 @@ const PhotographerForm = () => {
         valuePropName="fileList"
         getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
       >
-        <Upload
-          listType="picture-card"
-          multiple
-          beforeUpload={() => false}
-          accept="image/*"
-          maxCount={5}
-        >
+        <Upload listType="picture-card" multiple beforeUpload={() => false} accept="image/*" maxCount={5}>
           <div>
             <PlusOutlined />
             <div style={{ marginTop: 8 }}>Upload</div>
@@ -277,53 +257,30 @@ const PhotographerForm = () => {
 };
 
 // Designer form
-const DesignerForm = () => {
+const DesignerForm = ({ onFinish }) => {
   return (
-    <Form layout="vertical">
-      <Form.Item
-        name="name"
-        label="Designer Name"
-        rules={[{ required: true, message: "Please enter designer name" }]}
-      >
+    <Form layout="vertical" onFinish={onFinish}>
+      <Form.Item name="name" label="Designer Name" rules={[{ required: true, message: "Please enter designer name" }]}>
         <Input />
       </Form.Item>
-      <Form.Item
-        name="description"
-        label="Description"
-        rules={[{ required: true, message: "Please enter description" }]}
-      >
+      <Form.Item name="description" label="Description" rules={[{ required: true, message: "Please enter description" }]}>
         <Input.TextArea />
       </Form.Item>
-      <Form.Item
-        name="location"
-        label="Location"
-        rules={[{ required: true, message: "Please enter location" }]}
-      >
+      <Form.Item name="location" label="Location" rules={[{ required: true, message: "Please enter location" }]}>
         <Input />
       </Form.Item>
-      <Form.Item
-        name="style"
-        label="Design Style"
-        rules={[{ required: true, message: "Please select a style" }]}
-      >
+      <Form.Item name="style" label="Design Style" rules={[{ required: true, message: "Please select a style" }]}>
         <Select>
           <Option value="modern">Modern</Option>
           <Option value="classic">Classic</Option>
           <Option value="minimalist">Minimalist</Option>
         </Select>
       </Form.Item>
-      <Form.Item
-        name="priceRange"
-        label="Price Range"
-        rules={[{ required: true, message: "Please enter a price range" }]}
-      >
-        <Input placeholder="e.g., 20000-50000" />
+      <Form.Item name="priceRange" label="Price Range" rules={[{ required: true, message: "Please enter a price range" }]}>
+        <Input placeholder="e.g., 5000-15000" />
       </Form.Item>
-      <Form.Item name="eventTypes" label="Event Types">
-        <Select mode="tags" placeholder="Enter event types">
-          <Option value="wedding">Wedding</Option>
-          <Option value="corporate">Corporate</Option>
-        </Select>
+      <Form.Item name="experienceYears" label="Years of Experience" rules={[{ required: true, message: "Please enter years of experience" }]}>
+        <InputNumber min={0} style={{ width: "100%" }} />
       </Form.Item>
       <Form.Item name="portfolio" label="Portfolio URL">
         <Input placeholder="Enter portfolio link" />
@@ -334,13 +291,7 @@ const DesignerForm = () => {
         valuePropName="fileList"
         getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
       >
-        <Upload
-          listType="picture-card"
-          multiple
-          beforeUpload={() => false}
-          accept="image/*"
-          maxCount={5}
-        >
+        <Upload listType="picture-card" multiple beforeUpload={() => false} accept="image/*" maxCount={5}>
           <div>
             <PlusOutlined />
             <div style={{ marginTop: 8 }}>Upload</div>
