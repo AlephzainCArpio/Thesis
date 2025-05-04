@@ -2,16 +2,22 @@ const { getRecommendations } = require("../services/recommendationService");
 
 const getRecommendationsController = async (req, res) => {
   try {
-    const { budget, location, guests, eventType, serviceType } = req.body;
+    const { 
+      budget, 
+      location, 
+      guests, 
+      eventType, 
+      serviceType,
+    } = req.body;
 
     // Validate required parameters
     if (!budget || !location || !guests || !eventType || !serviceType) {
       return res.status(400).json({
-        message: "Missing required parameters. Please provide budget, location, guests, eventType, and serviceType.",
+        message: "Missing required parameters"
       });
     }
 
-    // Call the recommendation service
+   
     const recommendations = await getRecommendations({
       budget,
       location,
@@ -19,12 +25,30 @@ const getRecommendationsController = async (req, res) => {
       eventType,
       serviceType,
       userId: req.user.id,
+      preferences
     });
 
-    res.json({ recommendations });
+  
+    res.json({
+      recommendations,
+      metadata: {
+        total_results: recommendations.length,
+        filters_applied: {
+          budget,
+          location,
+          guests,
+          eventType,
+          serviceType
+        },
+        timestamp: new Date().toISOString()
+      }
+    });
   } catch (error) {
     console.error("Error in recommendation controller:", error);
-    res.status(500).json({ message: "Internal Server Error", details: error.message });
+    res.status(500).json({
+      message: "Internal Server Error",
+      details: error.message
+    });
   }
 };
 

@@ -92,7 +92,7 @@ const createCatering = async (req, res) => {
       images,
     } = req.body;
 
-    console.log("Request body:", req.body); // Log incoming request data
+    console.log("Request body:", req.body); 
     console.log("User ID:", req.user.id);
     console.log("User Role:", req.user.role);
 
@@ -126,7 +126,7 @@ const createCatering = async (req, res) => {
 
     res.status(201).json(catering);
   } catch (error) {
-    console.error("Error creating catering:", error); // Log the full error
+    console.error("Error creating catering:", error);
     res.status(500).json({ message: error.message });
   }
 };
