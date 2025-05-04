@@ -364,6 +364,7 @@ const AdminDashboard = () => {
                     <Option value="vegetarian">Vegetarian</Option>
                     <Option value="vegan">Vegan</Option>
                     <Option value="gluten-free">Gluten-Free</Option>
+                    <Option value="protien">Protien</Option>
                   </Select>
                 </Form.Item>
               </>
@@ -440,7 +441,7 @@ const AdminDashboard = () => {
                   <Option value="wedding">Wedding</Option>
                   <Option value="birthday">Birthday Party</Option>
                   <Option value="corporate">Corporate Event</Option>
-                  <Option value="conference">Conference</Option>
+                  <Option value="Reunion">Reunion</Option>
                   <Option value="social">Social Gathering</Option>
                 </Select>
                 </Form.Item>

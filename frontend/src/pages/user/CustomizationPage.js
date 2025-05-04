@@ -9,21 +9,21 @@ const CustomizationPage = () => {
   const [loading, setLoading] = useState(false)
   const [recommendations, setRecommendations] = useState(null)
   const [selectedService, setSelectedService] = useState([])
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false)  // New loading state for recommendations
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false)  
   const navigate = useNavigate()
 
   const onFinish = async (values) => {
     try {
       setLoading(true)
-      setLoadingRecommendations(true)  // Start loading recommendations
+      setLoadingRecommendations(true)  
 
       // Add the selected services to the request data
       const data = {
         ...values,
-        serviceType: selectedService.join(", "), // Convert the array to a string of selected services
+        serviceType: selectedService.join(", "), 
       }
 
-      const response = await api.post("/recommend", data)
+      const response = await api.post("/recommendation", data)
 
       // Ensure that the response contains recommendations
       if (response.data && response.data.recommendations) {
@@ -37,7 +37,7 @@ const CustomizationPage = () => {
       console.error(error)
     } finally {
       setLoading(false)
-      setLoadingRecommendations(false)  // Stop loading recommendations
+      setLoadingRecommendations(false) 
     }
   }
 
