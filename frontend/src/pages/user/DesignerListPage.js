@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react"
 import { Card, Row, Col, Typography, Spin, Empty } from "antd"
-import { useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom" // Changed from useNavigate
 import api from "../../services/api"
 
 const { Title, Text } = Typography
 
 const DesignerListPage = () => {
-  const navigate = useNavigate()
   const [designers, setDesigners] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -26,12 +25,7 @@ const DesignerListPage = () => {
     }
   }
 
-  const handleViewDetails = (id) => {
-    navigate(`/user/designers/${id}`)
-  }
-
   const renderDesignerCard = (designer) => {
-    // Parse images from JSON string
     const images = designer.portfolio ? JSON.parse(designer.portfolio) : []
     const firstImage = images.length > 0 ? images[0] : "/placeholder.svg?height=200&width=300"
 
@@ -49,7 +43,11 @@ const DesignerListPage = () => {
               />
             </div>
           }
-          onClick={() => handleViewDetails(designer.id)}
+          actions={[
+            <Link key="view-details" to={`/user/designers/${designer.id}`}>
+              View Details
+            </Link>,
+          ]}
         >
           <Card.Meta
             title={designer.name}
@@ -87,4 +85,3 @@ const DesignerListPage = () => {
 }
 
 export default DesignerListPage
-  

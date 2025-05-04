@@ -69,7 +69,7 @@ const CustomizationPage = () => {
                   <Option value="wedding">Wedding</Option>
                   <Option value="birthday">Birthday Party</Option>
                   <Option value="corporate">Corporate Event</Option>
-                  <Option value="conference">Conference</Option>
+                  <Option value="reunion">Reunion</Option>
                   <Option value="social">Social Gathering</Option>
                 </Select>
               </Form.Item>

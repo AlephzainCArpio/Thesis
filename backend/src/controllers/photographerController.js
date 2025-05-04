@@ -1,6 +1,7 @@
 const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient()
 
+// Helper function to parse portfolio
 const parsePortfolio = (portfolioInput) => {
   try {
     const parsed = typeof portfolioInput === "string" ? JSON.parse(portfolioInput) : portfolioInput
@@ -10,6 +11,7 @@ const parsePortfolio = (portfolioInput) => {
   }
 }
 
+// Get all photographers based on query parameters
 const getPhotographers = async (req, res) => {
   try {
     const { location, style, serviceType, status } = req.query
@@ -49,6 +51,7 @@ const getPhotographers = async (req, res) => {
   }
 }
 
+// Get a single photographer by ID
 const getPhotographerById = async (req, res) => {
   try {
     const photographer = await prisma.photographer.findUnique({
@@ -69,6 +72,7 @@ const getPhotographerById = async (req, res) => {
       return res.status(404).json({ message: "Photographer not found" })
     }
 
+    // Check if photographer is approved or if the user is authorized to view
     if (
       photographer.status !== "APPROVED" &&
       (!req.user || (req.user.id !== photographer.providerId && req.user.role !== "ADMIN"))
@@ -82,19 +86,11 @@ const getPhotographerById = async (req, res) => {
   }
 }
 
+// Create a new photographer
 const createPhotographer = async (req, res) => {
   try {
-    const {
-      name,
-      description,
-      location,
-      style,
-      experienceYears,
-      priceRange,
-      copyType,
-      serviceType,
-      portfolio,
-    } = req.body
+    const { name, description, location, style, experienceYears, priceRange, copyType, serviceType, portfolio } =
+      req.body
 
     const parsedPortfolio = parsePortfolio(portfolio)
 
@@ -120,6 +116,7 @@ const createPhotographer = async (req, res) => {
   }
 }
 
+// Update a photographer's details
 const updatePhotographer = async (req, res) => {
   try {
     const photographer = await prisma.photographer.findUnique({
@@ -130,6 +127,7 @@ const updatePhotographer = async (req, res) => {
       return res.status(404).json({ message: "Photographer not found" })
     }
 
+    // Check if user is provider of this photographer or an admin
     if (photographer.providerId !== req.user.id && req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Not authorized" })
     }
@@ -171,6 +169,7 @@ const updatePhotographer = async (req, res) => {
   }
 }
 
+// Delete a photographer from the system
 const deletePhotographer = async (req, res) => {
   try {
     const photographer = await prisma.photographer.findUnique({
@@ -181,6 +180,7 @@ const deletePhotographer = async (req, res) => {
       return res.status(404).json({ message: "Photographer not found" })
     }
 
+    // Check if user is provider of this photographer or an admin
     if (photographer.providerId !== req.user.id && req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Not authorized" })
     }
@@ -195,8 +195,10 @@ const deletePhotographer = async (req, res) => {
   }
 }
 
+// Record a photographer's view
 const viewPhotographer = async (req, res) => {
   try {
+    // Check if photographer exists
     const photographer = await prisma.photographer.findUnique({
       where: { id: req.params.id },
     })
@@ -205,6 +207,7 @@ const viewPhotographer = async (req, res) => {
       return res.status(404).json({ message: "Photographer not found" })
     }
 
+    // Record the view
     await prisma.viewHistory.create({
       data: {
         userId: req.user.id,

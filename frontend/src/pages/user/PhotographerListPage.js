@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react"
 import { Card, Typography, Row, Col, Spin, Empty } from "antd"
-import { useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import api from "../../services/api"
 
 const { Title, Paragraph } = Typography
 const { Meta } = Card
 
 const PhotographerListPage = () => {
-  const navigate = useNavigate()
   const [photographers, setPhotographers] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -27,20 +26,20 @@ const PhotographerListPage = () => {
     }
   }
 
-  const handleViewDetails = (id) => {
-    navigate(`/user/photographers/${id}`)
+  const safeJsonParse = (jsonString) => {
+    try {
+      return jsonString ? JSON.parse(jsonString) : []
+    } catch (error) {
+      console.warn('Failed to parse JSON:', error)
+      return []
+    }
   }
 
   const renderPhotographerCard = (photographer) => {
-    // Parse images from JSON string if it's a string, otherwise use empty array
-    let images = []
-    try {
-      images = photographer.portfolio ? JSON.parse(photographer.portfolio) : []
-    } catch (error) {
-      console.error('Error parsing portfolio:', error)
-    }
+    // Safely parse the portfolio JSON
+    const images = safeJsonParse(photographer.portfolio)
     const firstImage = images.length > 0 ? images[0] : "/placeholder.svg?height=200&width=300"
-  
+
     return (
       <Col xs={24} sm={12} md={8} key={photographer.id}>
         <Card
@@ -54,7 +53,11 @@ const PhotographerListPage = () => {
               />
             </div>
           }
-          onClick={() => handleViewDetails(photographer.id)}
+          actions={[
+            <Link key="view-details" to={`/user/photographers/${photographer.id}`}>
+              View Details
+            </Link>,
+          ]}
         >
           <Meta
             title={photographer.name}
@@ -80,7 +83,6 @@ const PhotographerListPage = () => {
         needs.
       </Paragraph>
 
-      {/* Results Section */}
       {loading ? (
         <div style={{ textAlign: "center", padding: 40 }}>
           <Spin size="large" />

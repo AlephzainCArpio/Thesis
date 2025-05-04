@@ -82,9 +82,9 @@ const AdminPhotographersPage = () => {
       key: "copyType",
     },
     {
-      title: "Service Type",
-      dataIndex: "serviceType",
-      key: "serviceType",
+      title: "Style",
+      dataIndex: "style",
+      key: "Style",
     },
     {
       title: "Price Range",
@@ -172,7 +172,7 @@ const AdminPhotographersPage = () => {
             <Descriptions.Item label="Style">{selectedPhotographer.style}</Descriptions.Item>
             <Descriptions.Item label="Experience (Years)">{selectedPhotographer.experienceYears}</Descriptions.Item>
             <Descriptions.Item label="Copy Type">{selectedPhotographer.copyType}</Descriptions.Item>
-            <Descriptions.Item label="Service Type">{selectedPhotographer.serviceType}</Descriptions.Item>
+            <Descriptions.Item label="Style">{selectedPhotographer.style}</Descriptions.Item>
             <Descriptions.Item label="Price Range">{selectedPhotographer.priceRange}</Descriptions.Item>
             <Descriptions.Item label="Description" span={2}>
               {selectedPhotographer.description}

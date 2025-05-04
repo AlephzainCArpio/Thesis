@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Card, Modal, Form, Input, InputNumber, Select, Upload, Tabs, message, Spin } from "antd";
+import {
+  Card,
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Upload,
+  Tabs,
+  message,
+  Spin
+} from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import axios from "axios";
 
@@ -30,12 +41,13 @@ const AdminDashboard = () => {
         headers: { Authorization: `Bearer ${token}` }
       };
 
-      const [venuesRes, cateringsRes, photographersRes, designersRes] = await Promise.all([
-        axios.get(`${API_URL}/api/venues`, config),
-        axios.get(`${API_URL}/api/catering`, config),
-        axios.get(`${API_URL}/api/photographers`, config),
-        axios.get(`${API_URL}/api/designers`, config)
-      ]);
+      const [venuesRes, cateringsRes, photographersRes, designersRes] =
+        await Promise.all([
+          axios.get(`${API_URL}/api/venues`, config),
+          axios.get(`${API_URL}/api/catering`, config),
+          axios.get(`${API_URL}/api/photographers`, config),
+          axios.get(`${API_URL}/api/designers`, config)
+        ]);
 
       setServices({
         venues: venuesRes.data || [],
@@ -61,7 +73,6 @@ const AdminDashboard = () => {
       const token = localStorage.getItem("token");
       const data = new FormData();
 
-      // Add common fields
       Object.keys(values).forEach((key) => {
         if (key !== "images") {
           if (Array.isArray(values[key])) {
@@ -72,12 +83,10 @@ const AdminDashboard = () => {
         }
       });
 
-      // Add serviceType for specific models
       if (activeTab === "CATERING" || activeTab === "PHOTOGRAPHER") {
         data.append("serviceType", activeTab);
       }
 
-      // Handle file uploads
       if (values.images && values.images.length > 0) {
         values.images.forEach((file) => {
           if (file.originFileObj) {
@@ -117,7 +126,9 @@ const AdminDashboard = () => {
       setIsModalVisible(false);
     } catch (error) {
       console.error("Error adding service:", error);
-      message.error(error.response?.data?.message || "Failed to add service");
+      message.error(
+        error.response?.data?.message || "Failed to add service"
+      );
     } finally {
       setLoading(false);
     }
@@ -130,29 +141,41 @@ const AdminDashboard = () => {
     { label: "Designer", key: "DESIGNER" }
   ];
 
+  // Fixed function to safely parse JSON and handle errors
+  const safeJsonParse = (jsonString) => {
+    if (!jsonString) return null;
+    
+    try {
+      return JSON.parse(jsonString);
+    } catch (error) {
+      console.error("Error parsing JSON:", error);
+      return null;
+    }
+  };
+
   const renderServiceCards = (type) => {
     const serviceList = services[type.toLowerCase() + "s"];
     if (!Array.isArray(serviceList)) return null;
 
-    return serviceList.map((service) => (
-      <Card
-        key={service.id}
-        style={{
-          width: 300,
-          marginBottom: 16,
-          backgroundColor: "#fff",
-          borderRadius: 8,
-          overflow: "hidden"
-        }}
-      >
-        {service.images && (
+    return serviceList.map((service) => {
+      // Safely parse the images
+      const parsedImages = safeJsonParse(service.images);
+      const firstImage = Array.isArray(parsedImages) && parsedImages.length > 0 ? parsedImages[0] : "default.jpg";
+      
+      return (
+        <Card
+          key={service.id}
+          style={{
+            width: 300,
+            marginBottom: 16,
+            backgroundColor: "#fff",
+            borderRadius: 8,
+            overflow: "hidden"
+          }}
+        >
           <div style={{ height: 200, overflow: "hidden" }}>
             <img
-              src={`${API_URL}/uploads/${type.toLowerCase()}s/${
-                Array.isArray(JSON.parse(service.images))
-                  ? JSON.parse(service.images)[0]
-                  : "default.jpg"
-              }`}
+              src={service.images ? `${API_URL}/uploads/${type.toLowerCase()}s/${firstImage}` : "/placeholder.jpg"}
               alt={service.name}
               style={{
                 width: "100%",
@@ -165,24 +188,25 @@ const AdminDashboard = () => {
               }}
             />
           </div>
-        )}
-        <div style={{ padding: 16 }}>
-          <h3>{service.name}</h3>
-          <p>{service.location}</p>
-          <p>
-            Status:{" "}
-            <span
-              style={{
-                color: service.status === "APPROVED" ? "#52c41a" : "#faad14",
-                fontWeight: "bold"
-              }}
-            >
-              {service.status}
-            </span>
-          </p>
-        </div>
-      </Card>
-    ));
+          <div style={{ padding: 16 }}>
+            <h3>{service.name}</h3>
+            <p>{service.location}</p>
+            <p>
+              Status:{" "}
+              <span
+                style={{
+                  color:
+                    service.status === "APPROVED" ? "#52c41a" : "#faad14",
+                  fontWeight: "bold"
+                }}
+              >
+                {service.status}
+              </span>
+            </p>
+          </div>
+        </Card>
+      );
+    });
   };
 
   if (pageLoading) {
@@ -231,13 +255,7 @@ const AdminDashboard = () => {
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
           {serviceTypes.map((type) => (
             <TabPane tab={type.label} key={type.key}>
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "20px"
-                }}
-              >
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
                 {renderServiceCards(type.key)}
               </div>
             </TabPane>
@@ -245,7 +263,9 @@ const AdminDashboard = () => {
         </Tabs>
 
         <Modal
-          title={`Add New ${activeTab.charAt(0) + activeTab.slice(1).toLowerCase()}`}
+          title={`Add New ${activeTab.charAt(0)}${activeTab
+            .slice(1)
+            .toLowerCase()}`}
           visible={isModalVisible}
           onCancel={() => {
             setIsModalVisible(false);
@@ -255,6 +275,7 @@ const AdminDashboard = () => {
           width={720}
         >
           <Form form={form} layout="vertical" onFinish={handleSubmit}>
+            {/* shared fields */}
             <Form.Item
               name="name"
               label="Name"
@@ -279,7 +300,7 @@ const AdminDashboard = () => {
               <Input />
             </Form.Item>
 
-            {/* Conditional fields based on activeTab */}
+            {/* VENUE */}
             {activeTab === "VENUE" && (
               <>
                 <Form.Item
@@ -306,26 +327,31 @@ const AdminDashboard = () => {
               </>
             )}
 
+            {/* CATERING */}
             {activeTab === "CATERING" && (
               <>
                 <Form.Item
                   name="maxPeople"
                   label="Maximum People"
-                  rules={[{ required: true, message: "Please enter max capacity" }]}
+                  rules={[
+                    { required: true, message: "Please enter max capacity" }
+                  ]}
                 >
                   <InputNumber min={1} style={{ width: "100%" }} />
                 </Form.Item>
                 <Form.Item
                   name="pricePerPerson"
                   label="Price Per Person"
-                  rules={[{ required: true, message: "Please enter price per person" }]}
+                  rules={[
+                    { required: true, message: "Please enter price per person" }
+                  ]}
                 >
                   <InputNumber min={0} style={{ width: "100%" }} />
                 </Form.Item>
                 <Form.Item
                   name="cuisineType"
                   label="Cuisine Type"
-                  rules={[{ required: true, message: "Please select cuisine type" }]}
+                  rules={[{ required: true, message: "Please select cuisine" }]}
                 >
                   <Select>
                     <Option value="filipino">Filipino</Option>
@@ -343,12 +369,13 @@ const AdminDashboard = () => {
               </>
             )}
 
+            {/* PHOTOGRAPHER */}
             {activeTab === "PHOTOGRAPHER" && (
               <>
                 <Form.Item
                   name="style"
                   label="Photography Style"
-                  rules={[{ required: true, message: "Please select a style" }]}
+                  rules={[{ required: true, message: "Please select style" }]}
                 >
                   <Select>
                     <Option value="traditional">Traditional</Option>
@@ -359,21 +386,21 @@ const AdminDashboard = () => {
                 <Form.Item
                   name="experienceYears"
                   label="Years of Experience"
-                  rules={[{ required: true, message: "Please enter years of experience" }]}
+                  rules={[{ required: true, message: "Please enter experience" }]}
                 >
                   <InputNumber min={0} style={{ width: "100%" }} />
                 </Form.Item>
                 <Form.Item
                   name="priceRange"
                   label="Price Range"
-                  rules={[{ required: true, message: "Please enter a price range" }]}
+                  rules={[{ required: true, message: "Please enter range" }]}
                 >
                   <Input placeholder="e.g., 5000-10000" />
                 </Form.Item>
                 <Form.Item
                   name="copyType"
                   label="Copy Type"
-                  rules={[{ required: true, message: "Please select a copy type" }]}
+                  rules={[{ required: true, message: "Please select copy type" }]}
                 >
                   <Select>
                     <Option value="virtual">Virtual</Option>
@@ -387,12 +414,13 @@ const AdminDashboard = () => {
               </>
             )}
 
+            {/* DESIGNER */}
             {activeTab === "DESIGNER" && (
               <>
                 <Form.Item
                   name="style"
                   label="Design Style"
-                  rules={[{ required: true, message: "Please select a style" }]}
+                  rules={[{ required: true, message: "Please select style" }]}
                 >
                   <Select>
                     <Option value="modern">Modern</Option>
@@ -403,15 +431,18 @@ const AdminDashboard = () => {
                 <Form.Item
                   name="priceRange"
                   label="Price Range"
-                  rules={[{ required: true, message: "Please enter a price range" }]}
+                  rules={[{ required: true, message: "Please enter price range" }]}
                 >
                   <Input placeholder="e.g., 20000-50000" />
                 </Form.Item>
                 <Form.Item name="eventTypes" label="Event Types">
-                  <Select mode="tags" placeholder="Enter event types">
-                    <Option value="wedding">Wedding</Option>
-                    <Option value="corporate">Corporate</Option>
-                  </Select>
+                <Select>
+                  <Option value="wedding">Wedding</Option>
+                  <Option value="birthday">Birthday Party</Option>
+                  <Option value="corporate">Corporate Event</Option>
+                  <Option value="conference">Conference</Option>
+                  <Option value="social">Social Gathering</Option>
+                </Select>
                 </Form.Item>
                 <Form.Item name="portfolio" label="Portfolio URL">
                   <Input placeholder="Enter portfolio link" />
@@ -442,19 +473,17 @@ const AdminDashboard = () => {
             <Form.Item>
               <button
                 type="submit"
-                disabled={loading}
                 style={{
                   width: "100%",
-                  height: 40,
+                  padding: "10px",
                   background: "#1890ff",
-                  color: "white",
+                  color: "#fff",
                   border: "none",
-                  borderRadius: 4,
-                  cursor: loading ? "not-allowed" : "pointer",
-                  opacity: loading ? 0.7 : 1
+                  borderRadius: 4
                 }}
+                disabled={loading}
               >
-                {loading ? "Adding..." : "Add Service"}
+                {loading ? "Submitting..." : "Submit"}
               </button>
             </Form.Item>
           </Form>
