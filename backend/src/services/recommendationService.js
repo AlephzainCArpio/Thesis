@@ -1,8 +1,9 @@
 const axios = require('axios');
+require('dotenv').config();
 
 const getRecommendations = async ({ budget, location, guests, eventType, serviceType, userId }) => {
   try {
-    const response = await axios.post('http://localhost:5001/recommend', {
+    const response = await axios.post(`${process.env.ALGORITHM_SERVICE_URL}/recommendation`, {
       budget,
       location,
       guests,
