@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Form, Input, InputNumber, Select, Button, Row, Col, message, Checkbox, Card } from "antd"
+import { Form, Input, InputNumber, Select, Button, Row, Col, message, Checkbox, Card, Tooltip } from "antd"
 import { useNavigate } from "react-router-dom"
 import api from "../../services/api"
 
@@ -9,11 +9,13 @@ const CustomizationPage = () => {
   const [loading, setLoading] = useState(false)
   const [recommendations, setRecommendations] = useState(null)
   const [selectedService, setSelectedService] = useState([])
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false)  // New loading state for recommendations
   const navigate = useNavigate()
 
   const onFinish = async (values) => {
     try {
       setLoading(true)
+      setLoadingRecommendations(true)  // Start loading recommendations
 
       // Add the selected services to the request data
       const data = {
@@ -22,7 +24,7 @@ const CustomizationPage = () => {
       }
 
       const response = await api.post("/recommend", data)
-      
+
       // Ensure that the response contains recommendations
       if (response.data && response.data.recommendations) {
         setRecommendations(response.data.recommendations)
@@ -35,6 +37,7 @@ const CustomizationPage = () => {
       console.error(error)
     } finally {
       setLoading(false)
+      setLoadingRecommendations(false)  // Stop loading recommendations
     }
   }
 
@@ -44,6 +47,12 @@ const CustomizationPage = () => {
 
   const viewService = (serviceType, id) => {
     navigate(`/user/${serviceType}/${id}`)
+  }
+
+  const renderServiceImage = (service) => {
+    return service.images && service.images.length > 0
+      ? JSON.parse(service.images)[0]
+      : "https://via.placeholder.com/300x200"
   }
 
   return (
@@ -105,16 +114,24 @@ const CustomizationPage = () => {
             <Checkbox.Group onChange={onServiceTypeChange}>
               <Row gutter={16}>
                 <Col span={8}>
-                  <Checkbox value="venues">Venue</Checkbox>
+                  <Tooltip title="Choose a venue for your event">
+                    <Checkbox value="venues">Venue</Checkbox>
+                  </Tooltip>
                 </Col>
                 <Col span={8}>
-                  <Checkbox value="catering">Catering</Checkbox>
+                  <Tooltip title="Catering services for your event">
+                    <Checkbox value="catering">Catering</Checkbox>
+                  </Tooltip>
                 </Col>
                 <Col span={8}>
-                  <Checkbox value="photographers">Photographer</Checkbox>
+                  <Tooltip title="Photographers for capturing moments">
+                    <Checkbox value="photographers">Photographer</Checkbox>
+                  </Tooltip>
                 </Col>
                 <Col span={8}>
-                  <Checkbox value="designers">Event Designer</Checkbox>
+                  <Tooltip title="Designers to set up the perfect atmosphere">
+                    <Checkbox value="designers">Event Designer</Checkbox>
+                  </Tooltip>
                 </Col>
               </Row>
             </Checkbox.Group>
@@ -128,23 +145,16 @@ const CustomizationPage = () => {
         </Form>
       </Card>
 
-      {recommendations && recommendations.length > 0 ? (
+      {loadingRecommendations ? (
+        <p>Loading recommendations...</p>
+      ) : recommendations && recommendations.length > 0 ? (
         <Card title="Recommended Services">
           <Row gutter={[16, 16]}>
-            {recommendations.map((service, index) => (
+            {recommendations.map((service) => (
               <Col span={8} key={service.id}>
                 <Card
                   hoverable
-                  cover={
-                    <img
-                      alt={service.name}
-                      src={
-                        service.images && service.images.length > 0
-                          ? JSON.parse(service.images)[0]
-                          : "https://via.placeholder.com/300x200"
-                      }
-                    />
-                  }
+                  cover={<img alt={service.name} src={renderServiceImage(service)} />}
                   onClick={() => viewService(service.type, service.id)}
                 >
                   <Card.Meta
