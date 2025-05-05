@@ -30,7 +30,7 @@ const RegisterPage = () => {
       formData.append("role", values.role)
 
       if (values.role === "PROVIDER") {
-        formData.append("serviceType", values.serviceType)  // Add serviceType here
+        formData.append("serviceType", values.serviceType) 
         if (values.verificationDocument?.[0]) {
           formData.append("verificationDocument", values.verificationDocument[0].originFileObj)
         }
