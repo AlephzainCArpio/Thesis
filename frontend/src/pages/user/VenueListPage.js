@@ -24,7 +24,7 @@ const VenueListPage = () => {
   const fetchVenues = async () => {
     try {
       setLoading(true)
-      const response = await api.get("/venues")
+      const response = await api.get("/api/venues")
       setVenues(response.data.venues || response.data)
       if (response.data.total) {
         setPagination({

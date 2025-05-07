@@ -33,7 +33,7 @@ const AdminDesignersPage = () => {
   const fetchDesigners = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/admin/designers");
+      const response = await api.get("/api/admin/designers");
       setDesigners(response.data);
     } catch (error) {
       message.error("Failed to fetch designers.");
@@ -130,7 +130,7 @@ const AdminDesignersPage = () => {
       icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         try {
-          await api.delete(`/admin/designers/${id}`);
+          await api.delete(`/api/admin/designers/${id}`);
           message.success("Designer deleted.");
           fetchDesigners();
         } catch (error) {

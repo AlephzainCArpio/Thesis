@@ -40,7 +40,7 @@ const UserProfilePage = () => {
   const fetchProfileData = async () => {
     try {
       setLoading(true)
-      const response = await api.get("/users/profile")
+      const response = await api.get("/api/users/profile")
       setProfileData(response.data)
 
       // Set avatar URL if available
@@ -93,7 +93,7 @@ const UserProfilePage = () => {
         return
       }
 
-      await api.put("/users/password", {
+      await api.put("/api/users/password", {
         currentPassword: values.currentPassword,
         newPassword: values.newPassword,
       })

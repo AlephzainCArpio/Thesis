@@ -26,7 +26,7 @@ const PendingServicesPage = () => {
     // First get the provider type
     const checkProviderType = async () => {
       try {
-        const response = await api.get("/provider/type")
+        const response = await api.get("/api/provider/type")
         setProviderType(response.data.providerType)
 
         // Set the active tab to the provider's type
@@ -165,7 +165,7 @@ const PendingServicesPage = () => {
           <Button
             icon={<EditOutlined />}
             onClick={() => handleEdit(record.id, activeTab)}
-            disabled={record.status === "APPROVED"} // Disable edit for approved services
+            disabled={record.status === "APPROVED"} 
           />
           <Popconfirm
             title="Are you sure you want to delete this service?"

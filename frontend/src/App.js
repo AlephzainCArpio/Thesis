@@ -40,9 +40,8 @@ import AdminPhotographersPage from "./pages/admin/AdminPhotographersPage";
 import AdminDesignersPage from "./pages/admin/AdminDesignersPage";
 import ProviderManagementPage from "./pages/admin/ProviderManagementPage";
 
-
 // Set axios base URL
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 axios.defaults.baseURL = API_URL;
 
 // Axios interceptors

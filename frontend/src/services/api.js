@@ -6,6 +6,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 10000, // Optional: 10s timeout
 });
 
 // Request interceptor for adding auth token
@@ -17,16 +18,12 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor for handling errors
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     // Handle unauthorized errors (token expired)
     if (error.response && error.response.status === 401) {
@@ -40,26 +37,29 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Function to submit service data with images (multipart/form-data)
 export const submitServiceData = async (formData) => {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('Authentication token not found.');
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Authentication token not found.");
 
     const response = await axios.post(
       `${api.defaults.baseURL}/providers/register-service`,
       formData,
       {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
 
     return response.data;
   } catch (error) {
-    console.error('Service submission error:', error.response || error);
+    console.error("Service submission error:", error.response || error);
     throw error;
   }
 };
+
 export default api;

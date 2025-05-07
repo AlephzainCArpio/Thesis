@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { Card, Row, Col, Typography, Spin, Empty } from "antd"
-import { Link } from "react-router-dom" // Changed from useNavigate
+import { Link } from "react-router-dom" 
 import api from "../../services/api"
 
 const { Title, Text } = Typography
@@ -16,7 +16,7 @@ const DesignerListPage = () => {
   const fetchDesigners = async () => {
     try {
       setLoading(true)
-      const response = await api.get("/designers")
+      const response = await api.get("/api/designers")
       setDesigners(response.data.designers || response.data)
     } catch (error) {
       console.error("Error fetching designers:", error)

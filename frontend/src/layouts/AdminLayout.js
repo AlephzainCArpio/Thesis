@@ -46,7 +46,7 @@ const AdminLayout = () => {
           </Menu.Item>
           <Menu.Item key="/admin/provider-management" icon={<AuditOutlined />}>
             <Link to="/admin/provider-management">Provider Management</Link>
-            {/* Use Badge to show pending count */}
+          
             {pendingCount > 0 && (
               <Badge count={pendingCount} style={{ marginLeft: '10px', backgroundColor: '#52c41a' }} />
             )}

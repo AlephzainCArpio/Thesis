@@ -49,7 +49,7 @@ const VenueDetailPage = () => {
   const fetchVenueDetails = async () => {
     try {
       setLoading(true)
-      const response = await api.get(`/venues/${id}`)
+      const response = await api.get(`/api/venues/${id}`)
       setVenue(response.data)
     } catch (error) {
       console.error("Error fetching venue details:", error)
@@ -64,7 +64,7 @@ const VenueDetailPage = () => {
 
   const checkIfFavorite = async () => {
     try {
-      const response = await api.get(`/users/favorites/check?venueId=${id}`)
+      const response = await api.get(`/api/users/favorites/check?venueId=${id}`)
       setIsFavorite(response.data.isFavorite)
     } catch (error) {
       console.error("Error checking favorite status:", error)
@@ -73,7 +73,7 @@ const VenueDetailPage = () => {
 
   const recordView = async () => {
     try {
-      await api.post(`/venues/${id}/view`)
+      await api.post(`/api/venues/${id}/view`)
     } catch (error) {
       console.error("Error recording view:", error)
     }
@@ -87,10 +87,10 @@ const VenueDetailPage = () => {
 
     try {
       if (isFavorite) {
-        await api.delete(`/users/favorites/venue/${id}`)
+        await api.delete(`/api/users/favorites/venue/${id}`)
         message.success("Removed from favorites")
       } else {
-        await api.post(`/users/favorites`, { venueId: id })
+        await api.post(`/api/users/favorites`, { venueId: id })
         message.success("Added to favorites")
       }
       setIsFavorite(!isFavorite)

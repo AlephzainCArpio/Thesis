@@ -16,7 +16,7 @@ const PhotographerDetailPage = () => {
   useEffect(() => {
     const fetchPhotographer = async () => {
       try {
-        const response = await api.get(`/photographers/${id}`)
+        const response = await api.get(`/api/photographers/${id}`)
         setPhotographer(response.data)
       } catch (error) {
         console.error("Error fetching photographer:", error)

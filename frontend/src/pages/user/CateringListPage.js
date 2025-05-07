@@ -26,7 +26,7 @@ const CateringListPage = () => {
   const fetchCaterings = async () => {
     try {
       setLoading(true)
-      const response = await api.get("/catering")
+      const response = await api.get("/api/catering")
       setCaterings(response.data.caterings || response.data)
     } catch (error) {
       console.error("Error fetching catering services:", error)

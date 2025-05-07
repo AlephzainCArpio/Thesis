@@ -20,9 +20,7 @@ const HomePage = () => {
     caterings: 0,
     photographers: 0,
     designers: 0,
-    users: 0,
-    providers: 0,
-    events: 0,
+    users: 0
   })
   const [featuredServices, setFeaturedServices] = useState([])
   const [loading, setLoading] = useState(true)
@@ -32,11 +30,11 @@ const HomePage = () => {
       try {
         setLoading(true)
         // Fetch statistics
-        const statsResponse = await api.get("/public/stats")
+        const statsResponse = await api.get("api/public/stats")
         setStats(statsResponse.data)
 
         // Fetch featured services
-        const featuredResponse = await api.get("/public/featured")
+        const featuredResponse = await api.get("/api/public/featured")
         console.log("Featured Services:", featuredResponse.data) // Log the response to check the data structure
 
         // Ensure featuredServices is an array
@@ -150,47 +148,14 @@ const HomePage = () => {
         </Row>
       </div>
 
-      {/* Featured Services */}
-      <div style={{ padding: "60px 20px" }}>
-        <Title level={2} style={{ textAlign: "center", marginBottom: "40px" }}>
-          Featured Services
-        </Title>
-        <Carousel autoplay>
-          {Array.isArray(featuredServices) && featuredServices.length > 0 ? (
-            featuredServices.map((service) => (
-              <div key={service.id}>
-                <Row justify="center" align="middle" gutter={[24, 24]}>
-                  <Col xs={24} md={12}>
-                    <img
-                      src={service.image || "https://via.placeholder.com/600x400"}
-                      alt={service.name}
-                      style={{ width: "100%", height: "auto", borderRadius: "8px" }}
-                    />
-                  </Col>
-                  <Col xs={24} md={12}>
-                    <Title level={3}>{service.name}</Title>
-                    <Paragraph>{service.description}</Paragraph>
-                    <Paragraph>
-                      <strong>Location:</strong> {service.location}
-                    </Paragraph>
-                    <Button type="primary">View Details</Button>
-                  </Col>
-                </Row>
-              </div>
-            ))
-          ) : (
-            <div>No featured services available.</div>
-          )}
-        </Carousel>
-      </div>
-
+     
       {/* Statistics */}
       <div style={{ padding: "60px 20px", background: "#f7fafc" }}>
         <Title level={2} style={{ textAlign: "center", marginBottom: "40px" }}>
           Why Choose Us
         </Title>
         <Row gutter={[48, 48]} justify="center">
-          <Col xs={12} md={6}>
+        <Col xs={9} md={3}>
             <Statistic
               title="Venues"
               value={stats.venues}
@@ -198,7 +163,7 @@ const HomePage = () => {
               valueStyle={{ color: "#4299e1" }}
             />
           </Col>
-          <Col xs={12} md={6}>
+          <Col xs={9} md={3}>
             <Statistic
               title="Caterers"
               value={stats.caterings}
@@ -206,16 +171,24 @@ const HomePage = () => {
               valueStyle={{ color: "#ed8936" }}
             />
           </Col>
-          <Col xs={12} md={6}>
-            <Statistic title="Users" value={stats.users} prefix={<UserOutlined />} valueStyle={{ color: "#38b2ac" }} />
-          </Col>
-          <Col xs={12} md={6}>
+          <Col xs={9} md={3}>
             <Statistic
-              title="Providers"
-              value={stats.providers}
+              title="Event Designers"
+              value={stats.designers}
               prefix={<TeamOutlined />}
               valueStyle={{ color: "#9f7aea" }}
             />
+          </Col>
+          <Col xs={9} md={3}>
+            <Statistic
+              title="Photographers"
+              value={stats.photographers}
+              prefix={<TeamOutlined />}
+              valueStyle={{ color: "#9f7aea" }}
+            />
+          </Col>
+          <Col xs={9} md={3}>
+            <Statistic title="Users" value={stats.users} prefix={<UserOutlined />} valueStyle={{ color: "#38b2ac" }} />
           </Col>
         </Row>
       </div>
@@ -283,9 +256,9 @@ const HomePage = () => {
               >
                 3
               </div>
-              <Title level={4}>Book Services</Title>
+              <Title level={4}>Cuztomize Services</Title>
               <Paragraph>
-                Once you find the perfect services, contact the providers directly to finalize the details.
+               Find the perfect venue, caterer, photographer, and designer for your event using easy to use Cuztomize services.
               </Paragraph>
             </div>
           </Col>

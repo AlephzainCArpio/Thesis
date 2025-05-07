@@ -17,7 +17,7 @@ const PhotographerListPage = () => {
   const fetchPhotographers = async () => {
     try {
       setLoading(true)
-      const response = await api.get("/photographers")
+      const response = await api.get("/api/photographers")
       setPhotographers(response.data.photographers || response.data)
     } catch (error) {
       console.error("Failed to fetch photographers:", error)

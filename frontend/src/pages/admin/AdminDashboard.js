@@ -31,7 +31,7 @@ const AdminDashboard = () => {
   const [form] = Form.useForm();
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+  const API_URL = process.env.REACT_APP_API_URL;
 
   const fetchServices = useCallback(async () => {
     try {
@@ -353,14 +353,14 @@ const AdminDashboard = () => {
                   label="Cuisine Type"
                   rules={[{ required: true, message: "Please select cuisine" }]}
                 >
-                  <Select>
+                  <Select placeholder="Enter Cuisine Type">
                     <Option value="filipino">Filipino</Option>
                     <Option value="chinese">Chinese</Option>
                     <Option value="italian">Italian</Option>
                   </Select>
                 </Form.Item>
                 <Form.Item name="dietaryOptions" label="Dietary Options">
-                  <Select mode="tags" placeholder="Enter dietary options">
+                  <Select  placeholder="Enter dietary options">
                     <Option value="vegetarian">Vegetarian</Option>
                     <Option value="vegan">Vegan</Option>
                     <Option value="gluten-free">Gluten-Free</Option>

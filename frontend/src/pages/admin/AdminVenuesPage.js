@@ -46,7 +46,7 @@ const AdminVenuesPage = () => {
   const fetchVenues = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/admin/venues");
+      const response = await api.get("/api/admin/venues");
       setVenues(response.data);
     } catch (error) {
       message.error("Failed to fetch venues");
@@ -76,7 +76,7 @@ const AdminVenuesPage = () => {
   const handleApprove = async (id) => {
     try {
       setActionLoading(true);
-      await api.put(`/admin/venues/${id}/approve`);
+      await api.put(`/api/admin/venues/${id}/approve`);
       message.success("Venue approved");
       fetchVenues();
     } catch (error) {
@@ -96,7 +96,7 @@ const AdminVenuesPage = () => {
     try {
       const values = await form.validateFields();
       setActionLoading(true);
-      await api.put(`/admin/venues/${selectedVenue.id}/reject`, {
+      await api.put(`/api/admin/venues/${selectedVenue.id}/reject`, {
         reason: values.reason,
       });
       message.success("Venue rejected");
@@ -135,7 +135,7 @@ const AdminVenuesPage = () => {
           .filter(Boolean),
       };
       setActionLoading(true);
-      await api.put(`/admin/venues/${selectedVenue.id}`, updatedVenue);
+      await api.put(`/api/admin/venues/${selectedVenue.id}`, updatedVenue);
       message.success("Venue updated");
       fetchVenues();
       setEditModalVisible(false);
@@ -153,7 +153,7 @@ const AdminVenuesPage = () => {
       onOk: async () => {
         try {
           setActionLoading(true);
-          await api.delete(`/admin/venues/${id}`);
+          await api.delete(`/api/admin/venues/${id}`);
           message.success("Venue deleted");
           fetchVenues();
         } catch (error) {

@@ -33,7 +33,7 @@ const AdminPhotographersPage = () => {
   const fetchPhotographers = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/admin/photographers");
+      const response = await api.get("/api/admin/photographers");
       setPhotographers(response.data);
     } catch (error) {
       message.error("Failed to fetch photographers.");
@@ -133,7 +133,7 @@ const AdminPhotographersPage = () => {
       icon: <ExclamationCircleOutlined />,
       onOk: async () => {
         try {
-          await api.delete(`/admin/photographers/${id}`);
+          await api.delete(`/api/admin/photographers/${id}`);
           message.success("Photographer deleted.");
           fetchPhotographers();
         } catch (error) {

@@ -42,7 +42,7 @@ const UserDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/users/dashboard");
+      const response = await api.get("/api/users/dashboard");
       console.log("Dashboard Response:", response.data);
       setDashboardData(response.data);
     } catch (error) {
@@ -79,13 +79,13 @@ const UserDashboard = () => {
   const getServiceUrl = (type, id) => {
     switch (type) {
       case "venue":
-        return `/user/venues/${id}`;
+        return `/api/user/venues/${id}`;
       case "catering":
-        return `/user/catering/${id}`;
+        return `/api/user/catering/${id}`;
       case "photographer":
-        return `/user/photographers/${id}`;
+        return `/api/user/photographers/${id}`;
       case "designer":
-        return `/user/designers/${id}`;
+        return `/api/user/designers/${id}`;
       default:
         return "#";
     }

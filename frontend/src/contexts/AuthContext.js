@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
           api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           
           // Fetch current user
-          const response = await api.get('/auth/me');
+          const response = await api.get('/api/auth/me');
           console.log('Current user data:', response.data); // Log for debugging
           setCurrentUser(response.data);
         }
@@ -45,7 +45,7 @@ export function AuthProvider({ children }) {
       setLoading(true);
       setError(null);
       
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/api/auth/login', { email, password });
       console.log('Login API response:', response.data); // Debug log
       
       const { token, user } = response.data;
@@ -71,7 +71,7 @@ export function AuthProvider({ children }) {
       setLoading(true);
       setError(null);
       
-      const response = await api.post('/auth/register', userData);
+      const response = await api.post('/api/auth/register', userData);
       const { token, user } = response.data;
       
       // Save token and set headers

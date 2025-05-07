@@ -15,7 +15,7 @@ const ProviderDashboard = () => {
   const fetchApprovedServices = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/providers/services"); 
+      const response = await api.get("/api/providers/services"); 
       setServices(response.data);
     } catch (error) {
       message.error("Failed to load approved services");

@@ -112,22 +112,22 @@ model Photographer {
 }
 
 model Designer {
-  id              String        @id @default(uuid())
-  name            String
-  description     String        @db.Text
-  location        String
-  style           String
-  priceRange      String
-  eventTypes      String?
-  portfolio       String?       @db.Text
-  providerId      String
-  status          ServiceStatus @default(PENDING)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  images          String?       @db.LongText
-  provider        User          @relation("DesignerProvider", fields: [providerId], references: [id])
-  favorites       Favorite[]
-  viewHistory     ViewHistory[]
+  id          String        @id @default(uuid())
+  name        String
+  description String        @db.Text
+  location    String
+  style       String
+  priceRange  String
+  eventTypes  String?
+  portfolio   String?       @db.Text
+  providerId  String
+  status      ServiceStatus @default(PENDING)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  images      String?       @db.LongText
+  provider    User          @relation("DesignerProvider", fields: [providerId], references: [id])
+  favorites   Favorite[]
+  viewHistory ViewHistory[]
 
   @@index([providerId], map: "designers_providerId_fkey")
   @@map("designers")

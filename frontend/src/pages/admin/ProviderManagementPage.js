@@ -20,7 +20,7 @@ const ProviderManagementPage = () => {
   const fetchPendingProviders = async () => {
     try {
       setLoading(true)
-      const response = await api.get("/admin/pending-providers")
+      const response = await api.get("/api/admin/pending-providers")
       setPendingProviders(response.data)
     } catch (error) {
       message.error("Failed to fetch pending providers")
@@ -46,7 +46,7 @@ const ProviderManagementPage = () => {
 
   const handleApproveProvider = async (id) => {
     try {
-      await api.put(`/admin/approve-provider/${id}`)
+      await api.put(`/api/admin/approve-provider/${id}`)
       message.success("Provider approved successfully")
       fetchPendingProviders()
     } catch (error) {
@@ -57,7 +57,7 @@ const ProviderManagementPage = () => {
 
   const handleRejectProvider = async (id) => {
     try {
-      await api.put(`/admin/reject-provider/${id}`)
+      await api.put(`/api/admin/reject-provider/${id}`)
       message.success("Provider rejected and converted to regular user")
       fetchPendingProviders()
     } catch (error) {

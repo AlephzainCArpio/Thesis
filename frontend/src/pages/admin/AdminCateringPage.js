@@ -15,7 +15,7 @@ const AdminCateringPage = () => {
   const fetchCaterings = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/admin/caterings");
+      const response = await api.get("/api/admin/caterings");
       setCaterings(response.data);
     } catch (error) {
       message.error("Failed to fetch catering services");

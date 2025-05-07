@@ -23,7 +23,7 @@ const CustomizationPage = () => {
         serviceType: selectedService.join(", "), 
       }
 
-      const response = await api.post("/recommendation", data)
+      const response = await api.post("/api/recommendation", data)
 
       // Ensure that the response contains recommendations
       if (response.data && response.data.recommendations) {
@@ -65,11 +65,6 @@ const CustomizationPage = () => {
           name="customization"
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{
-            eventType: "wedding",
-            budget: 50000,
-            guests: 100,
-          }}
         >
           <Row gutter={24}>
             <Col span={12}>

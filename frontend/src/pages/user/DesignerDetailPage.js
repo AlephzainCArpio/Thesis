@@ -16,7 +16,7 @@ const DesignerDetailPage = () => {
   useEffect(() => {
     const fetchDesigner = async () => {
       try {
-        const response = await api.get(`/designers/${id}`)
+        const response = await api.get(`/api/designers/${id}`)
         setDesigner(response.data)
       } catch (error) {
         console.error("Error fetching designer:", error)

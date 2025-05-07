@@ -29,7 +29,7 @@ const HistoryPage = () => {
   const fetchViewHistory = async () => {
     try {
       setLoading(true)
-      const response = await api.get("/users/history")
+      const response = await api.get("/api/users/history")
       setViewHistory(response.data)
     } catch (error) {
       console.error("Error fetching view history:", error)
@@ -41,7 +41,7 @@ const HistoryPage = () => {
 
   const deleteViewHistory = async (id) => {
     try {
-      await api.delete(`/users/history/${id}`)
+      await api.delete(`/api/users/history/${id}`)
       message.success("View history entry deleted")
       fetchViewHistory()
     } catch (error) {
@@ -68,13 +68,13 @@ const HistoryPage = () => {
   const getServiceUrl = (type, id) => {
     switch (type) {
       case "venue":
-        return `/user/venues/${id}`
+        return `/api/user/venues/${id}`
       case "catering":
-        return `/user/catering/${id}`
+        return `/api/user/catering/${id}`
       case "photographer":
-        return `/user/photographers/${id}`
+        return `/api/user/photographers/${id}`
       case "designer":
-        return `/user/designers/${id}`
+        return `/api/user/designers/${id}`
       default:
         return "#"
     }
@@ -85,16 +85,25 @@ const HistoryPage = () => {
       title: "Service Type",
       dataIndex: "serviceType",
       key: "serviceType",
-      render: (type) => (
-        <Tag
-          icon={getServiceIcon(type)}
-          color={
-            type === "venue" ? "blue" : type === "catering" ? "orange" : type === "photographer" ? "green" : "purple"
-          }
-        >
-          {type.charAt(0).toUpperCase() + type.slice(1)}
-        </Tag>
-      ),
+      render: (type) => {
+        if (!type) return null; // Handle undefined or missing type
+        return (
+          <Tag
+            icon={getServiceIcon(type)}
+            color={
+              type === "venue"
+                ? "blue"
+                : type === "catering"
+                ? "orange"
+                : type === "photographer"
+                ? "green"
+                : "purple"
+            }
+          >
+            {type.charAt(0).toUpperCase() + type.slice(1)}
+          </Tag>
+        );
+      },
       filters: [
         { text: "Venue", value: "venue" },
         { text: "Catering", value: "catering" },
@@ -131,13 +140,19 @@ const HistoryPage = () => {
           >
             View
           </Button>
-          <Button danger size="small" icon={<DeleteOutlined />} onClick={() => deleteViewHistory(record.id)}>
+          <Button
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            onClick={() => deleteViewHistory(record.id)}
+          >
             Delete
           </Button>
         </Space>
       ),
     },
-  ]
+  ];
+  
 
 
   return (
