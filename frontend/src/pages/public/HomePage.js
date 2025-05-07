@@ -30,7 +30,7 @@ const HomePage = () => {
       try {
         setLoading(true)
         // Fetch statistics
-        const statsResponse = await api.get("api/public/stats")
+        const statsResponse = await api.get("/api/public/stats")
         setStats(statsResponse.data)
 
         // Fetch featured services

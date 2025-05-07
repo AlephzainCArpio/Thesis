@@ -1,41 +1,86 @@
 import { useState } from "react"
-import { Form, Input, InputNumber, Select, Button, Row, Col, message, Checkbox, Card, Tooltip } from "antd"
+import {
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Button,
+  Row,
+  Col,
+  message,
+  Checkbox,
+  Card,
+  Tooltip
+} from "antd"
 import { useNavigate } from "react-router-dom"
 import api from "../../services/api"
 
 const { Option } = Select
 
+// Add serviceTypeMapping to map UI checkbox values to Prisma enum values
+const serviceTypeMapping = {
+  venues: "VENUE",
+  catering: "CATERING",
+  photographers: "PHOTOGRAPHER",
+  designers: "DESIGNER"
+}
+
 const CustomizationPage = () => {
   const [loading, setLoading] = useState(false)
   const [recommendations, setRecommendations] = useState(null)
   const [selectedService, setSelectedService] = useState([])
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false)  
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false)
   const navigate = useNavigate()
 
   const onFinish = async (values) => {
     try {
-      setLoading(true);
-  
+      setLoading(true)
+      setLoadingRecommendations(true)
+
+      // Convert selected services to Prisma enum values
+      const serviceTypes = selectedService.map(
+        (type) => serviceTypeMapping[type] || type
+      )
+
       const data = {
         ...values,
-        serviceType: selectedService.join(", "),
-      };
-  
-      const response = await api.post("/recommendation", data);
-  
+        serviceType: serviceTypes // <-- Send as array
+      }
+
+      const response = await api.post("/recommendation", data)
+
+      console.log("API Response:", response.data)
+
       if (response.data && response.data.recommendations) {
-        setRecommendations(response.data.recommendations);
-        message.success("Recommendations generated successfully!");
+        const { above_budget, below_budget, best_match } =
+          response.data.recommendations
+        const allRecommendations = [
+          ...above_budget,
+          ...below_budget,
+          ...best_match
+        ]
+
+        setRecommendations(allRecommendations)
+
+        if (allRecommendations.length > 0) {
+          message.success("Recommendations generated successfully!")
+        } else {
+          message.warning("No recommendations found.")
+        }
       } else {
-        message.warning("No recommendations found.");
+        message.warning("No recommendations found.")
       }
     } catch (error) {
-      message.error("Failed to generate recommendations");
-      console.error(error);
+      console.error("Error during recommendation request:", error.response || error)
+      message.error(
+        error.response?.data?.message || "Failed to generate recommendations"
+      )
     } finally {
-      setLoading(false);
+      setLoading(false)
+      setLoadingRecommendations(false)
     }
-  };
+  }
+
   const onServiceTypeChange = (checkedValues) => {
     setSelectedService(checkedValues)
   }
@@ -56,14 +101,14 @@ const CustomizationPage = () => {
       <p>Tell us about your event and we'll find the perfect services for you.</p>
 
       <Card title="Event Details" style={{ marginBottom: 24 }}>
-        <Form
-          name="customization"
-          layout="vertical"
-          onFinish={onFinish}
-        >
+        <Form name="customization" layout="vertical" onFinish={onFinish}>
           <Row gutter={24}>
             <Col span={12}>
-              <Form.Item name="eventType" label="Event Type" rules={[{ required: true }]}>
+              <Form.Item
+                name="eventType"
+                label="Event Type"
+                rules={[{ required: true }]}
+              >
                 <Select>
                   <Option value="wedding">Wedding</Option>
                   <Option value="birthday">Birthday Party</Option>
@@ -77,30 +122,48 @@ const CustomizationPage = () => {
 
           <Row gutter={24}>
             <Col span={12}>
-              <Form.Item name="location" label="Location" rules={[{ required: true }]}>
+              <Form.Item
+                name="location"
+                label="Location"
+                rules={[{ required: true }]}
+              >
                 <Input placeholder="e.g., Bulan, Sorsogon" />
               </Form.Item>
             </Col>
 
             <Col span={12}>
-              <Form.Item name="guests" label="Number of Guests" rules={[{ required: true }]}>
+              <Form.Item
+                name="guests"
+                label="Number of Guests"
+                rules={[{ required: true }]}
+              >
                 <InputNumber min={1} max={1000} style={{ width: "100%" }} />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item name="budget" label="Budget (₱)" rules={[{ required: true }]}>
+          <Form.Item
+            name="budget"
+            label="Budget (₱)"
+            rules={[{ required: true }]}
+          >
             <InputNumber
               style={{ width: "100%" }}
               min={5000}
               max={500000}
               step={5000}
-              formatter={(value) => `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+              formatter={(value) =>
+                `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+              }
               parser={(value) => value.replace(/₱\s?|(,*)/g, "")}
             />
           </Form.Item>
 
-          <Form.Item name="serviceType" label="Select Service Types" rules={[{ required: true }]}>
+          <Form.Item
+            name="serviceType"
+            label="Select Service Types"
+            rules={[{ required: true }]}
+          >
             <Checkbox.Group onChange={onServiceTypeChange}>
               <Row gutter={16}>
                 <Col span={8}>
@@ -136,90 +199,44 @@ const CustomizationPage = () => {
       </Card>
 
       {loadingRecommendations ? (
-  <p>Loading recommendations...</p>
-) : recommendations ? (
-  <>
-    <h3>Best Match</h3>
-    <Card title="Best Match Services">
-      <Row gutter={[16, 16]}>
-        {recommendations.best_match.map((service) => (
-          <Col span={8} key={service.id}>
-            <Card
-              hoverable
-              cover={<img alt={service.name} src={renderServiceImage(service)} />}
-              onClick={() => viewService(service.type, service.id)}
-            >
-              <Card.Meta
-                title={service.name}
-                description={
-                  <>
-                    <p>{service.location}</p>
-                    <p>{service.description.substring(0, 100)}...</p>
-                    {service.price && <p>Price: ₱{service.price.toLocaleString()}</p>}
-                  </>
-                }
-              />
-            </Card>
-          </Col>
-        ))}
-      </Row>
-    </Card>
-
-    <h3>Slightly Above Budget</h3>
-    <Card title="Slightly Above Budget Services">
-      <Row gutter={[16, 16]}>
-        {recommendations.above_budget.map((service) => (
-          <Col span={8} key={service.id}>
-            <Card
-              hoverable
-              cover={<img alt={service.name} src={renderServiceImage(service)} />}
-              onClick={() => viewService(service.type, service.id)}
-            >
-              <Card.Meta
-                title={service.name}
-                description={
-                  <>
-                    <p>{service.location}</p>
-                    <p>{service.description.substring(0, 100)}...</p>
-                    {service.price && <p>Price: ₱{service.price.toLocaleString()}</p>}
-                  </>
-                }
-              />
-            </Card>
-          </Col>
-        ))}
-      </Row>
-    </Card>
-
-    <h3>Below Budget</h3>
-    <Card title="Below Budget Services">
-      <Row gutter={[16, 16]}>
-        {recommendations.below_budget.map((service) => (
-          <Col span={8} key={service.id}>
-            <Card
-              hoverable
-              cover={<img alt={service.name} src={renderServiceImage(service)} />}
-              onClick={() => viewService(service.type, service.id)}
-            >
-              <Card.Meta
-                title={service.name}
-                description={
-                  <>
-                    <p>{service.location}</p>
-                    <p>{service.description.substring(0, 100)}...</p>
-                    {service.price && <p>Price: ₱{service.price.toLocaleString()}</p>}
-                  </>
-                }
-              />
-            </Card>
-          </Col>
-        ))}
-      </Row>
-    </Card>
-  </>
-) : (
-  <p>No recommendations available.</p>
-)}
+        <p>Loading recommendations...</p>
+      ) : recommendations && recommendations.length > 0 ? (
+        <Card title="Recommended Services">
+          <Row gutter={[16, 16]}>
+            {recommendations.map((service) => (
+              <Col span={8} key={service.id}>
+                <Card
+                  hoverable
+                  cover={
+                    <img
+                      alt={service.name}
+                      src={renderServiceImage(service)}
+                    />
+                  }
+                  onClick={() => viewService(service.type, service.id)}
+                >
+                  <Card.Meta
+                    title={service.name}
+                    description={
+                      <>
+                        <p>{service.location}</p>
+                        <p>
+                          {service.description?.substring(0, 100)}...
+                        </p>
+                        {service.price && (
+                          <p>Price: ₱{service.price.toLocaleString()}</p>
+                        )}
+                      </>
+                    }
+                  />
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Card>
+      ) : (
+        <p>No recommendations available.</p>
+      )}
     </div>
   )
 }

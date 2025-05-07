@@ -66,40 +66,45 @@ class DatabaseConnector:
         """Close the database connection explicitly when done"""
         self._disconnect()
 
-    def get_services(self, service_types: str):
+    def get_services(self, service_types):
         """
         Fetch services from the database based on the service types.
-        
         Args:
-            service_types (str): A comma-separated string of service types (e.g., "venues, catering").
-        
+            service_types (str or List[str]): A comma-separated string or a list of service types (e.g., "venues, catering").
         Returns:
             List[Dict]: A list of services.
         """
         try:
-            # Split the service types into a list
-            service_types_list = [st.strip() for st in service_types.split(",")]
-
+            # Normalize service_types to a list
+            if isinstance(service_types, str):
+                service_types_list = [st.strip().upper() for st in service_types.split(",")]
+            elif isinstance(service_types, list):
+                service_types_list = [st.strip().upper() for st in service_types]
+            else:
+                raise ValueError("`service_types` must be a string or a list of strings.")
+            
+            # Map service types to database table names
             TABLE_NAME_MAPPING = {
-                "catering": "caterings",  
-                "photographers": "photographers",  
-                "venues": "venues",  
-                "designers": "designers",  
+                "CATERING": "caterings",
+                "PHOTOGRAPHER": "photographers",
+                "VENUE": "venues",
+                "DESIGNER": "designers",
             }
 
+            # Fetch data from each valid service table
             all_services = []
             for service_type in service_types_list:
-                if service_type not in TABLE_NAME_MAPPING:
+                table_name = TABLE_NAME_MAPPING.get(service_type)
+                if not table_name:
                     raise ValueError(f"Invalid service type: {service_type}")
-                
-                # Get the table name from the mapping
-                table_name = TABLE_NAME_MAPPING[service_type]
-                
-                query = f"SELECT * FROM {table_name}"  # Query the correct table
+
+                # Fetch data from the appropriate table
+                query = f"SELECT * FROM {table_name} WHERE status = 'APPROVED'"
                 services = self.execute_query(query)
                 all_services.extend(services)
-            
+
             return all_services
+
         except Exception as e:
             logger.error(f"Error fetching services for types '{service_types}': {e}")
             raise

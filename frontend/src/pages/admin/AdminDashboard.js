@@ -263,232 +263,231 @@ const AdminDashboard = () => {
         </Tabs>
 
         <Modal
-          title={`Add New ${activeTab.charAt(0)}${activeTab
-            .slice(1)
-            .toLowerCase()}`}
-          visible={isModalVisible}
-          onCancel={() => {
-            setIsModalVisible(false);
-            form.resetFields();
-          }}
-          footer={null}
-          width={720}
+  title={`Add New ${activeTab.charAt(0)}${activeTab.slice(1).toLowerCase()}`}
+  visible={isModalVisible}
+  onCancel={() => {
+    setIsModalVisible(false);
+    form.resetFields();
+  }}
+  footer={null}
+  width={720}
+>
+  <Form form={form} layout="vertical" onFinish={handleSubmit}>
+    {/* shared fields */}
+    <Form.Item
+      name="name"
+      label="Name"
+      rules={[{ required: true, message: "Please enter name" }]}
+    >
+      <Input />
+    </Form.Item>
+
+    <Form.Item
+      name="description"
+      label="Description"
+      rules={[{ required: true, message: "Please enter description" }]}
+    >
+      <TextArea rows={4} />
+    </Form.Item>
+
+    <Form.Item
+      name="location"
+      label="Location"
+      rules={[{ required: true, message: "Please enter location" }]}
+    >
+      <Input />
+    </Form.Item>
+
+    {/* VENUE */}
+    {activeTab === "VENUE" && (
+      <>
+        <Form.Item
+          name="capacity"
+          label="Capacity"
+          rules={[{ required: true, message: "Please enter capacity" }]}
         >
-          <Form form={form} layout="vertical" onFinish={handleSubmit}>
-            {/* shared fields */}
-            <Form.Item
-              name="name"
-              label="Name"
-              rules={[{ required: true, message: "Please enter name" }]}
-            >
-              <Input />
-            </Form.Item>
+          <InputNumber min={1} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item
+          name="price"
+          label="Price"
+          rules={[{ required: true, message: "Please enter price" }]}
+        >
+          <InputNumber min={0} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item name="amenities" label="Amenities">
+          <Select mode="tags" placeholder="Enter amenities">
+            <Option value="wifi">WiFi</Option>
+            <Option value="parking">Parking</Option>
+            <Option value="catering">Catering Allowed</Option>
+          </Select>
+        </Form.Item>
+      </>
+    )}
 
-            <Form.Item
-              name="description"
-              label="Description"
-              rules={[{ required: true, message: "Please enter description" }]}
-            >
-              <TextArea rows={4} />
-            </Form.Item>
+    {/* CATERING */}
+    {activeTab === "CATERING" && (
+      <>
+        <Form.Item
+          name="maxPeople"
+          label="Maximum People"
+          rules={[
+            { required: true, message: "Please enter max capacity" }
+          ]}
+        >
+          <InputNumber min={1} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item
+          name="pricePerPerson"
+          label="Price Per Person"
+          rules={[
+            { required: true, message: "Please enter price per person" }
+          ]}
+        >
+          <InputNumber min={0} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item
+          name="cuisineType"
+          label="Cuisine Type"
+          rules={[{ required: true, message: "Please select cuisine" }]}
+        >
+          <Select placeholder="Enter Cuisine Type">
+            <Option value="filipino">Filipino</Option>
+            <Option value="chinese">Chinese</Option>
+            <Option value="italian">Italian</Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name="dietaryOptions" label="Dietary Options">
+          <Select placeholder="Enter dietary options">
+            <Option value="vegetarian">Vegetarian</Option>
+            <Option value="vegan">Vegan</Option>
+            <Option value="gluten-free">Gluten-Free</Option>
+            <Option value="protien">Protien</Option>
+          </Select>
+        </Form.Item>
+      </>
+    )}
 
-            <Form.Item
-              name="location"
-              label="Location"
-              rules={[{ required: true, message: "Please enter location" }]}
-            >
-              <Input />
-            </Form.Item>
+    {/* PHOTOGRAPHER */}
+    {activeTab === "PHOTOGRAPHER" && (
+      <>
+        <Form.Item
+          name="style"
+          label="Photography Style"
+          rules={[{ required: true, message: "Please select style" }]}
+        >
+          <Select>
+            <Option value="traditional">Traditional</Option>
+            <Option value="photojournalistic">Photojournalistic</Option>
+            <Option value="contemporary">Contemporary</Option>
+          </Select>
+        </Form.Item>
+        <Form.Item
+          name="experienceYears"
+          label="Years of Experience"
+          rules={[{ required: true, message: "Please enter experience" }]}
+        >
+          <InputNumber min={0} style={{ width: "100%" }} />
+        </Form.Item>
+        <Form.Item
+          name="priceRange"
+          label="Price Range"
+          rules={[{ required: true, message: "Please enter range" }]}
+        >
+          <Input placeholder="e.g., 5000-10000" />
+        </Form.Item>
+        <Form.Item
+          name="copyType"
+          label="Copy Type"
+          rules={[{ required: true, message: "Please select copy type" }]}
+        >
+          <Select>
+            <Option value="virtual">Virtual</Option>
+            <Option value="physical">Physical</Option>
+            <Option value="both">Both</Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name="portfolio" label="Portfolio URL">
+          <Input placeholder="Enter portfolio link" />
+        </Form.Item>
+      </>
+    )}
 
-            {/* VENUE */}
-            {activeTab === "VENUE" && (
-              <>
-                <Form.Item
-                  name="capacity"
-                  label="Capacity"
-                  rules={[{ required: true, message: "Please enter capacity" }]}
-                >
-                  <InputNumber min={1} style={{ width: "100%" }} />
-                </Form.Item>
-                <Form.Item
-                  name="price"
-                  label="Price"
-                  rules={[{ required: true, message: "Please enter price" }]}
-                >
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-                <Form.Item name="amenities" label="Amenities">
-                  <Select mode="tags" placeholder="Enter amenities">
-                    <Option value="wifi">WiFi</Option>
-                    <Option value="parking">Parking</Option>
-                    <Option value="catering">Catering Allowed</Option>
-                  </Select>
-                </Form.Item>
-              </>
-            )}
+    {/* DESIGNER */}
+    {activeTab === "DESIGNER" && (
+      <>
+        <Form.Item
+          name="style"
+          label="Design Style"
+          rules={[{ required: true, message: "Please select style" }]}
+        >
+          <Select>
+            <Option value="modern">Modern</Option>
+            <Option value="classic">Classic</Option>
+            <Option value="minimalist">Minimalist</Option>
+          </Select>
+        </Form.Item>
+        <Form.Item
+          name="priceRange"
+          label="Price Range"
+          rules={[{ required: true, message: "Please enter price range" }]}
+        >
+          <Input placeholder="e.g., 20000-50000" />
+        </Form.Item>
+        <Form.Item name="eventTypes" label="Event Types">
+          <Select>
+            <Option value="wedding">Wedding</Option>
+            <Option value="birthday">Birthday Party</Option>
+            <Option value="corporate">Corporate Event</Option>
+            <Option value="Reunion">Reunion</Option>
+            <Option value="social">Social Gathering</Option>
+          </Select>
+        </Form.Item>
+        <Form.Item name="portfolio" label="Portfolio URL">
+          <Input placeholder="Enter portfolio link" />
+        </Form.Item>
+      </>
+    )}
 
-            {/* CATERING */}
-            {activeTab === "CATERING" && (
-              <>
-                <Form.Item
-                  name="maxPeople"
-                  label="Maximum People"
-                  rules={[
-                    { required: true, message: "Please enter max capacity" }
-                  ]}
-                >
-                  <InputNumber min={1} style={{ width: "100%" }} />
-                </Form.Item>
-                <Form.Item
-                  name="pricePerPerson"
-                  label="Price Per Person"
-                  rules={[
-                    { required: true, message: "Please enter price per person" }
-                  ]}
-                >
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-                <Form.Item
-                  name="cuisineType"
-                  label="Cuisine Type"
-                  rules={[{ required: true, message: "Please select cuisine" }]}
-                >
-                  <Select placeholder="Enter Cuisine Type">
-                    <Option value="filipino">Filipino</Option>
-                    <Option value="chinese">Chinese</Option>
-                    <Option value="italian">Italian</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item name="dietaryOptions" label="Dietary Options">
-                  <Select  placeholder="Enter dietary options">
-                    <Option value="vegetarian">Vegetarian</Option>
-                    <Option value="vegan">Vegan</Option>
-                    <Option value="gluten-free">Gluten-Free</Option>
-                    <Option value="protien">Protien</Option>
-                  </Select>
-                </Form.Item>
-              </>
-            )}
+    <Form.Item
+      name="images"
+      label="Images"
+      valuePropName="fileList"
+      getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+    >
+      <Upload
+        listType="picture-card"
+        multiple
+        beforeUpload={() => false}
+        accept="image/*"
+        maxCount={5}
+      >
+        <div>
+          <PlusOutlined />
+          <div style={{ marginTop: 8 }}>Upload</div>
+        </div>
+      </Upload>
+    </Form.Item>
 
-            {/* PHOTOGRAPHER */}
-            {activeTab === "PHOTOGRAPHER" && (
-              <>
-                <Form.Item
-                  name="style"
-                  label="Photography Style"
-                  rules={[{ required: true, message: "Please select style" }]}
-                >
-                  <Select>
-                    <Option value="traditional">Traditional</Option>
-                    <Option value="photojournalistic">Photojournalistic</Option>
-                    <Option value="contemporary">Contemporary</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item
-                  name="experienceYears"
-                  label="Years of Experience"
-                  rules={[{ required: true, message: "Please enter experience" }]}
-                >
-                  <InputNumber min={0} style={{ width: "100%" }} />
-                </Form.Item>
-                <Form.Item
-                  name="priceRange"
-                  label="Price Range"
-                  rules={[{ required: true, message: "Please enter range" }]}
-                >
-                  <Input placeholder="e.g., 5000-10000" />
-                </Form.Item>
-                <Form.Item
-                  name="copyType"
-                  label="Copy Type"
-                  rules={[{ required: true, message: "Please select copy type" }]}
-                >
-                  <Select>
-                    <Option value="virtual">Virtual</Option>
-                    <Option value="physical">Physical</Option>
-                    <Option value="both">Both</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item name="portfolio" label="Portfolio URL">
-                  <Input placeholder="Enter portfolio link" />
-                </Form.Item>
-              </>
-            )}
+    <Form.Item>
+      <button
+        type="submit"
+        style={{
+          width: "100%",
+          padding: "10px",
+          background: "#1890ff",
+          color: "#fff",
+          border: "none",
+          borderRadius: 4
+        }}
+        disabled={loading}
+      >
+        {loading ? "Submitting..." : "Submit"}
+      </button>
+    </Form.Item>
+  </Form>
+</Modal>
 
-            {/* DESIGNER */}
-            {activeTab === "DESIGNER" && (
-              <>
-                <Form.Item
-                  name="style"
-                  label="Design Style"
-                  rules={[{ required: true, message: "Please select style" }]}
-                >
-                  <Select>
-                    <Option value="modern">Modern</Option>
-                    <Option value="classic">Classic</Option>
-                    <Option value="minimalist">Minimalist</Option>
-                  </Select>
-                </Form.Item>
-                <Form.Item
-                  name="priceRange"
-                  label="Price Range"
-                  rules={[{ required: true, message: "Please enter price range" }]}
-                >
-                  <Input placeholder="e.g., 20000-50000" />
-                </Form.Item>
-                <Form.Item name="eventTypes" label="Event Types">
-                <Select>
-                  <Option value="wedding">Wedding</Option>
-                  <Option value="birthday">Birthday Party</Option>
-                  <Option value="corporate">Corporate Event</Option>
-                  <Option value="Reunion">Reunion</Option>
-                  <Option value="social">Social Gathering</Option>
-                </Select>
-                </Form.Item>
-                <Form.Item name="portfolio" label="Portfolio URL">
-                  <Input placeholder="Enter portfolio link" />
-                </Form.Item>
-              </>
-            )}
-
-            <Form.Item
-              name="images"
-              label="Images"
-              valuePropName="fileList"
-              getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-            >
-              <Upload
-                listType="picture-card"
-                multiple
-                beforeUpload={() => false}
-                accept="image/*"
-                maxCount={5}
-              >
-                <div>
-                  <PlusOutlined />
-                  <div style={{ marginTop: 8 }}>Upload</div>
-                </div>
-              </Upload>
-            </Form.Item>
-
-            <Form.Item>
-              <button
-                type="submit"
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  background: "#1890ff",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 4
-                }}
-                disabled={loading}
-              >
-                {loading ? "Submitting..." : "Submit"}
-              </button>
-            </Form.Item>
-          </Form>
-        </Modal>
       </div>
     </div>
   );
