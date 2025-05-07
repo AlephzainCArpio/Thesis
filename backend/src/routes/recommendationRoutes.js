@@ -1,8 +1,9 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const { getRecommendationsController } = require('../controllers/recommendationController');
+const { protect } = require("../middlewares/authMiddleware");
+const { getRecommendationsController } = require("../controllers/recommendationController");
 
-
-router.post('/recommendation', getRecommendationsController);
+// Apply the protect middleware
+router.post("/recommendation", protect, getRecommendationsController);
 
 module.exports = router;

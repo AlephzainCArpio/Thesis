@@ -24,7 +24,6 @@ export function AuthProvider({ children }) {
           
           // Fetch current user
           const response = await api.get('/api/auth/me');
-          console.log('Current user data:', response.data); // Log for debugging
           setCurrentUser(response.data);
         }
       } catch (err) {
@@ -46,8 +45,6 @@ export function AuthProvider({ children }) {
       setError(null);
       
       const response = await api.post('/api/auth/login', { email, password });
-      console.log('Login API response:', response.data); // Debug log
-      
       const { token, user } = response.data;
       
       // Save token and set headers

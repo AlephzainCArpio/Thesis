@@ -14,33 +14,28 @@ const CustomizationPage = () => {
 
   const onFinish = async (values) => {
     try {
-      setLoading(true)
-      setLoadingRecommendations(true)  
-
-      // Add the selected services to the request data
+      setLoading(true);
+  
       const data = {
         ...values,
-        serviceType: selectedService.join(", "), 
-      }
-
-      const response = await api.post("/api/recommendation", data)
-
-      // Ensure that the response contains recommendations
+        serviceType: selectedService.join(", "),
+      };
+  
+      const response = await api.post("/recommendation", data);
+  
       if (response.data && response.data.recommendations) {
-        setRecommendations(response.data.recommendations)
-        message.success("Recommendations generated successfully!")
+        setRecommendations(response.data.recommendations);
+        message.success("Recommendations generated successfully!");
       } else {
-        message.warning("No recommendations found.")
+        message.warning("No recommendations found.");
       }
     } catch (error) {
-      message.error("Failed to generate recommendations")
-      console.error(error)
+      message.error("Failed to generate recommendations");
+      console.error(error);
     } finally {
-      setLoading(false)
-      setLoadingRecommendations(false) 
+      setLoading(false);
     }
-  }
-
+  };
   const onServiceTypeChange = (checkedValues) => {
     setSelectedService(checkedValues)
   }
@@ -141,35 +136,90 @@ const CustomizationPage = () => {
       </Card>
 
       {loadingRecommendations ? (
-        <p>Loading recommendations...</p>
-      ) : recommendations && recommendations.length > 0 ? (
-        <Card title="Recommended Services">
-          <Row gutter={[16, 16]}>
-            {recommendations.map((service) => (
-              <Col span={8} key={service.id}>
-                <Card
-                  hoverable
-                  cover={<img alt={service.name} src={renderServiceImage(service)} />}
-                  onClick={() => viewService(service.type, service.id)}
-                >
-                  <Card.Meta
-                    title={service.name}
-                    description={
-                      <>
-                        <p>{service.location}</p>
-                        <p>{service.description.substring(0, 100)}...</p>
-                        {service.price && <p>Price: ₱{service.price.toLocaleString()}</p>}
-                      </>
-                    }
-                  />
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </Card>
-      ) : (
-        recommendations && <p>No recommendations available.</p>
-      )}
+  <p>Loading recommendations...</p>
+) : recommendations ? (
+  <>
+    <h3>Best Match</h3>
+    <Card title="Best Match Services">
+      <Row gutter={[16, 16]}>
+        {recommendations.best_match.map((service) => (
+          <Col span={8} key={service.id}>
+            <Card
+              hoverable
+              cover={<img alt={service.name} src={renderServiceImage(service)} />}
+              onClick={() => viewService(service.type, service.id)}
+            >
+              <Card.Meta
+                title={service.name}
+                description={
+                  <>
+                    <p>{service.location}</p>
+                    <p>{service.description.substring(0, 100)}...</p>
+                    {service.price && <p>Price: ₱{service.price.toLocaleString()}</p>}
+                  </>
+                }
+              />
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    </Card>
+
+    <h3>Slightly Above Budget</h3>
+    <Card title="Slightly Above Budget Services">
+      <Row gutter={[16, 16]}>
+        {recommendations.above_budget.map((service) => (
+          <Col span={8} key={service.id}>
+            <Card
+              hoverable
+              cover={<img alt={service.name} src={renderServiceImage(service)} />}
+              onClick={() => viewService(service.type, service.id)}
+            >
+              <Card.Meta
+                title={service.name}
+                description={
+                  <>
+                    <p>{service.location}</p>
+                    <p>{service.description.substring(0, 100)}...</p>
+                    {service.price && <p>Price: ₱{service.price.toLocaleString()}</p>}
+                  </>
+                }
+              />
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    </Card>
+
+    <h3>Below Budget</h3>
+    <Card title="Below Budget Services">
+      <Row gutter={[16, 16]}>
+        {recommendations.below_budget.map((service) => (
+          <Col span={8} key={service.id}>
+            <Card
+              hoverable
+              cover={<img alt={service.name} src={renderServiceImage(service)} />}
+              onClick={() => viewService(service.type, service.id)}
+            >
+              <Card.Meta
+                title={service.name}
+                description={
+                  <>
+                    <p>{service.location}</p>
+                    <p>{service.description.substring(0, 100)}...</p>
+                    {service.price && <p>Price: ₱{service.price.toLocaleString()}</p>}
+                  </>
+                }
+              />
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    </Card>
+  </>
+) : (
+  <p>No recommendations available.</p>
+)}
     </div>
   )
 }

@@ -15,24 +15,25 @@ class DatabaseConnector:
         self.user = os.environ.get('DB_USER')
         self.password = os.environ.get('DB_PASSWORD')
         self.database = os.environ.get('DB_NAME')
-        self.port = int(os.environ.get('DB_PORT', 3306))
+        self.port = int(os.environ.get('DB_PORT'))
         self.connection = None
+        self._connect()  # Open connection when the object is created
         
     def _connect(self):
-        """Establish connection to the database"""
-        try:
-            self.connection = mysql.connector.connect(
-                host=self.host,
-                user=self.user,
-                password=self.password,
-                database=self.database,
-                port=self.port
-            )
-            logger.info(f"Connected to database {self.database} on {self.host}")
-            return self.connection
-        except mysql.connector.Error as e:
-            logger.error(f"Error connecting to MySQL database: {e}")
-            raise
+        """Establish connection to the database if not already connected"""
+        if not self.connection or not self.connection.is_connected():
+            try:
+                self.connection = mysql.connector.connect(
+                    host=self.host,
+                    user=self.user,
+                    password=self.password,
+                    database=self.database,
+                    port=self.port
+                )
+                logger.info(f"Connected to database {self.database} on {self.host}")
+            except mysql.connector.Error as e:
+                logger.error(f"Error connecting to MySQL database: {e}")
+                raise
     
     def _disconnect(self):
         """Close the database connection"""
@@ -42,11 +43,12 @@ class DatabaseConnector:
     
     def execute_query(self, query, params=None, fetch=True):
         """Execute a query and optionally fetch results"""
+        cursor = None
         try:
-            self._connect()
+            self._connect()  # Ensure connection is open before executing query
             cursor = self.connection.cursor(dictionary=True)
             cursor.execute(query, params or ())
-            
+
             if fetch:
                 results = cursor.fetchall()
                 return results
@@ -59,4 +61,45 @@ class DatabaseConnector:
         finally:
             if cursor:
                 cursor.close()
-            self._disconnect()
+    
+    def close(self):
+        """Close the database connection explicitly when done"""
+        self._disconnect()
+
+    def get_services(self, service_types: str):
+        """
+        Fetch services from the database based on the service types.
+        
+        Args:
+            service_types (str): A comma-separated string of service types (e.g., "venues, catering").
+        
+        Returns:
+            List[Dict]: A list of services.
+        """
+        try:
+            # Split the service types into a list
+            service_types_list = [st.strip() for st in service_types.split(",")]
+
+            TABLE_NAME_MAPPING = {
+                "catering": "caterings",  
+                "photographers": "photographers",  
+                "venues": "venues",  
+                "designers": "designers",  
+            }
+
+            all_services = []
+            for service_type in service_types_list:
+                if service_type not in TABLE_NAME_MAPPING:
+                    raise ValueError(f"Invalid service type: {service_type}")
+                
+                # Get the table name from the mapping
+                table_name = TABLE_NAME_MAPPING[service_type]
+                
+                query = f"SELECT * FROM {table_name}"  # Query the correct table
+                services = self.execute_query(query)
+                all_services.extend(services)
+            
+            return all_services
+        except Exception as e:
+            logger.error(f"Error fetching services for types '{service_types}': {e}")
+            raise

@@ -3,7 +3,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const path = require("path");
 const fs = require("fs");
-
+const bodyParser = require("body-parser");
 const { errorHandler } = require("./middlewares/errorHandlers");
 
 const authRoutes = require("./routes/authRoutes");
@@ -20,13 +20,13 @@ const recommendationRoutes = require("./routes/recommendationRoutes");
 const app = express();
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 app.use(express.json());
 app.use(morgan("dev"));
 
-
+app.use(bodyParser.json())
 // Serve static files from /uploads
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
@@ -49,7 +49,7 @@ app.use("/api/designers", designerRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/providers", providerRoutes);
-app.use("/api/recommendation", recommendationRoutes);
+app.use("/", recommendationRoutes);
 
 // Error handler middleware
 app.use(errorHandler);
