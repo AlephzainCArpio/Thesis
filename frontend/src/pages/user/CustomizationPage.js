@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState } from "react";
 import {
   Form,
   Input,
@@ -11,66 +11,66 @@ import {
   Checkbox,
   Card,
   Tooltip
-} from "antd"
-import { useNavigate } from "react-router-dom"
-import api from "../../services/api"
+} from "antd";
+import { useNavigate } from "react-router-dom";
+import api from "../../services/api";
 
-const { Option } = Select
+const { Option } = Select;
 
-// Add serviceTypeMapping to map UI checkbox values to Prisma enum values
 const serviceTypeMapping = {
   venues: "VENUE",
   catering: "CATERING",
   photographers: "PHOTOGRAPHER",
   designers: "DESIGNER"
-}
+};
 
 const CustomizationPage = () => {
-  const [loading, setLoading] = useState(false)
-  const [recommendations, setRecommendations] = useState(null)
-  const [selectedService, setSelectedService] = useState([])
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false)
-  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false);
+  const [recommendations, setRecommendations] = useState(null);
+  const [selectedService, setSelectedService] = useState([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const navigate = useNavigate();
 
   const onFinish = async (values) => {
     try {
-      setLoading(true)
-      setLoadingRecommendations(true)
+      setLoading(true);
+      setLoadingRecommendations(true);
 
-      // Convert selected services to Prisma enum values
       const serviceTypes = selectedService.map(
         (type) => serviceTypeMapping[type] || type
-      )
+      );
 
       const data = {
         ...values,
-        serviceType: serviceTypes // <-- Send as array
-      }
+        serviceType: serviceTypes
+      };
 
-      console.log("Request Payload:", data); // Log the payload for debugging
+      console.log("Request Payload:", data);
 
-      const response = await api.post("/recommendation", data)
+      const response = await api.post("/recommendation", data);
 
-      console.log("API Response:", response.data)
+      console.log("API Response:", response.data);
 
       if (response.data && response.data.recommendations) {
         const { above_budget, below_budget, best_match } =
-          response.data.recommendations
+          response.data.recommendations;
         const allRecommendations = [
           ...above_budget,
           ...below_budget,
           ...best_match
-        ]
+        ];
 
-        setRecommendations(allRecommendations)
+        console.log("All Recommendations:", allRecommendations);
+
+        setRecommendations(allRecommendations);
 
         if (allRecommendations.length > 0) {
-          message.success("Recommendations generated successfully!")
+          message.success("Recommendations generated successfully!");
         } else {
-          message.warning("No recommendations found.")
+          message.warning("No recommendations found.");
         }
       } else {
-        message.warning("No recommendations found.")
+        message.warning("No recommendations found.");
       }
     } catch (error) {
       console.error(
@@ -84,21 +84,21 @@ const CustomizationPage = () => {
       setLoading(false);
       setLoadingRecommendations(false);
     }
-  }
+  };
 
   const onServiceTypeChange = (checkedValues) => {
-    setSelectedService(checkedValues)
-  }
+    setSelectedService(checkedValues);
+  };
 
   const viewService = (serviceType, id) => {
-    navigate(`/user/${serviceType}/${id}`)
-  }
+    navigate(`/user/${serviceType}/${id}`);
+  };
 
   const renderServiceImage = (service) => {
     return service.images && service.images.length > 0
       ? JSON.parse(service.images)[0]
-      : "https://via.placeholder.com/300x200"
-  }
+      : "https://via.placeholder.com/300x200";
+  };
 
   return (
     <div>
@@ -243,7 +243,7 @@ const CustomizationPage = () => {
         <p>No recommendations available.</p>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default CustomizationPage
+export default CustomizationPage;
