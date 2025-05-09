@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `caterings` ADD COLUMN `serviceType` VARCHAR(191) NOT NULL DEFAULT 'CATERING';
