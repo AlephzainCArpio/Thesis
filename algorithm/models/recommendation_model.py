@@ -29,10 +29,7 @@ class RecommendationModel:
         return recommendations
 
     def recommend_services(self, user_input: dict) -> Dict[str, List[Dict]]:
-        cache_key = self.generate_cache_key(user_input)
-        if cache_key in self._cache:
-            self.logger.info("Fetching recommendations from cache.")
-            return self._cache[cache_key]
+        self.logger.info(f"User input for recommendations: {user_input}")
 
         service_type = user_input.get("service_type", "")  
         services = self.db.get_services([service_type])  # Fetch only the requested service type
@@ -58,8 +55,7 @@ class RecommendationModel:
             "below_budget": []
         }
 
-        self._cache[cache_key] = recommendations
-        self.logger.info(f"Recommendations generated and cached: {recommendations}")
+        self.logger.info(f"Recommendations generated: {recommendations}")
         return recommendations
 
     def _pre_filter_services(self, services: List[Dict], user_input: dict) -> List[Dict]:

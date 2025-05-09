@@ -75,14 +75,18 @@ class DatabaseConnector:
             List[Dict]: A list of services.
         """
         try:
-            # Normalize service_types to a list
-            if isinstance(service_types, str):
-                service_types_list = [st.strip().upper() for st in service_types.split(",")]
-            elif isinstance(service_types, list):
+            # Flatten nested lists, if any
+            if isinstance(service_types, list):
+                service_types = [item for sublist in service_types for item in sublist] if any(isinstance(i, list) for i in service_types) else service_types
+
                 service_types_list = [st.strip().upper() for st in service_types]
+            elif isinstance(service_types, str):
+                service_types_list = [st.strip().upper() for st in service_types.split(",")]
             else:
                 raise ValueError("`service_types` must be a string or a list of strings.")
-            
+
+            logger.info(f"Service types normalized: {service_types_list}")
+
             # Map service types to database table names
             TABLE_NAME_MAPPING = {
                 "CATERING": "caterings",
@@ -101,6 +105,7 @@ class DatabaseConnector:
                 # Fetch data from the appropriate table
                 query = f"SELECT * FROM {table_name} WHERE status = 'APPROVED'"
                 services = self.execute_query(query)
+                logger.info(f"Fetched {len(services)} services for type '{service_type}' from table '{table_name}'")
                 all_services.extend(services)
 
             return all_services

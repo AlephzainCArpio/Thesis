@@ -47,6 +47,8 @@ const CustomizationPage = () => {
         serviceType: serviceTypes // <-- Send as array
       }
 
+      console.log("Request Payload:", data); // Log the payload for debugging
+
       const response = await api.post("/recommendation", data)
 
       console.log("API Response:", response.data)
@@ -71,13 +73,16 @@ const CustomizationPage = () => {
         message.warning("No recommendations found.")
       }
     } catch (error) {
-      console.error("Error during recommendation request:", error.response || error)
+      console.error(
+        "Error during recommendation request:",
+        error.response || error
+      );
       message.error(
         error.response?.data?.message || "Failed to generate recommendations"
-      )
+      );
     } finally {
-      setLoading(false)
-      setLoadingRecommendations(false)
+      setLoading(false);
+      setLoadingRecommendations(false);
     }
   }
 
