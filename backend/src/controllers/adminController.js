@@ -271,65 +271,9 @@ const rejectProvider = async (req, res) => {
   }
 };
 
-// STATS
-const getDashboardStats = async (req, res) => {
-  try {
-    const [
-      userCount,
-      providerCount,
-      venueCount,
-      cateringCount,
-      photographerCount,
-      designerCount,
-      pendingCount,
-      recentUsers,
-      recentViews,
-    ] = await Promise.all([
-      prisma.user.count({ where: { role: "USER" } }),
-      prisma.user.count({ where: { role: "PROVIDER" } }),
-      prisma.venue.count({ where: { status: "APPROVED" } }),
-      prisma.catering.count({ where: { status: "APPROVED" } }),
-      prisma.photographer.count({ where: { status: "APPROVED" } }),
-      prisma.designer.count({ where: { status: "APPROVED" } }),
-      prisma.venue.count({ where: { status: "PENDING" } }) +
-        prisma.catering.count({ where: { status: "PENDING" } }) +
-        prisma.photographer.count({ where: { status: "PENDING" } }) +
-        prisma.designer.count({ where: { status: "PENDING" } }),
-      prisma.user.findMany({
-        take: 5,
-        orderBy: { createdAt: "desc" },
-        select: { id: true, name: true, email: true, role: true, createdAt: true },
-      }),
-      prisma.viewHistory.findMany({
-        take: 10,
-        orderBy: { viewedAt: "desc" },
-        include: {
-          user: { select: { name: true, email: true } },
-          venue: { select: { name: true } },
-          catering: { select: { name: true } },
-          photographer: { select: { name: true } },
-          designer: { select: { name: true } },
-        },
-      }),
-    ]);
 
-    res.json({
-      userCount,
-      providerCount,
-      venueCount,
-      cateringCount,
-      photographerCount,
-      designerCount,
-      pendingCount,
-      recentUsers,
-      recentViews,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
-// NEWLY ADDED FUNCTIONS
+// VENUES
 const getAdminVenues = async (req, res) => {
   try {
     const venues = await prisma.venue.findMany({
@@ -382,7 +326,6 @@ module.exports = {
   getPendingServices,
   approveService,
   rejectService,
-  getDashboardStats,
   getPendingProviders,
   getVerificationDocument,
   approveProvider,

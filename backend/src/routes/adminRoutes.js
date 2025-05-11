@@ -7,7 +7,6 @@ const {
   getPendingServices,
   approveService,
   rejectService,
-  getDashboardStats,
   getPendingProviders,
   getVerificationDocument,
   approveProvider,
@@ -32,7 +31,7 @@ router.delete("/users/:id", deleteUser);
 router.get("/pending", getPendingServices);
 router.put("/approve/:serviceType/:id", approveService);
 router.put("/reject/:serviceType/:id", rejectService);
-router.get("/stats", getDashboardStats);
+
 
 // New routes for admin to fetch services
 router.get("/venues", getAdminVenues);

@@ -315,17 +315,17 @@ const AdminDashboard = () => {
         >
           <InputNumber min={0} style={{ width: "100%" }} />
           </Form.Item>
-          <Form.Item name="eventTypes" label="Event Types">
+         <Form.Item name="eventTypes" label="Event Types">
           <Select>
             <Option value="wedding">Wedding</Option>
             <Option value="birthday">Birthday Party</Option>
             <Option value="corporate">Corporate Event</Option>
-            <Option value="reunion">Reunion</Option>
+            <Option value="Reunion">Reunion</Option>
             <Option value="social">Social Gathering</Option>
           </Select>
         </Form.Item>
       
-        <Form.Item name="amenities" label="Amenities">
+        <Form.Item name="amenities" label="Amenities">  
           <Select mode="tags" placeholder="Enter amenities">
             <Option value="wifi">WiFi</Option>
             <Option value="parking">Parking</Option>

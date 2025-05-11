@@ -109,19 +109,15 @@ const CustomizationPage = () => {
         <Form name="customization" layout="vertical" onFinish={onFinish}>
           <Row gutter={24}>
             <Col span={12}>
-              <Form.Item
-                name="eventType"
-                label="Event Type"
-                rules={[{ required: true }]}
-              >
-                <Select>
-                  <Option value="wedding">Wedding</Option>
-                  <Option value="birthday">Birthday Party</Option>
-                  <Option value="corporate">Corporate Event</Option>
-                  <Option value="reunion">Reunion</Option>
-                  <Option value="social">Social Gathering</Option>
-                </Select>
-              </Form.Item>
+             <Form.Item name="eventTypes" label="Event Types">
+  <Select>
+    <Option value="wedding">Wedding</Option>
+    <Option value="birthday">Birthday Party</Option>
+    <Option value="corporate">Corporate Event</Option>
+    <Option value="Reunion">Reunion</Option>
+    <Option value="social">Social Gathering</Option>
+  </Select>
+</Form.Item>
             </Col>
           </Row>
 

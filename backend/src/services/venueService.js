@@ -151,7 +151,7 @@ const getVenueById = async (id, userId = null) => {
  */
 const createVenue = async (venueData, providerId, userRole) => {
   try {
-    const { name, description, location, capacity, price, amenities, images } = venueData
+    const { name, description, location, capacity, price, amenities, images,eventTypes } = venueData
 
     const venue = await prisma.venue.create({
       data: {
@@ -162,6 +162,7 @@ const createVenue = async (venueData, providerId, userRole) => {
         price: Number.parseFloat(price),
         amenities,
         images,
+        eventTypes,
         providerId,
         status: userRole === "ADMIN" ? "APPROVED" : "PENDING",
       },
@@ -209,6 +210,7 @@ const updateVenue = async (id, venueData, userId, userRole) => {
         price: Number.parseFloat(price),
         amenities,
         images,
+        eventTypes,
         status: userRole === "ADMIN" ? status : venue.status,
       },
     })
