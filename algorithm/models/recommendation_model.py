@@ -50,7 +50,6 @@ class RecommendationModel:
             "below_budget": similar_services['below_budget']
         }
 
-        # Cache the final recommendations
         self._cache[cache_key] = final_recommendations
         self.logger.info("Recommendations generated and cached.")
 
@@ -62,29 +61,34 @@ class RecommendationModel:
         guests = user_input.get("guests", 0)
         event_type = user_input.get("event_type", "").lower()
 
+        self.logger.info(f"Filtering services with budget: {budget}, guests: {guests}, event type: {event_type}")
         for service in services:
             try:
+                # Calculate total cost based on service type
                 if service['type'] == 'CATERING':
                     total_cost = service.get('pricePerPerson', 0) * guests
+                    if guests > service.get('maxPeople', 0) * 1.1:  # 10% flexibility
+                        continue
+                elif service['type'] == 'VENUE':
+                    total_cost = service.get('price', float('inf'))
+                    if guests > service.get('capacity', 0) * 1.1:  # 10% flexibility
+                        continue
                 elif service['type'] in ['DESIGNER', 'PHOTOGRAPHER']:
                     price_range = service.get('priceRange', '')
                     min_price, max_price = map(float, price_range.split('-')) if '-' in price_range else (float(price_range), float(price_range))
                     total_cost = (min_price + max_price) / 2
-                else:  # VENUE
-                    total_cost = service.get('price', float('inf'))
-
-                if total_cost > budget:
+                else:
                     continue
 
+                # Check if the cost is within a reasonable budget range (10% flexibility)
+                if total_cost > budget * 1.1:
+                    continue
+
+                # Event type filtering (only for VENUE and DESIGNER)
                 if service['type'] in ['VENUE', 'DESIGNER']:
                     service_event_types = service.get('eventTypes', "").lower().split(",")
                     if event_type and event_type not in service_event_types:
                         continue
-
-                if service['type'] == 'VENUE' and guests > service.get('capacity', 0):
-                    continue
-                if service['type'] == 'CATERING' and guests > service.get('maxPeople', 0):
-                    continue
 
                 filtered_services.append(service)
 
@@ -95,7 +99,6 @@ class RecommendationModel:
         return filtered_services
 
     def generate_cache_key(self, user_input):
-        # Use a more consistent and unique cache key format
         key_string = f"{user_input['budget']}_{user_input['location']}_{user_input['guests']}_{user_input['event_type']}_{'_'.join(sorted(user_input['service_types']))}"
         return hashlib.md5(key_string.encode()).hexdigest()
 
@@ -104,7 +107,7 @@ class RecommendationModel:
         priority_queue = []
 
         for service in services:
-            heapq.heappush(priority_queue, (service['price'], [service]))
+            heapq.heappush(priority_queue, (service.get('price', 0), [service]))
 
         while priority_queue:
             current_cost, current_combination = heapq.heappop(priority_queue)
@@ -115,8 +118,8 @@ class RecommendationModel:
 
             for service in services:
                 if service['type'] not in types_in_combination:
-                    new_cost = current_cost + service['price']
-                    if new_cost <= budget:
+                    new_cost = current_cost + service.get('price', 0)
+                    if new_cost <= budget * 1.1:  # 10% flexibility
                         heapq.heappush(priority_queue, (new_cost, current_combination + [service]))
 
         return min(combinations, key=lambda x: x[0])[1] if combinations else []
@@ -136,7 +139,7 @@ class RecommendationModel:
 
             for idx in indices[0]:
                 similar_service = services[idx]
-                if similar_service['price'] > service['price']:
+                if similar_service['price'] > service.get('price', 0):
                     similar['above_budget'].append(similar_service)
                 else:
                     similar['below_budget'].append(similar_service)

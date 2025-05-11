@@ -1108,3 +1108,5 @@
 2025-05-11 21:37:09,500 - __main__ - WARNING - No matching services after pre-filtering.
 2025-05-11 21:37:09,500 - __main__ - INFO - Final recommendations to be returned: {'best_match': [], 'above_budget': [], 'below_budget': []}
 2025-05-11 21:45:32,644 - __main__ - ERROR - Error processing recommendations: RecommendationModel.get_recommendations() got an unexpected keyword argument 'service_type'
+2025-05-11 23:04:24,656 - __main__ - ERROR - Error processing recommendations: RecommendationModel.get_recommendations() got an unexpected keyword argument 'service_type'
+2025-05-11 23:13:15,050 - __main__ - ERROR - Error processing recommendations: RecommendationModel.get_recommendations() got an unexpected keyword argument 'service_type'

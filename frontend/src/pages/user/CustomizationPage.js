@@ -42,7 +42,8 @@ const CustomizationPage = () => {
 
       const data = {
         ...values,
-        serviceType: serviceTypes
+        serviceType: serviceTypes,
+        eventType: values.eventTypes // Ensure alignment with backend
       };
 
       console.log("Request Payload:", data);
@@ -109,15 +110,15 @@ const CustomizationPage = () => {
         <Form name="customization" layout="vertical" onFinish={onFinish}>
           <Row gutter={24}>
             <Col span={12}>
-             <Form.Item name="eventTypes" label="Event Types">
-  <Select>
-    <Option value="wedding">Wedding</Option>
-    <Option value="birthday">Birthday Party</Option>
-    <Option value="corporate">Corporate Event</Option>
-    <Option value="Reunion">Reunion</Option>
-    <Option value="social">Social Gathering</Option>
-  </Select>
-</Form.Item>
+              <Form.Item name="eventTypes" label="Event Types">
+                <Select>
+                  <Option value="wedding">Wedding</Option>
+                  <Option value="birthday">Birthday Party</Option>
+                  <Option value="corporate">Corporate Event</Option>
+                  <Option value="Reunion">Reunion</Option>
+                  <Option value="social">Social Gathering</Option>
+                </Select>
+              </Form.Item>
             </Col>
           </Row>
 

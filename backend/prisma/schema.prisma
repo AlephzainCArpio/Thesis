@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-   output   = "./node_modules/@prisma/client"
 }
 
 datasource db {
@@ -35,9 +34,6 @@ model UserProfile {
   id          String  @id @default(uuid())
   userId      String  @unique
   location    String?
-  preferences String? @db.LongText
-  notifyEmail Boolean @default(true)
-  notifyPhone Boolean @default(false)
   avatar      String?
   user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
