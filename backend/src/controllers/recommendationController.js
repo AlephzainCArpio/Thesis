@@ -4,18 +4,24 @@ const getRecommendationsController = async (req, res) => {
   try {
     const { budget, location, guests, eventTypes, serviceType } = req.body;
 
+    // Check if all required fields are present
     if (!budget || !location || !guests || !eventTypes || !serviceType) {
       return res.status(400).json({
         message: "Missing required parameters",
       });
     }
 
+    // Check if user is authenticated
     if (!req.user || !req.user.id) {
       return res.status(401).json({
         message: "Not authorized, user not found",
       });
     }
 
+   
+    const eventType = Array.isArray(eventTypes) ? eventTypes[0] : eventTypes;
+
+    // Get recommendations from the service
     const recommendations = await getRecommendations({
       budget,
       location,

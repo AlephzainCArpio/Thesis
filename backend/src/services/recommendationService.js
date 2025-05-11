@@ -1,58 +1,28 @@
-const { getRecommendations } = require("../services/recommendationService");
+const axios = require('axios');
+require('dotenv').config();
 
-const getRecommendationsController = async (req, res) => {
+const ALGORITHM_SERVICE_URL = process.env.ALGORITHM_SERVICE_URL;
+
+const getRecommendations = async ({ budget, location, guests, eventType, serviceType, userId }) => {
   try {
-    const { budget, location, guests, eventTypes, serviceType } = req.body;
+    // Flatten serviceType if it's nested
+    const flattenedServiceType = Array.isArray(serviceType[0]) ? serviceType.flat() : serviceType;
 
-    if (!budget || !location || !guests || !eventTypes || !serviceType) {
-      return res.status(400).json({
-        message: "Missing required parameters",
-      });
-    }
-
-    if (!req.user || !req.user.id) {
-      return res.status(401).json({
-        message: "Not authorized, user not found",
-      });
-    }
-
-    const recommendations = await getRecommendations({
+    const response = await axios.post(`${ALGORITHM_SERVICE_URL}/recommendation`, {
       budget,
       location,
       guests,
       eventType,
-      serviceType,
-      userId: req.user.id,
+      serviceType: flattenedServiceType,
+      userId,
     });
 
-    res.json({
-      recommendations,
-      metadata: {
-        total_results: {
-          best_match: recommendations.best_match.length,
-          above_budget: recommendations.above_budget.length,
-          below_budget: recommendations.below_budget.length,
-        },
-        filters_applied: {
-          budget,
-          location,
-          guests,
-          eventType,
-          serviceType,
-        },
-        timestamp: new Date().toISOString(),
-      },
-    });
+    return response.data.recommendations;
   } catch (error) {
-    console.error("Error in recommendation controller:", {
-      message: error.message,
-      stack: error.stack,
-    });
-    res.status(500).json({
-      message: "Internal Server Error",
-      details: error.message,
-    });
+    console.error("Error calling Python recommendation service:", error.message);
+    throw error;
   }
 };
-
-module.exports = { getRecommendationsController };
+module.exports = {
+  getRecommendations,
+};
