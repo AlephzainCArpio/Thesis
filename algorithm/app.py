@@ -27,7 +27,7 @@ CORS(app)  # Enable CORS for all routes
 db_connector = DatabaseConnector()
 
 # Initialize the RecommendationModel with the required arguments
-cache = {}  # Initialize an empty cache
+cache = {}  
 recommendation_model = RecommendationModel(db_connector=db_connector, logger=logger, cache=cache)
 
 @app.route('/health', methods=['GET'])
