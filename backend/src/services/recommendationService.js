@@ -3,12 +3,12 @@ require('dotenv').config();
 
 const ALGORITHM_SERVICE_URL = process.env.ALGORITHM_SERVICE_URL;
 
-const getRecommendations = async ({ budget, guests, eventType, serviceType, userId }) => {
+const getRecommendations = async ({ budget, guests, eventTypes, serviceType, userId }) => {
   try {
     const response = await axios.post(`${ALGORITHM_SERVICE_URL}/recommendation`, {
       budget,
       guests,
-      eventType,
+      eventTypes,
       serviceType,
       userId,
     });

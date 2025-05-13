@@ -79,7 +79,7 @@ class RecommendationModel:
                 if price > budget:
                     continue
 
-                service_event_types = service.get('eventType', "").lower().split(",")
+                service_event_types = service.get('eventTypes', "").lower().split(",")
                 if event_type and event_type not in service_event_types:
                     continue
 

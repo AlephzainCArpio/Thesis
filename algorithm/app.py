@@ -85,7 +85,7 @@ def get_recommendations():
                 "message": "No data provided"
             }), 400
 
-        required_fields = ['budget', 'guests', 'eventType', 'serviceType']
+        required_fields = ['budget', 'guests', 'eventTypes', 'serviceType']
         missing_fields = [field for field in required_fields if field not in data]
         
         if missing_fields:
@@ -98,7 +98,7 @@ def get_recommendations():
         recommendations = recommendation_model.get_recommendations(
             budget=data['budget'],
             guests=data['guests'],
-            event_type=data['eventType'],
+            event_type=data['eventTypes'],
             service_type=data['serviceType'],
             user_id=data.get('userId') 
         )

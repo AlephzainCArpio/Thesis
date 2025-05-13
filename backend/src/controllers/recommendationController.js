@@ -18,13 +18,11 @@ const getRecommendationsController = async (req, res) => {
       });
     }
 
-    const eventType = Array.isArray(eventTypes) ? eventTypes[0] : eventTypes;
-
-    
+    // Pass the eventTypes field as-is to the recommendation service
     const recommendations = await getRecommendations({
       budget,
       guests,
-      eventType,
+      eventTypes, 
       serviceType,
       userId: req.user.id,
     });
@@ -40,7 +38,7 @@ const getRecommendationsController = async (req, res) => {
         filters_applied: {
           budget,
           guests,
-          eventType,
+          eventTypes,
           serviceType,
         },
         timestamp: new Date().toISOString(),

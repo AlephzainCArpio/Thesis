@@ -35,12 +35,14 @@ const CustomizationPage = () => {
       setLoading(true);
       setLoadingRecommendations(true);
 
+      // Map service types and ensure eventTypes is included
       const serviceTypes = selectedService.map(
         (type) => serviceTypeMapping[type] || type
       );
 
       const data = {
         ...values,
+        eventTypes: values.eventTypes, // Ensure eventTypes is explicitly included
         serviceType: serviceTypes
       };
 
@@ -108,12 +110,16 @@ const CustomizationPage = () => {
         <Form name="customization" layout="vertical" onFinish={onFinish}>
           <Row gutter={24}>
             <Col span={12}>
-              <Form.Item name="eventTypes" label="Event Types">
+              <Form.Item
+                name="eventTypes"
+                label="Event Types"
+                rules={[{ required: true, message: "Please select an event type." }]}
+              >
                 <Select>
                   <Option value="wedding">Wedding</Option>
                   <Option value="birthday">Birthday Party</Option>
                   <Option value="corporate">Corporate Event</Option>
-                  <Option value="Reunion">Reunion</Option>
+                  <Option value="reunion">Reunion</Option>
                   <Option value="social">Social Gathering</Option>
                 </Select>
               </Form.Item>
@@ -125,7 +131,9 @@ const CustomizationPage = () => {
               <Form.Item
                 name="guests"
                 label="Number of Guests"
-                rules={[{ required: true }]}
+                rules={[
+                  { required: true, message: "Please enter the number of guests." }
+                ]}
               >
                 <InputNumber min={1} max={1000} style={{ width: "100%" }} />
               </Form.Item>
@@ -135,7 +143,7 @@ const CustomizationPage = () => {
           <Form.Item
             name="budget"
             label="Budget (₱)"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: "Please enter your budget." }]}
           >
             <InputNumber
               style={{ width: "100%" }}
@@ -152,7 +160,7 @@ const CustomizationPage = () => {
           <Form.Item
             name="serviceType"
             label="Select Service Types"
-            rules={[{ required: true }]}
+            rules={[{ required: true, message: "Please select at least one service type." }]}
           >
             <Checkbox.Group onChange={onServiceTypeChange}>
               <Row gutter={16}>
