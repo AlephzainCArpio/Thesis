@@ -79,8 +79,6 @@ def get_recommendations():
     try:
         # Validate request data
         data = request.get_json()
-        logger.info(f"Received recommendation request with data: {data}")
-        
         if not data:
             return jsonify({
                 "error": "Bad Request",
@@ -89,50 +87,38 @@ def get_recommendations():
 
         required_fields = ['budget', 'location', 'guests', 'eventType', 'serviceType']
         missing_fields = [field for field in required_fields if field not in data]
-
+        
         if missing_fields:
             return jsonify({
                 "error": "Bad Request",
                 "message": f"Missing required fields: {', '.join(missing_fields)}"
             }), 400
 
-        # Validate serviceType field
-        if not isinstance(data['serviceType'], list) or not data['serviceType']:
-            return jsonify({
-                "error": "Bad Request",
-                "message": "'serviceType' must be a non-empty list"
-            }), 400
-
-        # Map eventType to eventTypes for database compatibility
-        event_types = [data['eventType']]  # Convert to list if needed
-
         # Process the recommendation request using RecommendationModel
         recommendations = recommendation_model.get_recommendations(
             budget=data['budget'],
             location=data['location'],
             guests=data['guests'],
-            event_type=event_types,  # Pass as a list
-            service_types=data['serviceType'],  # Ensure plural form is used
-            user_id=data.get('userId')
+            event_type=data['eventType'],
+            service_type=data['serviceType'],
+            user_id=data.get('userId') 
         )
-
+        
         if not recommendations:
-            logger.warning("No recommendations found for the given input.")
             return jsonify({
                 "message": "No recommendations found"
             }), 404
-
-        logger.info("Recommendations successfully generated.")
+        
         return jsonify({"recommendations": recommendations})
 
     except ValueError as e:
-        logger.error(f"Value error in recommendations: {str(e)}", exc_info=True)
+        logger.error(f"Value error in recommendations: {str(e)}")
         return jsonify({
             "error": "Bad Request",
             "message": str(e)
         }), 400
     except Exception as e:
-        logger.error(f"Error processing recommendations: {str(e)}", exc_info=True)
+        logger.error(f"Error processing recommendations: {str(e)}")
         return jsonify({
             "error": "Internal Server Error",
             "message": "An error occurred while processing recommendations"
