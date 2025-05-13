@@ -3,7 +3,6 @@ import heapq
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import MinMaxScaler
-from utils.distance_calculator import calculate_distance, DistanceCalculationError
 from utils.database_connector import DatabaseConnector
 from typing import List, Dict, Any
 import hashlib
@@ -16,10 +15,9 @@ class RecommendationModel:
         self._cache = cache
         self.scaler = MinMaxScaler()
 
-    def get_recommendations(self, budget: float, location: str, guests: int, event_type: str, service_type: str, user_id: str = None) -> Dict[str, List[Dict]]:
+    def get_recommendations(self, budget: float, guests: int, event_type: str, service_type: str, user_id: str = None) -> Dict[str, List[Dict]]:
         user_input = {
             'budget': budget,
-            'location': location,
             'guests': guests,
             'event_type': event_type,
             'service_type': service_type,
@@ -46,21 +44,17 @@ class RecommendationModel:
             self.logger.warning("No matching services after pre-filtering.")
             return {"best_match": [], "above_budget": [], "below_budget": []}
 
-        best_match = self._find_best_option_enhanced(filtered_services, user_input)
+        best_match = self._find_best_option_dijkstra(filtered_services, user_input)
         self.logger.info(f"Best match found: {best_match}")
-        similar_options = self._find_similar_options_enhanced(filtered_services, best_match, k=2)
+        similar_options = self._find_similar_options_knn(filtered_services, best_match, k=2)
 
         return {
             "best_match": [best_match] if best_match else [],
-            "above_budget": similar_options,
-            "below_budget": []
+            "above_budget": similar_options["above_budget"],
+            "below_budget": similar_options["below_budget"]
         }
 
     def _pre_filter_services(self, services: List[Dict], user_input: dict) -> List[Dict]:
-        """
-        Filters services based on user input such as budget, guests, and event type.
-        Returns the services that meet the criteria.
-        """
         filtered_services = []
         budget = user_input.get("budget", float('inf'))
         guests = user_input.get("guests", 0)
@@ -69,26 +63,26 @@ class RecommendationModel:
         self.logger.info(f"Filtering services with budget: {budget}, guests: {guests}, event type: {event_type}")
         for service in services:
             try:
-                price_range = service.get('priceRange', '')
-                if "-" in price_range:
-                    min_price, max_price = map(float, price_range.split('-'))
+                if service['type'] == 'VENUE':
+                    if guests > service.get('capacity', 0):
+                        continue
+                    price = service.get('price', float('inf'))
+                elif service['type'] == 'CATERING':
+                    if guests > service.get('maxPeople', 0):
+                        continue
+                    price = service.get('pricePerPerson', 0) * guests
                 else:
-                    min_price, max_price = float(price_range), float(price_range)
+                    price_range = service.get('priceRange', '0-0')
+                    min_price, max_price = map(float, price_range.split('-'))
+                    price = (min_price + max_price) / 2
 
-                if not (min_price <= budget <= max_price):
-                    continue  # Skip if the budget does not match the price range
+                if price > budget:
+                    continue
 
-                # Check for event type match
-                service_event_types = service.get('eventTypes', "").lower().split(",")
+                service_event_types = service.get('eventType', "").lower().split(",")
                 if event_type and event_type not in service_event_types:
                     continue
 
-                # Ensure capacity is sufficient for the number of guests
-                capacity = service.get('capacity', 0)
-                if guests > capacity:
-                    continue
-
-                # Add service to the filtered list if it passes all criteria
                 filtered_services.append(service)
 
             except Exception as e:
@@ -98,52 +92,33 @@ class RecommendationModel:
         self.logger.info(f"Services after filtering: {len(filtered_services)}")
         return filtered_services
 
-    def _find_best_option_enhanced(self, services: List[Dict], user_input: dict) -> Dict:
-        self.logger.info("Finding the best option using enhanced scoring...")
-
-        pq = []
+    def _find_best_option_dijkstra(self, services: List[Dict], user_input: dict) -> Dict:
         budget = user_input.get("budget", float('inf'))
-        location = user_input.get("location", "")
-        guests = user_input.get("guests", 0)
-        event_type = user_input.get("event_type", "").lower()
+        pq = []
 
         for service in services:
             try:
-                distance = calculate_distance(service.get('location', ''), location)
-                distance_score = max(0, 1 - (distance / 100))  # Normalize distance score
                 price = service.get('price', float('inf'))
-                price_score = max(0, 1 - (price / budget))  # Normalize price score
-                capacity_score = max(0, 1 - (guests / service.get('capacity', 1)))
-                event_type_score = 1 if event_type in service.get('eventTypes', []) else 0
-
-                final_score = 0.3 * price_score + 0.25 * distance_score + 0.2 * capacity_score + 0.25 * event_type_score
-                heapq.heappush(pq, (-final_score, service))
-
-            except DistanceCalculationError as e:
-                self.logger.error(f"Distance calculation error: {str(e)}")
+                if service.get('type') == 'CATERING':
+                    price = service.get('pricePerPerson', 0) * user_input.get("guests", 0)
+                score = abs(price - budget)
+                heapq.heappush(pq, (score, service))
+            except Exception as e:
+                self.logger.error(f"Error processing service in Dijkstra's algorithm: {str(e)}")
 
         return heapq.heappop(pq)[1] if pq else None
 
-    def _find_similar_options_enhanced(self, services: List[Dict], reference_service: Dict, k: int = 2) -> List[Dict]:
+    def _find_similar_options_knn(self, services: List[Dict], reference_service: Dict, k: int = 2) -> Dict[str, List[Dict]]:
         if not reference_service or len(services) <= 1:
-            return []
+            return {"above_budget": [], "below_budget": []}
 
-        # Extract features (price and capacity) for comparison
-        features = [[service.get('price', 0), service.get('capacity', 0)] for service in services if service['id'] != reference_service['id']]
-        if not features:
-            return []
+        budget = reference_service.get('price', float('inf'))
+        features = [{'price': service.get('price', 0)} for service in services if service != reference_service]
 
-        features_normalized = self.scaler.fit_transform(features)
-        knn = NearestNeighbors(n_neighbors=min(k, len(features)), metric='cosine')
-        knn.fit(features_normalized)
-        ref_features = self.scaler.transform([[reference_service.get('price', 0), reference_service.get('capacity', 0)]])
-        _, indices = knn.kneighbors(ref_features)
+        above_budget = [service for service in features if service['price'] > budget]
+        below_budget = [service for service in features if service['price'] <= budget]
 
-        return [services[idx] for idx in indices[0]]
-
-    def generate_cache_key(self, user_input: dict) -> str:
-        """
-        Generates a cache key based on user input. It returns a hash string for unique identification.
-        """
-        hash_object = hashlib.md5(str(user_input).encode())
-        return hash_object.hexdigest()
+        return {
+            "above_budget": above_budget[:k],
+            "below_budget": below_budget[:k]
+        }

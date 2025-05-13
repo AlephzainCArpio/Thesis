@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from utils.database_connector import DatabaseConnector
-from models.recommendation_model import RecommendationModel 
+from models.recommendation_model import RecommendationModel
 import os
 from dotenv import load_dotenv
 import logging
@@ -27,7 +27,7 @@ CORS(app)  # Enable CORS for all routes
 db_connector = DatabaseConnector()
 
 # Initialize the RecommendationModel with the required arguments
-cache = {}  
+cache = {}
 recommendation_model = RecommendationModel(db_connector=db_connector, logger=logger, cache=cache)
 
 @app.route('/health', methods=['GET'])
@@ -85,7 +85,7 @@ def get_recommendations():
                 "message": "No data provided"
             }), 400
 
-        required_fields = ['budget', 'location', 'guests', 'eventType', 'serviceType']
+        required_fields = ['budget', 'guests', 'eventType', 'serviceType']
         missing_fields = [field for field in required_fields if field not in data]
         
         if missing_fields:
@@ -97,7 +97,6 @@ def get_recommendations():
         # Process the recommendation request using RecommendationModel
         recommendations = recommendation_model.get_recommendations(
             budget=data['budget'],
-            location=data['location'],
             guests=data['guests'],
             event_type=data['eventType'],
             service_type=data['serviceType'],

@@ -41,6 +41,11 @@ class DatabaseConnector:
             self.connection.close()
             logger.info("Database connection closed")
     
+    def get_connection(self):
+        """Return the current database connection"""
+        self._connect()  # Ensure the connection is active
+        return self.connection
+    
     def execute_query(self, query, params=None, fetch=True):
         """Execute a query and optionally fetch results"""
         cursor = None
@@ -65,7 +70,7 @@ class DatabaseConnector:
     def close(self):
         """Close the database connection explicitly when done"""
         self._disconnect()
-
+    
     def get_services(self, service_types):
         """
         Fetch services from the database based on the service types.

@@ -2,10 +2,10 @@ const { getRecommendations } = require("../services/recommendationService");
 
 const getRecommendationsController = async (req, res) => {
   try {
-    const { budget, location, guests, eventTypes, serviceType } = req.body;
+    const { budget, guests, eventTypes, serviceType } = req.body;
 
     // Check if all required fields are present
-    if (!budget || !location || !guests || !eventTypes || !serviceType) {
+    if (!budget || !guests || !eventTypes || !serviceType) {
       return res.status(400).json({
         message: "Missing required parameters",
       });
@@ -18,13 +18,11 @@ const getRecommendationsController = async (req, res) => {
       });
     }
 
-   
     const eventType = Array.isArray(eventTypes) ? eventTypes[0] : eventTypes;
 
-    // Get recommendations from the service
+    
     const recommendations = await getRecommendations({
       budget,
-      location,
       guests,
       eventType,
       serviceType,
@@ -41,7 +39,6 @@ const getRecommendationsController = async (req, res) => {
         },
         filters_applied: {
           budget,
-          location,
           guests,
           eventType,
           serviceType,

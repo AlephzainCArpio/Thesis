@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   Form,
-  Input,
   InputNumber,
   Select,
   Button,
@@ -67,7 +66,7 @@ const CustomizationPage = () => {
         if (allRecommendations.length > 0) {
           message.success("Recommendations generated successfully!");
         } else {
-          message.warning("No recommendations found.");
+          message.warning("No matching services found for the selected budget.");
         }
       } else {
         message.warning("No recommendations found.");
@@ -109,29 +108,19 @@ const CustomizationPage = () => {
         <Form name="customization" layout="vertical" onFinish={onFinish}>
           <Row gutter={24}>
             <Col span={12}>
-             <Form.Item name="eventTypes" label="Event Types">
-  <Select>
-    <Option value="wedding">Wedding</Option>
-    <Option value="birthday">Birthday Party</Option>
-    <Option value="corporate">Corporate Event</Option>
-    <Option value="Reunion">Reunion</Option>
-    <Option value="social">Social Gathering</Option>
-  </Select>
-</Form.Item>
+              <Form.Item name="eventTypes" label="Event Types">
+                <Select>
+                  <Option value="wedding">Wedding</Option>
+                  <Option value="birthday">Birthday Party</Option>
+                  <Option value="corporate">Corporate Event</Option>
+                  <Option value="Reunion">Reunion</Option>
+                  <Option value="social">Social Gathering</Option>
+                </Select>
+              </Form.Item>
             </Col>
           </Row>
 
           <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item
-                name="location"
-                label="Location"
-                rules={[{ required: true }]}
-              >
-                <Input placeholder="e.g., Bulan, Sorsogon" />
-              </Form.Item>
-            </Col>
-
             <Col span={12}>
               <Form.Item
                 name="guests"
