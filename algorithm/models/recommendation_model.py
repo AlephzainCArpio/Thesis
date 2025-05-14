@@ -29,7 +29,7 @@ class RecommendationModel:
 
     def recommend_services(self, user_input: dict) -> Dict[str, List[Dict]]:
         self.logger.info(f"User input for recommendations: {user_input}")
-        service_type = user_input.get("service_type", "")
+        service_type = user_input.get("service_type", [])
         services = self.db.get_services([service_type])
 
         self.logger.info(f"Fetched services from database: {services}")
@@ -80,7 +80,7 @@ class RecommendationModel:
                 #     continue
 
                 service_event_types = service.get('eventTypes', "").lower().split(",")
-                if event_type and event_type not in service_event_types:
+                if service.get("type") in ["VENUE", "DESIGNER"] and event_type and event_type not in service_event_types:
                     continue
 
                 filtered_services.append(service)

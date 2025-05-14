@@ -111,11 +111,9 @@ class DatabaseConnector:
                 query = f"SELECT * FROM {table_name} WHERE status = 'APPROVED'"
                 services = self.execute_query(query)
                 logger.info(f"Fetched {len(services)} services for type '{service_type}' from table '{table_name}'")
-                raw_services = []
                 for service in services:
                     service["type"] = service_type
-                    raw_services.append(service)
-                all_services.extend(raw_services)
+                    all_services.append(service)
 
             return all_services
 
