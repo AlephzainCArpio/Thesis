@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, json
 from flask_cors import CORS
 from utils.database_connector import DatabaseConnector
 from models.recommendation_model import RecommendationModel
@@ -56,23 +56,6 @@ def health_check():
         except Exception as e:
             logger.error(f"Error closing database connection: {str(e)}")
 
-@app.errorhandler(404)
-def not_found_error(error):
-    """Handle 404 errors"""
-    return jsonify({
-        "error": "Not Found",
-        "message": "The requested resource was not found"
-    }), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    """Handle 500 errors"""
-    logger.error(f"Internal server error: {str(error)}")
-    return jsonify({
-        "error": "Internal Server Error",
-        "message": "An unexpected error occurred"
-    }), 500
-
 @app.route('/recommendation', methods=['POST'])
 def get_recommendations():
     """Endpoint for getting recommendations with proper error handling"""
@@ -93,6 +76,7 @@ def get_recommendations():
                 "error": "Bad Request",
                 "message": f"Missing required fields: {', '.join(missing_fields)}"
             }), 400
+   
 
         # Process the recommendation request using RecommendationModel
         recommendations = recommendation_model.get_recommendations(
@@ -108,7 +92,11 @@ def get_recommendations():
                 "message": "No recommendations found"
             }), 404
         
-        return jsonify({"recommendations": recommendations})
+        print(recommendations)
+
+        return jsonify({
+            "recommendations": json.dumps(recommendations)
+        })
 
     except ValueError as e:
         logger.error(f"Value error in recommendations: {str(e)}")
@@ -121,7 +109,24 @@ def get_recommendations():
         return jsonify({
             "error": "Internal Server Error",
             "message": "An error occurred while processing recommendations"
-        }), 500
+        }), 500    
+
+@app.errorhandler(404)
+def not_found_error(error):
+    """Handle 404 errors"""
+    return jsonify({
+        "error": "Not Found",
+        "message": "The requested resource was not found"
+    }), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors"""
+    logger.error(f"Internal server error: {str(error)}")
+    return jsonify({
+        "error": "Internal Server Error",
+        "message": "An unexpected error occurred"
+    }), 500
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT"))

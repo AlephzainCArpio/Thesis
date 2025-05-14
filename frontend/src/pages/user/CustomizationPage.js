@@ -42,7 +42,7 @@ const CustomizationPage = () => {
 
       const data = {
         ...values,
-        eventTypes: values.eventTypes, // Ensure eventTypes is explicitly included
+        eventTypes: values.eventTypes, 
         serviceType: serviceTypes
       };
 

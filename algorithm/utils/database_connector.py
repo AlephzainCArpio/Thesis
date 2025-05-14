@@ -43,14 +43,14 @@ class DatabaseConnector:
     
     def get_connection(self):
         """Return the current database connection"""
-        self._connect()  # Ensure the connection is active
+        self._connect()  # Ensures the connection is active
         return self.connection
     
     def execute_query(self, query, params=None, fetch=True):
         """Execute a query and optionally fetch results"""
         cursor = None
         try:
-            self._connect()  # Ensure connection is open before executing query
+            self._connect()  # Ensures connection is open before executing query
             cursor = self.connection.cursor(dictionary=True)
             cursor.execute(query, params or ())
 
@@ -111,7 +111,11 @@ class DatabaseConnector:
                 query = f"SELECT * FROM {table_name} WHERE status = 'APPROVED'"
                 services = self.execute_query(query)
                 logger.info(f"Fetched {len(services)} services for type '{service_type}' from table '{table_name}'")
-                all_services.extend(services)
+                raw_services = []
+                for service in services:
+                    service["type"] = service_type
+                    raw_services.append(service)
+                all_services.extend(raw_services)
 
             return all_services
 

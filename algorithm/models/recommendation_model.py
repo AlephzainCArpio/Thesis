@@ -76,8 +76,8 @@ class RecommendationModel:
                     min_price, max_price = map(float, price_range.split('-'))
                     price = (min_price + max_price) / 2
 
-                if price > budget:
-                    continue
+                # if price > budget:
+                #     continue
 
                 service_event_types = service.get('eventTypes', "").lower().split(",")
                 if event_type and event_type not in service_event_types:

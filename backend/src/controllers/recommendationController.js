@@ -27,7 +27,8 @@ const getRecommendationsController = async (req, res) => {
       userId: req.user.id,
     });
 
-    res.json({
+
+    res.status(200).json({
       recommendations,
       metadata: {
         total_results: {
@@ -45,7 +46,7 @@ const getRecommendationsController = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error in recommendation controller:", error);
+    // console.error("Error in recommendation controller:", error);
     res.status(500).json({
       message: "Internal Server Error",
       details: error.message,
