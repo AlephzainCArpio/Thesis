@@ -48,7 +48,6 @@ def health_check():
             "error": str(e)
         }), 500
     finally:
-        # Ensure connection is properly closed
         try:
             if 'connection' in locals() and connection.is_connected():
                 connection.close()
@@ -60,76 +59,49 @@ def health_check():
 def get_recommendations():
     """Endpoint for getting recommendations with proper error handling"""
     try:
-        # Validate request data
         data = request.get_json()
         if not data:
-            return jsonify({
-                "error": "Bad Request",
-                "message": "No data provided"
-            }), 400
+            return jsonify({"error": "Bad Request", "message": "No data provided"}), 400
 
-        required_fields = ['budget', 'guests', 'eventTypes', 'serviceType']
+        required_fields = ['budget', 'guests', 'serviceType']
         missing_fields = [field for field in required_fields if field not in data]
-        
         if missing_fields:
-            return jsonify({
-                "error": "Bad Request",
-                "message": f"Missing required fields: {', '.join(missing_fields)}"
-            }), 400
-   
+            return jsonify({"error": "Bad Request", "message": f"Missing required fields: {', '.join(missing_fields)}"}), 400
 
         # Process the recommendation request using RecommendationModel
         recommendations = recommendation_model.get_recommendations(
             budget=data['budget'],
             guests=data['guests'],
-            event_type=data['eventTypes'],
+            event_type=data.get('eventTypes', None),
             service_type=data['serviceType'],
-            user_id=data.get('userId') 
+            user_id=data.get('userId', None)
         )
         
         if not recommendations:
-            return jsonify({
-                "message": "No recommendations found"
-            }), 404
-        
-        print(recommendations)
+            return jsonify({"message": "No recommendations found"}), 404
 
-        return jsonify({
-            "recommendations": json.dumps(recommendations)
-        })
+        return jsonify({"recommendations": recommendations})
 
     except ValueError as e:
         logger.error(f"Value error in recommendations: {str(e)}")
-        return jsonify({
-            "error": "Bad Request",
-            "message": str(e)
-        }), 400
+        return jsonify({"error": "Bad Request", "message": str(e)}), 400
     except Exception as e:
         logger.error(f"Error processing recommendations: {str(e)}")
-        return jsonify({
-            "error": "Internal Server Error",
-            "message": "An error occurred while processing recommendations"
-        }), 500    
+        return jsonify({"error": "Internal Server Error", "message": "An error occurred while processing recommendations"}), 500    
 
 @app.errorhandler(404)
 def not_found_error(error):
     """Handle 404 errors"""
-    return jsonify({
-        "error": "Not Found",
-        "message": "The requested resource was not found"
-    }), 404
+    return jsonify({"error": "Not Found", "message": "The requested resource was not found"}), 404
 
 @app.errorhandler(500)
 def internal_error(error):
     """Handle 500 errors"""
     logger.error(f"Internal server error: {str(error)}")
-    return jsonify({
-        "error": "Internal Server Error",
-        "message": "An unexpected error occurred"
-    }), 500
+    return jsonify({"error": "Internal Server Error", "message": "An unexpected error occurred"}), 500
 
 if __name__ == '__main__':
-    port = int(os.getenv("PORT"))
+    port = int(os.getenv("PORT", 5000))
     debug = bool(int(os.getenv("FLASK_DEBUG", "0")))
     try:
         app.run(host='0.0.0.0', port=port, debug=debug)

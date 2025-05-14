@@ -5,7 +5,6 @@ from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import MinMaxScaler
 from utils.database_connector import DatabaseConnector
 from typing import List, Dict, Any
-import hashlib
 
 
 class RecommendationModel:
@@ -31,13 +30,12 @@ class RecommendationModel:
         self.logger.info(f"User input for recommendations: {user_input}")
         service_type = user_input.get("service_type", [])
         services = self.db.get_services([service_type])
-
+        
         self.logger.info(f"Fetched services from database: {services}")
         if not services:
             self.logger.warning("No services found for the given type.")
             return {"best_match": [], "above_budget": [], "below_budget": []}
 
-        # Apply filtering based on user input
         filtered_services = self._pre_filter_services(services, user_input)
         self.logger.info(f"Filtered services: {filtered_services}")
         if not filtered_services:
@@ -64,25 +62,26 @@ class RecommendationModel:
         for service in services:
             try:
                 if service['type'] == 'VENUE':
-                    if guests > service.get('capacity', 0):
-                        continue
+                    capacity = service.get('capacity', 0)
                     price = service.get('price', float('inf'))
-                elif service['type'] == 'CATERING':
-                    if guests > service.get('maxPeople', 0):
+                    if guests > capacity:
                         continue
-                    price = service.get('pricePerPerson', 0) * guests
+                elif service['type'] == 'CATERING':
+                    max_people = service.get('maxPeople', 0)
+                    price_per_person = service.get('pricePerPerson', 0)
+                    if guests > max_people:
+                        continue
+                    price = guests * price_per_person
                 else:
                     price_range = service.get('priceRange', '0-0')
                     min_price, max_price = map(float, price_range.split('-'))
                     price = (min_price + max_price) / 2
 
-                # if price > budget:
-                #     continue
-
                 service_event_types = service.get('eventTypes', "").lower().split(",")
                 if service.get("type") in ["VENUE", "DESIGNER"] and event_type and event_type not in service_event_types:
                     continue
 
+                service['price'] = price
                 filtered_services.append(service)
 
             except Exception as e:
@@ -99,8 +98,6 @@ class RecommendationModel:
         for service in services:
             try:
                 price = service.get('price', float('inf'))
-                if service.get('type') == 'CATERING':
-                    price = service.get('pricePerPerson', 0) * user_input.get("guests", 0)
                 score = abs(price - budget)
                 heapq.heappush(pq, (score, service))
             except Exception as e:
@@ -113,10 +110,15 @@ class RecommendationModel:
             return {"above_budget": [], "below_budget": []}
 
         budget = reference_service.get('price', float('inf'))
-        features = [{'price': service.get('price', 0)} for service in services if service != reference_service]
+        above_budget = []
+        below_budget = []
 
-        above_budget = [service for service in features if service['price'] > budget]
-        below_budget = [service for service in features if service['price'] <= budget]
+        for service in services:
+            price = service.get('price', 0)
+            if price > budget:
+                above_budget.append(service)
+            else:
+                below_budget.append(service)
 
         return {
             "above_budget": above_budget[:k],

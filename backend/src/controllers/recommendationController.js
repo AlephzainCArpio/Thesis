@@ -4,8 +4,8 @@ const getRecommendationsController = async (req, res) => {
   try {
     const { budget, guests, eventTypes, serviceType } = req.body;
 
-    // Check if all required fields are present
-    if (!budget || !guests || !eventTypes || !serviceType) {
+    // Validate required fields
+    if (!budget || !guests || !serviceType) {
       return res.status(400).json({
         message: "Missing required parameters",
       });
@@ -18,15 +18,14 @@ const getRecommendationsController = async (req, res) => {
       });
     }
 
-    // Pass the eventTypes field as-is to the recommendation service
+    // Prepare payload for recommendation service
     const recommendations = await getRecommendations({
       budget,
       guests,
-      eventTypes, 
+      eventTypes: eventTypes || null, 
       serviceType,
       userId: req.user.id,
     });
-
 
     res.status(200).json({
       recommendations,
@@ -46,7 +45,7 @@ const getRecommendationsController = async (req, res) => {
       },
     });
   } catch (error) {
-    // console.error("Error in recommendation controller:", error);
+    console.error("Error in recommendation controller:", error);
     res.status(500).json({
       message: "Internal Server Error",
       details: error.message,
