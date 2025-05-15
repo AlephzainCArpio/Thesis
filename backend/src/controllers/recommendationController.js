@@ -4,10 +4,17 @@ const getRecommendationsController = async (req, res) => {
   try {
     const { budget, guests, eventTypes, serviceType } = req.body;
 
-    // Validate required fields
-    if (!budget || !guests || !serviceType) {
+    // Validate required fields based on service type
+    const missingFields = [];
+    if (!budget) missingFields.push("budget");
+    if (serviceType === "DESIGNER" && !eventTypes) missingFields.push("eventTypes");
+    if (serviceType !== "PHOTOGRAPHER" && serviceType !== "DESIGNER" && !guests) missingFields.push("guests");
+    if (!serviceType) missingFields.push("serviceType");
+
+    // Return error if any required field is missing
+    if (missingFields.length > 0) {
       return res.status(400).json({
-        message: "Missing required parameters",
+        message: `Missing required parameters: ${missingFields.join(", ")}`,
       });
     }
 
@@ -22,11 +29,12 @@ const getRecommendationsController = async (req, res) => {
     const recommendations = await getRecommendations({
       budget,
       guests,
-      eventTypes: eventTypes || null, 
+      eventTypes: eventTypes || null,
       serviceType,
       userId: req.user.id,
     });
 
+    // Return the response with metadata
     res.status(200).json({
       recommendations,
       metadata: {
