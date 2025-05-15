@@ -88,12 +88,10 @@ const AdminDashboard = () => {
       }
 
       if (values.images && values.images.length > 0) {
-        values.images.forEach((file) => {
-          if (file.originFileObj) {
-            data.append("images", file.originFileObj);
-          }
-        });
-      }
+  values.images.forEach((file) => {
+    data.append("images", file.originFileObj);  // or just file if it's already a File object
+  });
+}
 
       let endpoint = "";
       switch (activeTab) {

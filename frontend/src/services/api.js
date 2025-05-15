@@ -44,8 +44,21 @@ export const submitServiceData = async (formData) => {
     const token = localStorage.getItem("token");
     if (!token) throw new Error("Authentication token not found.");
 
+    // Log form data for debugging
+    console.log("Form data being sent:");
+    for (let [key, value] of formData.entries()) {
+      if (key === 'images') {
+        console.log(`${key}: ${value.name} (${value.type}, ${value.size} bytes)`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    }
+
+    const url = `${api.defaults.baseURL}/api/providers/register-service`;
+    console.log("Sending request to:", url);
+
     const response = await axios.post(
-      `${api.defaults.baseURL}/providers/register-service`,
+      url,
       formData,
       {
         headers: {
@@ -55,9 +68,10 @@ export const submitServiceData = async (formData) => {
       }
     );
 
+    console.log("Response received:", response.data);
     return response.data;
   } catch (error) {
-    console.error("Service submission error:", error.response || error);
+    console.error("Service submission error:", error.response ? error.response.data : error.message);
     throw error;
   }
 };

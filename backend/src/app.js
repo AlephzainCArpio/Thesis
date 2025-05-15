@@ -16,7 +16,6 @@ const adminRoutes = require("./routes/adminRoutes");
 const publicRoutes = require("./routes/publicRoutes");
 const providerRoutes = require("./routes/providerRoutes");
 const recommendationRoutes = require("./routes/recommendationRoutes");
-
 const app = express();
 
 app.use(cors({
@@ -49,8 +48,7 @@ app.use("/api/designers", designerRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/providers", providerRoutes);
-app.use("/", recommendationRoutes);
-
+app.use("/", recommendationRoutes); 
 // Error handler middleware
 app.use(errorHandler);
 

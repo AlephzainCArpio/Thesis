@@ -3,15 +3,16 @@ const { PrismaClient } = require('@prisma/client');
 const router = express.Router();
 const { protect } = require('../middlewares/authMiddleware');
 const { handleUpload } = require('../middlewares/uploadMiddleware');
-const path = require('path');
 
 const prisma = new PrismaClient();
 
-// Protected upload route
-router.post('/:serviceType', protect, handleUpload, async (req, res) => {
+router.post('/:serviceType', protect, (req, res, next) => {
+  const folder = req.params.serviceType.toLowerCase();
+  handleUpload(folder)(req, res, next);
+}, async (req, res) => {
   const { serviceType } = req.params;
 
-  if (!req.files || req.files.length === 0) {
+  if (!req.filePaths || req.filePaths.length === 0) {
     return res.status(400).json({
       status: 'error',
       message: 'No files uploaded',
@@ -19,33 +20,45 @@ router.post('/:serviceType', protect, handleUpload, async (req, res) => {
   }
 
   try {
-    // Save file metadata to the database
-    const uploadedFiles = req.filePaths.map((filePath) => ({
-      images: filePath,
-      providerId: req.user.id, // assuming `req.user.id` contains the user's ID
-      status: 'PENDING',
-    }));
+    const providerId = req.user.id;
+    const images = req.filePaths; 
 
     let result;
     switch (serviceType.toLowerCase()) {
       case 'venues':
-        result = await prisma.venue.createMany({
-          data: uploadedFiles,
+        result = await prisma.venue.create({
+          data: {
+            images, 
+            providerId,
+            status: 'PENDING',
+          },
         });
         break;
       case 'photographers':
-        result = await prisma.photographer.createMany({
-          data: uploadedFiles,
+        result = await prisma.photographer.create({
+          data: {
+            images,
+            providerId,
+            status: 'PENDING',
+          },
         });
         break;
       case 'designers':
-        result = await prisma.designer.createMany({
-          data: uploadedFiles,
+        result = await prisma.designer.create({
+          data: {
+            images,
+            providerId,
+            status: 'PENDING',
+          },
         });
         break;
       case 'caterings':
-        result = await prisma.catering.createMany({
-          data: uploadedFiles,
+        result = await prisma.catering.create({
+          data: {
+            images,
+            providerId,
+            status: 'PENDING',
+          },
         });
         break;
       default:
@@ -57,7 +70,7 @@ router.post('/:serviceType', protect, handleUpload, async (req, res) => {
 
     return res.status(200).json({
       status: 'success',
-      message: 'Files uploaded and saved to database successfully',
+      message: 'Files uploaded and saved successfully',
       result,
     });
   } catch (error) {

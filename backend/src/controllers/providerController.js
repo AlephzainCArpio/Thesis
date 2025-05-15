@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
+const multer = require('multer');
+const path = require('path');
 const prisma = new PrismaClient();
 
 // Generate JWT
@@ -10,15 +12,122 @@ const generateToken = (id) => {
   });
 };
 
+// Multer setup for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadsDir = path.join(__dirname, '../../uploads/');
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, `${uniqueSuffix}-${file.originalname}`);
+  },
+});
+
+// Multer file filter
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only JPEG, JPG, PNG and WebP images are allowed.'), false);
+  }
+};
+
+// Export upload middleware to be used in routes
+const upload = multer({ 
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 5 // Maximum 5 files
+  }
+});
+
+// Validation functions
+const validatePriceRange = (priceRange) => {
+  if (!priceRange) throw new Error('Price range is required');
+  
+  const priceRangeRegex = /^\d+(-\d+)?$/;
+  if (!priceRangeRegex.test(priceRange)) {
+    throw new Error('Invalid price range format. Use format: 5000 or 5000-10000');
+  }
+
+  if (priceRange.includes('-')) {
+    const [min, max] = priceRange.split('-').map(Number);
+    if (min >= max) {
+      throw new Error('Minimum price must be less than maximum price');
+    }
+  }
+
+  return priceRange;
+};
+
+const validateServiceData = (serviceData, serviceType) => {
+  // Common validations
+  const requiredFields = ['name', 'description', 'location'];
+  for (const field of requiredFields) {
+    if (!serviceData[field]?.trim()) {
+      throw new Error(`${field.charAt(0).toUpperCase() + field.slice(1)} is required`);
+    }
+  }
+
+  // Service-specific validations
+  switch (serviceType) {
+    case 'PHOTOGRAPHER':
+      if (!serviceData.experienceYears || isNaN(serviceData.experienceYears)) {
+        throw new Error('Valid experience years are required for photographers');
+      }
+      if (!serviceData.style || !['traditional', 'photojournalistic', 'contemporary'].includes(serviceData.style)) {
+        throw new Error('Valid photography style is required');
+      }
+      if (!serviceData.copyType || !['virtual', 'physical', 'both'].includes(serviceData.copyType)) {
+        throw new Error('Valid copy type is required');
+      }
+      break;
+      
+    case 'VENUE':
+      if (!serviceData.capacity || isNaN(serviceData.capacity)) {
+        throw new Error('Valid capacity is required for venues');
+      }
+      if (!serviceData.amenities || (!Array.isArray(serviceData.amenities) && typeof serviceData.amenities !== 'string')) {
+        throw new Error('Valid amenities list is required');
+      }
+      break;
+      
+    case 'CATERING':
+      if (!serviceData.maxPeople || isNaN(serviceData.maxPeople)) {
+        throw new Error('Valid maximum people capacity is required');
+      }
+      if (!serviceData.cuisineType) {
+        throw new Error('Cuisine type is required');
+      }
+      if (!serviceData.pricePerPerson || isNaN(serviceData.pricePerPerson)) {
+        throw new Error('Valid price per person is required');
+      }
+      break;
+      
+    case 'DESIGNER':
+      if (!serviceData.style || !['modern', 'classic', 'minimalist'].includes(serviceData.style)) {
+        throw new Error('Valid design style is required');
+      }
+      if (!serviceData.experienceYears || isNaN(serviceData.experienceYears)) {
+        throw new Error('Valid experience years are required');
+      }
+      break;
+
+    default:
+      throw new Error('Invalid service type');
+  }
+};
+
+// User registration
 const register = async (req, res) => {
   try {
     const { name, email, password, role, phone, providerType } = req.body;
 
     // Check if user exists
-    const userExists = await prisma.user.findUnique({
-      where: { email },
-    });
-
+    const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -28,8 +137,7 @@ const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Set verification status based on role
-    const verificationStatus =
-      role === "PROVIDER" ? "PENDING_DOCUMENT" : "NOT_REQUIRED";
+    const verificationStatus = role === "PROVIDER" ? "PENDING_DOCUMENT" : "NOT_REQUIRED";
 
     // Create user
     const user = await prisma.user.create({
@@ -41,9 +149,7 @@ const register = async (req, res) => {
         phone,
         providerType: providerType || null,
         verificationStatus,
-        profile: {
-          create: {},
-        },
+        profile: { create: {} },
       },
     });
 
@@ -65,15 +171,13 @@ const register = async (req, res) => {
   }
 };
 
+// User login
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     // Check for user email
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
-
+    const user = await prisma.user.findUnique({ where: { email } });
     if (user && (await bcrypt.compare(password, user.password))) {
       res.json({
         id: user.id,
@@ -92,6 +196,180 @@ const login = async (req, res) => {
   }
 };
 
+// Register a service with file uploads
+const registerService = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const userId = req.user.id;
+    const { serviceType, ...serviceData } = req.body;
+
+    // Validate service type
+    if (!['PHOTOGRAPHER', 'VENUE', 'CATERING', 'DESIGNER'].includes(serviceType)) {
+      return res.status(400).json({ message: 'Invalid service type' });
+    }
+
+    // Get user to verify provider type
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Verify service type matches user's providerType if set
+    if (user.providerType && user.providerType !== serviceType) {
+      return res.status(400).json({ 
+        message: `You are registered as a ${user.providerType} provider. You cannot register services in other categories.` 
+      });
+    }
+
+    // Check files uploaded
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: 'At least one image is required' });
+    }
+
+    // Validate service data
+    try {
+      validateServiceData(serviceData, serviceType);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    // Validate priceRange if present
+    if (serviceData.priceRange) {
+      try {
+        serviceData.priceRange = validatePriceRange(
+          Array.isArray(serviceData.priceRange) 
+            ? serviceData.priceRange.join('-')
+            : serviceData.priceRange
+        );
+      } catch (error) {
+        return res.status(400).json({ message: error.message });
+      }
+    }
+
+    // Prepare image URLs
+    const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+
+    // Process arrays and JSON fields
+    const processedData = { ...serviceData };
+    ['amenities', 'dietaryOptions', 'eventTypes'].forEach(field => {
+      if (processedData[field]) {
+        try {
+          if (typeof processedData[field] === 'string' && processedData[field].includes(',')) {
+            processedData[field] = processedData[field].split(',').map(s => s.trim());
+          } else if (typeof processedData[field] === 'string') {
+            try {
+              processedData[field] = JSON.parse(processedData[field]);
+            } catch {
+              processedData[field] = [processedData[field]];
+            }
+          }
+        } catch {
+          // ignore parsing errors, keep as is
+        }
+      }
+    });
+
+    // Create the service record in DB according to service type
+    let newService;
+
+    switch (serviceType) {
+      case "PHOTOGRAPHER":
+        newService = await prisma.photographer.create({
+          data: {
+            name: processedData.name,
+            location: processedData.location,
+            description: processedData.description,
+            experienceYears: Number(processedData.experienceYears),
+            style: processedData.style,
+            copyType: processedData.copyType,
+            priceRange: processedData.priceRange,
+            contact: processedData.contact,
+            images: imageUrls,
+            userId,
+          },
+        });
+        break;
+
+      case "VENUE":
+        newService = await prisma.venue.create({
+          data: {
+            name: processedData.name,
+            location: processedData.location,
+            description: processedData.description,
+            capacity: Number(processedData.capacity),
+            amenities: processedData.amenities,
+            price: Number(processedData.price),
+            contact: processedData.contact,
+            images: imageUrls,
+            userId,
+          },
+        });
+        break;
+
+      case "CATERING":
+        newService = await prisma.catering.create({
+          data: {
+            name: processedData.name,
+            location: processedData.location,
+            description: processedData.description,
+            maxPeople: Number(processedData.maxPeople),
+            cuisineType: processedData.cuisineType,
+            pricePerPerson: Number(processedData.pricePerPerson),
+            contact: processedData.contact,
+            images: imageUrls,
+            userId,
+          },
+        });
+        break;
+
+      case "DESIGNER":
+        newService = await prisma.designer.create({
+          data: {
+            name: processedData.name,
+            location: processedData.location,
+            description: processedData.description,
+            style: processedData.style,
+            experienceYears: Number(processedData.experienceYears),
+            priceRange: processedData.priceRange,
+            contact: processedData.contact,
+            images: imageUrls,
+            userId,
+          },
+        });
+        break;
+    }
+
+    // Update user's providerType if not set
+    if (!user.providerType) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { providerType: serviceType }
+      });
+    }
+
+    res.status(201).json({ message: "Service registered successfully", service: newService });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getProviderType = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ providerType: user.providerType });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
 const getMe = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
@@ -113,24 +391,6 @@ const getMe = async (req, res) => {
   }
 };
 
-// Get Provider Type
-const getProviderType = async (req, res) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json({ providerType: user.providerType });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Validate Service Registration
 const validateServiceRegistration = async (req, res) => {
   try {
     const { serviceType } = req.body;
@@ -158,107 +418,12 @@ const validateServiceRegistration = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-// Register Service
-const registerService = async (req, res) => {
-  try {
-    const { serviceType, ...serviceData } = req.body;
-
-    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (user.providerType !== serviceType) {
-      return res.status(400).json({
-        message: `You are registered as a ${user.providerType} provider. Cannot register ${serviceType} service.`,
-      });
-    }
-
-    let createdService;
-    switch (serviceType) {
-      case 'PHOTOGRAPHER':
-        createdService = await prisma.photographer.create({
-          data: {
-            providerId: user.id,
-            name: serviceData.name,
-            description: serviceData.description,
-            location: serviceData.location,
-            style: serviceData.style,
-            experienceYears: parseInt(serviceData.experienceYears),
-            priceRange: serviceData.priceRange,
-            copyType: serviceData.copyType,
-            portfolio: serviceData.portfolio || null,
-            images: JSON.stringify(serviceData.images || []),
-            status: 'PENDING',
-            serviceType,
-          },
-        });
-        break;
-
-      case 'VENUE':
-        createdService = await prisma.venue.create({
-          data: {
-            providerId: user.id,
-            name: serviceData.name,
-            description: serviceData.description,
-            location: serviceData.location,
-            capacity: parseInt(serviceData.capacity),
-            price: parseFloat(serviceData.price),
-            amenities: JSON.stringify(serviceData.amenities || []),
-            images: JSON.stringify(serviceData.images || []),
-            status: 'PENDING',
-            serviceType,
-          },
-        });
-        break;
-
-      case 'CATERING':
-        createdService = await prisma.catering.create({
-          data: {
-            providerId: user.id,
-            name: serviceData.name,
-            description: serviceData.description,
-            location: serviceData.location,
-            maxPeople: parseInt(serviceData.maxPeople),
-            pricePerPerson: parseFloat(serviceData.pricePerPerson),
-            dietaryOptions: JSON.stringify(serviceData.dietaryOptions || []),
-            images: JSON.stringify(serviceData.images || []),
-            status: 'PENDING',
-            serviceType,
-          },
-        });
-        break;
-
-      case 'DESIGNER':
-        createdService = await prisma.designer.create({
-          data: {
-            providerId: user.id,
-            name: serviceData.name,
-            description: serviceData.description,
-            location: serviceData.location,
-            eventTypes: JSON.stringify(serviceData.eventTypes || []),
-            images: JSON.stringify(serviceData.images || []),
-            status: 'PENDING',
-            serviceType,
-          },
-        });
-        break;
-
-      default:
-        return res.status(400).json({ message: 'Invalid service type' });
-    }
-
-    res.status(201).json({ message: "Service submitted for approval", service: createdService });
-  } catch (error) {
-    console.error("Error in registerService:", error);
-    res.status(500).json({ message: error.message });
-  }
-};
-
 module.exports = {
   register,
   login,
-  getMe,
-  getProviderType,
-  validateServiceRegistration,
   registerService,
+getMe,
+  validateServiceRegistration,
+ getProviderType,
+  upload, // multer middleware
 };
