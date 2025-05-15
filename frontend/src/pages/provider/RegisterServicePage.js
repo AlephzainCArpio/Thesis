@@ -2,6 +2,7 @@ import React from 'react';
 import { Form, Input, InputNumber, Select, Upload } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { PlusOutlined } from '@ant-design/icons';
+import { submitServiceData } from '../../services/api';
 
 const { Option } = Select;
 
@@ -26,10 +27,52 @@ const RegisterServicePage = () => {
   );
 };
 
+const handleSubmit = async (values) => {
+  try {
+    const formData = new FormData();
+    for (const key in values) {
+      formData.append(key, values[key]);
+    }
+    if (values.images) {
+      values.images.forEach((file, index) => {
+        formData.append(`images[${index}]`, file.originFileObj);
+      });
+    }
+    await submitServiceData(formData);
+    alert('Service registered successfully!');
+  } catch (error) {
+    console.error('Error registering service:', error);
+    alert('Failed to register service.');
+  }
+};
+
+// Common image upload component
+const ImageUpload = () => (
+  <Form.Item
+    name="images"
+    label="Images"
+    valuePropName="fileList"
+    getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+  >
+    <Upload
+      listType="picture-card"
+      multiple
+      beforeUpload={() => false}
+      accept="image/*"
+      maxCount={5}
+    >
+      <div>
+        <PlusOutlined />
+        <div style={{ marginTop: 8 }}>Upload</div>
+      </div>
+    </Upload>
+  </Form.Item>
+);
+
 // Venue form
 const VenueForm = () => {
   return (
-    <Form layout="vertical">
+    <Form layout="vertical" onFinish={handleSubmit}>
       <Form.Item
         name="name"
         label="Venue Name"
@@ -65,32 +108,23 @@ const VenueForm = () => {
       >
         <InputNumber min={0} style={{ width: "100%" }} />
       </Form.Item>
-      <Form.Item name="amenities" label="Amenities">
+      <Form.Item name="eventTypes" label="Event Types">
+        <Select>
+          <Option value="wedding">Wedding</Option>
+          <Option value="birthday">Birthday Party</Option>
+          <Option value="corporate">Corporate Event</Option>
+          <Option value="Reunion">Reunion</Option>
+          <Option value="social">Social Gathering</Option>
+        </Select>
+      </Form.Item>
+      <Form.Item name="amenities" label="Amenities">  
         <Select mode="tags" placeholder="Enter amenities">
           <Option value="wifi">WiFi</Option>
           <Option value="parking">Parking</Option>
           <Option value="catering">Catering Allowed</Option>
         </Select>
       </Form.Item>
-      <Form.Item
-        name="images"
-        label="Images"
-        valuePropName="fileList"
-        getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-      >
-        <Upload
-          listType="picture-card"
-          multiple
-          beforeUpload={() => false}
-          accept="image/*"
-          maxCount={5}
-        >
-          <div>
-            <PlusOutlined />
-            <div style={{ marginTop: 8 }}>Upload</div>
-          </div>
-        </Upload>
-      </Form.Item>
+      <ImageUpload />
       <Form.Item>
         <button type="submit">Register Venue</button>
       </Form.Item>
@@ -101,7 +135,7 @@ const VenueForm = () => {
 // Catering form
 const CateringForm = () => {
   return (
-    <Form layout="vertical">
+    <Form layout="vertical" onFinish={handleSubmit}>
       <Form.Item
         name="name"
         label="Catering Name"
@@ -140,40 +174,23 @@ const CateringForm = () => {
       <Form.Item
         name="cuisineType"
         label="Cuisine Type"
-        rules={[{ required: true, message: "Please select cuisine type" }]}
+        rules={[{ required: true, message: "Please select cuisine" }]}
       >
-        <Select>
+        <Select placeholder="Enter Cuisine Type">
           <Option value="filipino">Filipino</Option>
           <Option value="chinese">Chinese</Option>
           <Option value="italian">Italian</Option>
         </Select>
       </Form.Item>
       <Form.Item name="dietaryOptions" label="Dietary Options">
-        <Select mode="tags" placeholder="Enter dietary options">
+        <Select placeholder="Enter dietary options">
           <Option value="vegetarian">Vegetarian</Option>
           <Option value="vegan">Vegan</Option>
           <Option value="gluten-free">Gluten-Free</Option>
+          <Option value="protien">Protein</Option>
         </Select>
       </Form.Item>
-      <Form.Item
-        name="images"
-        label="Images"
-        valuePropName="fileList"
-        getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-      >
-        <Upload
-          listType="picture-card"
-          multiple
-          beforeUpload={() => false}
-          accept="image/*"
-          maxCount={5}
-        >
-          <div>
-            <PlusOutlined />
-            <div style={{ marginTop: 8 }}>Upload</div>
-          </div>
-        </Upload>
-      </Form.Item>
+      <ImageUpload />
       <Form.Item>
         <button type="submit">Register Catering</button>
       </Form.Item>
@@ -184,7 +201,7 @@ const CateringForm = () => {
 // Photographer form
 const PhotographerForm = () => {
   return (
-    <Form layout="vertical">
+    <Form layout="vertical" onFinish={handleSubmit}>
       <Form.Item
         name="name"
         label="Photographer Name"
@@ -209,7 +226,7 @@ const PhotographerForm = () => {
       <Form.Item
         name="style"
         label="Photography Style"
-        rules={[{ required: true, message: "Please select a style" }]}
+        rules={[{ required: true, message: "Please select style" }]}
       >
         <Select>
           <Option value="traditional">Traditional</Option>
@@ -220,21 +237,21 @@ const PhotographerForm = () => {
       <Form.Item
         name="experienceYears"
         label="Years of Experience"
-        rules={[{ required: true, message: "Please enter years of experience" }]}
+        rules={[{ required: true, message: "Please enter experience" }]}
       >
         <InputNumber min={0} style={{ width: "100%" }} />
       </Form.Item>
       <Form.Item
         name="priceRange"
         label="Price Range"
-        rules={[{ required: true, message: "Please enter a price range" }]}
+        rules={[{ required: true, message: "Please enter range" }]}
       >
         <Input placeholder="e.g., 5000-10000" />
       </Form.Item>
       <Form.Item
         name="copyType"
         label="Copy Type"
-        rules={[{ required: true, message: "Please select a copy type" }]}
+        rules={[{ required: true, message: "Please select copy type" }]}
       >
         <Select>
           <Option value="virtual">Virtual</Option>
@@ -245,25 +262,7 @@ const PhotographerForm = () => {
       <Form.Item name="portfolio" label="Portfolio URL">
         <Input placeholder="Enter portfolio link" />
       </Form.Item>
-      <Form.Item
-        name="images"
-        label="Images"
-        valuePropName="fileList"
-        getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-      >
-        <Upload
-          listType="picture-card"
-          multiple
-          beforeUpload={() => false}
-          accept="image/*"
-          maxCount={5}
-        >
-          <div>
-            <PlusOutlined />
-            <div style={{ marginTop: 8 }}>Upload</div>
-          </div>
-        </Upload>
-      </Form.Item>
+      <ImageUpload />
       <Form.Item>
         <button type="submit">Register Photographer</button>
       </Form.Item>
@@ -274,7 +273,7 @@ const PhotographerForm = () => {
 // Designer form
 const DesignerForm = () => {
   return (
-    <Form layout="vertical">
+    <Form layout="vertical" onFinish={handleSubmit}>
       <Form.Item
         name="name"
         label="Designer Name"
@@ -299,7 +298,7 @@ const DesignerForm = () => {
       <Form.Item
         name="style"
         label="Design Style"
-        rules={[{ required: true, message: "Please select a style" }]}
+        rules={[{ required: true, message: "Please select style" }]}
       >
         <Select>
           <Option value="modern">Modern</Option>
@@ -310,38 +309,23 @@ const DesignerForm = () => {
       <Form.Item
         name="priceRange"
         label="Price Range"
-        rules={[{ required: true, message: "Please enter a price range" }]}
+        rules={[{ required: true, message: "Please enter price range" }]}
       >
         <Input placeholder="e.g., 20000-50000" />
       </Form.Item>
       <Form.Item name="eventTypes" label="Event Types">
-        <Select mode="tags" placeholder="Enter event types">
+        <Select>
           <Option value="wedding">Wedding</Option>
-          <Option value="corporate">Corporate</Option>
+          <Option value="birthday">Birthday Party</Option>
+          <Option value="corporate">Corporate Event</Option>
+          <Option value="Reunion">Reunion</Option>
+          <Option value="social">Social Gathering</Option>
         </Select>
       </Form.Item>
       <Form.Item name="portfolio" label="Portfolio URL">
         <Input placeholder="Enter portfolio link" />
       </Form.Item>
-      <Form.Item
-        name="images"
-        label="Images"
-        valuePropName="fileList"
-        getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-      >
-        <Upload
-          listType="picture-card"
-          multiple
-          beforeUpload={() => false}
-          accept="image/*"
-          maxCount={5}
-        >
-          <div>
-            <PlusOutlined />
-            <div style={{ marginTop: 8 }}>Upload</div>
-          </div>
-        </Upload>
-      </Form.Item>
+      <ImageUpload />
       <Form.Item>
         <button type="submit">Register Designer</button>
       </Form.Item>

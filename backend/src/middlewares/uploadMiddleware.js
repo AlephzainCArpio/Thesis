@@ -2,7 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-
+// Create service directories if they don't exist
 const createServiceDirectories = () => {
   const serviceTypes = ['venues', 'photographers', 'designers', 'caterings'];
   const baseUploadDir = path.join(__dirname, '../../uploads');
@@ -25,9 +25,7 @@ createServiceDirectories();
 // Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Extract the service type from the URL and determine the destination folder
-    const urlParts = req.originalUrl.split('/');
-    const serviceType = urlParts[urlParts.length - 1].replace(/s$/, 's'); 
+    const { serviceType } = req.params; // Extract serviceType from params
     const uploadDir = path.join(__dirname, `../../uploads/${serviceType}`);
     
     // Create service-specific folder if it doesn't exist
@@ -39,7 +37,6 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Generate a unique filename with a timestamp
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname).toLowerCase(); // Get the file extension (e.g., .jpg)
     cb(null, `${uniqueSuffix}${ext}`);
@@ -69,7 +66,7 @@ const upload = multer({
 });
 
 // Middleware to handle file uploads and save file paths
-const handleUpload = async (req, res, next) => {
+const handleUpload = (req, res, next) => {
   upload.array('images', 5)(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       // Multer-specific error handling
@@ -107,9 +104,9 @@ const handleUpload = async (req, res, next) => {
         );
         return relativePath.replace(/\\/g, '/'); // Convert Windows paths to URL format
       });
+      console.log('File paths processed:', req.filePaths);
     }
 
-    
     next();
   });
 };
