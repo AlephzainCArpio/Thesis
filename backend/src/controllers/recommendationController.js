@@ -18,7 +18,7 @@ const getRecommendationsController = async (req, res) => {
       });
     }
 
-    // Prepare payload for recommendation service
+    // Call the recommendation service
     const recommendations = await getRecommendations({
       budget,
       guests,
@@ -31,9 +31,9 @@ const getRecommendationsController = async (req, res) => {
       recommendations,
       metadata: {
         total_results: {
-          best_match: recommendations.best_match.length,
-          above_budget: recommendations.above_budget.length,
-          below_budget: recommendations.below_budget.length,
+          best_match: recommendations.bestMatch.length,
+          above_budget: recommendations.aboveBudget.length,
+          below_budget: recommendations.belowBudget.length,
         },
         filters_applied: {
           budget,

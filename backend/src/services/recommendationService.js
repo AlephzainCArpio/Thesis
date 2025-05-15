@@ -9,26 +9,28 @@ const getRecommendations = async ({ budget, guests, eventTypes, serviceType, use
     const payload = {
       budget: parseFloat(budget) || 0,
       guests: parseInt(guests) || 0,
-      eventTypes: serviceType === "VENUE" || serviceType === "DESIGNER" ? eventTypes || "" : undefined, 
+      eventTypes: eventTypes || "", 
       serviceType: serviceType || "",
       userId: userId || "",
     };
 
     console.log("Calling recommendation service with payload:", payload);
 
-    const response = await axios.post(`${ALGORITHM_SERVICE_URL}/recommendation`, payload);
+    const response = await axios.post(`${ALGORITHM_SERVICE_URL}/recommendation`, payload)
 
-    // Ensure the response structure matches the updated model
+    // Process the response
     const data = response.data;
     if (data && data.recommendations) {
+      const recommendations = JSON.parse(data.recommendations)
       return {
-        bestMatch: data.recommendations.best_match || [],
-        aboveBudget: data.recommendations.above_budget || [],
-        belowBudget: data.recommendations.below_budget || []
+        bestMatch: recommendations.best_match || [],
+        aboveBudget: recommendations.above_budget || [],
+        belowBudget: recommendations.below_budget || []
       };
+    } else {
+      throw new Error("Unexpected response format from recommendation service");
     }
 
-    throw new Error("Unexpected response format from recommendation service");
   } catch (error) {
     console.error("Error calling Python recommendation service:", error.message);
     throw error;

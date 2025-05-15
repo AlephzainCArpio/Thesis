@@ -63,7 +63,7 @@ const CateringListPage = () => {
             title={catering.name}
             description={
               <>
-                <div style={{ marginBottom: 8 }}>Location: {catering.location}</div>
+                <div style={{ marginBottom: 8 }}>Location:  {catering.location}</div>
                 <div style={{ marginBottom: 8 }}>Max People: {catering.maxPeople}</div>
                 <div style={{ marginBottom: 8 }}>
                   Price Per Person: ₱{catering.pricePerPerson?.toLocaleString() || "0"}

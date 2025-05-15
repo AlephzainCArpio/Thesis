@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, json
+from flask import Flask, request, jsonify, json, make_response
 from flask_cors import CORS
 from utils.database_connector import DatabaseConnector
 from models.recommendation_model import RecommendationModel
@@ -89,12 +89,10 @@ def get_recommendations():
         if not recommendations:
             return jsonify({
                 "message": "No recommendations found"
-            }), 404
-        
-        print(recommendations)
+            }), 404 
 
         return jsonify({
-            "recommendations": json.dumps(recommendations)
+            "recommendations": json.dumps(recommendations, default=repr)
         })
 
     except ValueError as e:
@@ -104,6 +102,7 @@ def get_recommendations():
             "message": str(e)
         }), 400
     except Exception as e:
+        print(e)
         logger.error(f"Error processing recommendations: {str(e)}")
         return jsonify({
             "error": "Internal Server Error",

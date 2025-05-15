@@ -35,7 +35,7 @@ const CustomizationPage = () => {
       setLoading(true);
 
       const serviceType = serviceTypeMapping[selectedService] || selectedService;
-
+      
       // Prepare the event payload
       const payload = {
         serviceType,
@@ -73,6 +73,7 @@ const CustomizationPage = () => {
       setLoading(false);
     }
   };
+  console.log(isModalVisible)
 
   const onServiceTypeChange = (e) => {
     setSelectedService(e.target.value);
@@ -170,7 +171,7 @@ const CustomizationPage = () => {
           >
             <InputNumber
               style={{ width: "100%" }}
-              min={5000}
+              min={100}
               max={500000}
               step={5000}
               formatter={(value) => `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
@@ -193,12 +194,55 @@ const CustomizationPage = () => {
         footer={null}
         width={800}
       >
-        {recommendations && renderRecommendationCard("Best Match", recommendations.best_match)}
-        {recommendations && renderRecommendationCard("Above Budget", recommendations.above_budget)}
-        {recommendations && renderRecommendationCard("Below Budget", recommendations.below_budget)}
+        {recommendations && renderRecommendationCard("Best Match", recommendations.bestMatch)}
+        {recommendations && renderRecommendationCard("Above Budget", recommendations.aboveBudget)}
+        {recommendations && renderRecommendationCard("Below Budget", recommendations.belowBudget)}
       </Modal>
     </div>
   );
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export default CustomizationPage;
