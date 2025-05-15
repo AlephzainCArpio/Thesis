@@ -5,14 +5,10 @@ const multer = require('multer');
 const path = require('path');
 const prisma = new PrismaClient();
 
-// Generate JWT
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "30d",
-  });
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
 
-// Multer setup for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadsDir = path.join(__dirname, '../../uploads/');
@@ -23,123 +19,64 @@ const storage = multer.diskStorage({
     cb(null, `${uniqueSuffix}-${file.originalname}`);
   },
 });
-
-// Multer file filter
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type. Only JPEG, JPG, PNG and WebP images are allowed.'), false);
-  }
+  if (allowedTypes.includes(file.mimetype)) cb(null, true);
+  else cb(new Error('Invalid file type. Only JPEG, JPG, PNG and WebP images are allowed.'), false);
 };
-
-// Export upload middleware to be used in routes
-const upload = multer({ 
+const upload = multer({
   storage,
   fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-    files: 5 // Maximum 5 files
-  }
+  limits: { fileSize: 5 * 1024 * 1024, files: 5 }
 });
 
-// Validation functions
 const validatePriceRange = (priceRange) => {
   if (!priceRange) throw new Error('Price range is required');
-  
   const priceRangeRegex = /^\d+(-\d+)?$/;
-  if (!priceRangeRegex.test(priceRange)) {
-    throw new Error('Invalid price range format. Use format: 5000 or 5000-10000');
-  }
-
+  if (!priceRangeRegex.test(priceRange)) throw new Error('Invalid price range format. Use format: 5000 or 5000-10000');
   if (priceRange.includes('-')) {
     const [min, max] = priceRange.split('-').map(Number);
-    if (min >= max) {
-      throw new Error('Minimum price must be less than maximum price');
-    }
+    if (min >= max) throw new Error('Minimum price must be less than maximum price');
   }
-
   return priceRange;
 };
-
 const validateServiceData = (serviceData, serviceType) => {
-  // Common validations
   const requiredFields = ['name', 'description', 'location'];
   for (const field of requiredFields) {
-    if (!serviceData[field]?.trim()) {
-      throw new Error(`${field.charAt(0).toUpperCase() + field.slice(1)} is required`);
-    }
+    if (!serviceData[field]?.trim()) throw new Error(`${field.charAt(0).toUpperCase() + field.slice(1)} is required`);
   }
-
-  // Service-specific validations
   switch (serviceType) {
     case 'PHOTOGRAPHER':
-      if (!serviceData.experienceYears || isNaN(serviceData.experienceYears)) {
-        throw new Error('Valid experience years are required for photographers');
-      }
-      if (!serviceData.style || !['traditional', 'photojournalistic', 'contemporary'].includes(serviceData.style)) {
-        throw new Error('Valid photography style is required');
-      }
-      if (!serviceData.copyType || !['virtual', 'physical', 'both'].includes(serviceData.copyType)) {
-        throw new Error('Valid copy type is required');
-      }
+      if (!serviceData.experienceYears || isNaN(serviceData.experienceYears)) throw new Error('Valid experience years are required for photographers');
+      if (!serviceData.style || !['traditional', 'photojournalistic', 'contemporary'].includes(serviceData.style)) throw new Error('Valid photography style is required');
+      if (!serviceData.copyType || !['virtual', 'physical', 'both'].includes(serviceData.copyType)) throw new Error('Valid copy type is required');
       break;
-      
     case 'VENUE':
-      if (!serviceData.capacity || isNaN(serviceData.capacity)) {
-        throw new Error('Valid capacity is required for venues');
-      }
-      if (!serviceData.amenities || (!Array.isArray(serviceData.amenities) && typeof serviceData.amenities !== 'string')) {
-        throw new Error('Valid amenities list is required');
-      }
+      if (!serviceData.capacity || isNaN(serviceData.capacity)) throw new Error('Valid capacity is required for venues');
+      if (!serviceData.amenities || (!Array.isArray(serviceData.amenities) && typeof serviceData.amenities !== 'string')) throw new Error('Valid amenities list is required');
       break;
-      
     case 'CATERING':
-      if (!serviceData.maxPeople || isNaN(serviceData.maxPeople)) {
-        throw new Error('Valid maximum people capacity is required');
-      }
-      if (!serviceData.cuisineType) {
-        throw new Error('Cuisine type is required');
-      }
-      if (!serviceData.pricePerPerson || isNaN(serviceData.pricePerPerson)) {
-        throw new Error('Valid price per person is required');
-      }
+      if (!serviceData.maxPeople || isNaN(serviceData.maxPeople)) throw new Error('Valid maximum people capacity is required');
+      if (!serviceData.cuisineType) throw new Error('Cuisine type is required');
+      if (!serviceData.pricePerPerson || isNaN(serviceData.pricePerPerson)) throw new Error('Valid price per person is required');
       break;
-      
     case 'DESIGNER':
-      if (!serviceData.style || !['modern', 'classic', 'minimalist'].includes(serviceData.style)) {
-        throw new Error('Valid design style is required');
-      }
-      if (!serviceData.experienceYears || isNaN(serviceData.experienceYears)) {
-        throw new Error('Valid experience years are required');
-      }
+      if (!serviceData.style || !['modern', 'classic', 'minimalist'].includes(serviceData.style)) throw new Error('Valid design style is required');
+      if (!serviceData.experienceYears || isNaN(serviceData.experienceYears)) throw new Error('Valid experience years are required');
       break;
-
     default:
       throw new Error('Invalid service type');
   }
 };
 
-// User registration
 const register = async (req, res) => {
   try {
-    const { name, email, password, role, phone, providerType } = req.body;
-
-    // Check if user exists
+    const { name, email, password, role, phone, serviceType } = req.body;
     const userExists = await prisma.user.findUnique({ where: { email } });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    // Hash password
+    if (userExists) return res.status(400).json({ message: "User already exists" });
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Set verification status based on role
     const verificationStatus = role === "PROVIDER" ? "PENDING_DOCUMENT" : "NOT_REQUIRED";
-
-    // Create user
     const user = await prisma.user.create({
       data: {
         name,
@@ -147,19 +84,18 @@ const register = async (req, res) => {
         password: hashedPassword,
         role: role || "USER",
         phone,
-        providerType: providerType || null,
+        serviceType: serviceType || null,
         verificationStatus,
         profile: { create: {} },
       },
     });
-
     if (user) {
       res.status(201).json({
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
-        providerType: user.providerType,
+        serviceType: user.serviceType,
         verificationStatus: user.verificationStatus,
         token: generateToken(user.id),
       });
@@ -171,12 +107,9 @@ const register = async (req, res) => {
   }
 };
 
-// User login
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // Check for user email
     const user = await prisma.user.findUnique({ where: { email } });
     if (user && (await bcrypt.compare(password, user.password))) {
       res.json({
@@ -184,7 +117,7 @@ const login = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        providerType: user.providerType,
+        serviceType: user.serviceType,
         verificationStatus: user.verificationStatus,
         token: generateToken(user.id),
       });
@@ -196,49 +129,36 @@ const login = async (req, res) => {
   }
 };
 
-// Register a service with file uploads
 const registerService = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Authentication required" });
     }
-    
     const userId = req.user.id;
     const { serviceType, ...serviceData } = req.body;
 
-    // Validate service type
     if (!['PHOTOGRAPHER', 'VENUE', 'CATERING', 'DESIGNER'].includes(serviceType)) {
       return res.status(400).json({ message: 'Invalid service type' });
     }
-
-    // Get user to verify provider type
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ message: 'User not found' });
-
-    // Verify service type matches user's providerType if set
-    if (user.providerType && user.providerType !== serviceType) {
-      return res.status(400).json({ 
-        message: `You are registered as a ${user.providerType} provider. You cannot register services in other categories.` 
+    if (user.serviceType && user.serviceType !== serviceType) {
+      return res.status(400).json({
+        message: `You are registered as a ${user.serviceType} service provider. You cannot register services in other categories.`
       });
     }
-
-    // Check files uploaded
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ message: 'At least one image is required' });
     }
-
-    // Validate service data
     try {
       validateServiceData(serviceData, serviceType);
     } catch (error) {
       return res.status(400).json({ message: error.message });
     }
-
-    // Validate priceRange if present
     if (serviceData.priceRange) {
       try {
         serviceData.priceRange = validatePriceRange(
-          Array.isArray(serviceData.priceRange) 
+          Array.isArray(serviceData.priceRange)
             ? serviceData.priceRange.join('-')
             : serviceData.priceRange
         );
@@ -247,12 +167,13 @@ const registerService = async (req, res) => {
       }
     }
 
-    // Prepare image URLs
     const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+    let imagesField = "";
+    if (imageUrls.length === 1) imagesField = imageUrls[0];
+    else imagesField = imageUrls.join(",");
 
-    // Process arrays and JSON fields
     const processedData = { ...serviceData };
-    ['amenities', 'dietaryOptions', 'eventTypes'].forEach(field => {
+    ['dietaryOptions'].forEach(field => {
       if (processedData[field]) {
         try {
           if (typeof processedData[field] === 'string' && processedData[field].includes(',')) {
@@ -270,9 +191,49 @@ const registerService = async (req, res) => {
       }
     });
 
-    // Create the service record in DB according to service type
-    let newService;
+    let singleEventType = "";
+    if (processedData.eventTypes) {
+      if (Array.isArray(processedData.eventTypes)) {
+        singleEventType = processedData.eventTypes[0];
+      } else {
+        singleEventType = processedData.eventTypes;
+      }
+    }
 
+    // --- amenities fix: always store as JSON stringified array ---
+    let amenitiesString = "[]";
+    if (processedData.amenities) {
+      if (Array.isArray(processedData.amenities)) {
+        amenitiesString = JSON.stringify(processedData.amenities);
+      } else if (typeof processedData.amenities === 'string') {
+        amenitiesString = JSON.stringify([processedData.amenities]);
+      }
+    }
+
+    // Remove undefined contact field if present
+    const contactData = {};
+    if (
+      typeof processedData.contact === "string" &&
+      processedData.contact.trim() !== ""
+    ) {
+      contactData.contact = processedData.contact;
+    }
+
+    const venueData = {
+      name: processedData.name,
+      location: processedData.location,
+      description: processedData.description,
+      capacity: Number(processedData.capacity),
+      amenities: amenitiesString,
+      price: Number(processedData.price),
+      images: imagesField,
+      providerId: userId,
+      eventTypes: singleEventType,
+      ...contactData
+    };
+    console.log('Venue creation data:', venueData);
+
+    let newService;
     switch (serviceType) {
       case "PHOTOGRAPHER":
         newService = await prisma.photographer.create({
@@ -284,29 +245,17 @@ const registerService = async (req, res) => {
             style: processedData.style,
             copyType: processedData.copyType,
             priceRange: processedData.priceRange,
-            contact: processedData.contact,
-            images: imageUrls,
-            userId,
+            images: imagesField,
+            providerId: userId,
+            serviceType,
+            portfolio: processedData.portfolio,
+            ...contactData
           },
         });
         break;
-
       case "VENUE":
-        newService = await prisma.venue.create({
-          data: {
-            name: processedData.name,
-            location: processedData.location,
-            description: processedData.description,
-            capacity: Number(processedData.capacity),
-            amenities: processedData.amenities,
-            price: Number(processedData.price),
-            contact: processedData.contact,
-            images: imageUrls,
-            userId,
-          },
-        });
+        newService = await prisma.venue.create({ data: venueData });
         break;
-
       case "CATERING":
         newService = await prisma.catering.create({
           data: {
@@ -316,13 +265,14 @@ const registerService = async (req, res) => {
             maxPeople: Number(processedData.maxPeople),
             cuisineType: processedData.cuisineType,
             pricePerPerson: Number(processedData.pricePerPerson),
-            contact: processedData.contact,
-            images: imageUrls,
-            userId,
+            images: imagesField,
+            providerId: userId,
+            dietaryOptions: Array.isArray(processedData.dietaryOptions) ? processedData.dietaryOptions.join(",") : processedData.dietaryOptions,
+            serviceType,
+            ...contactData
           },
         });
         break;
-
       case "DESIGNER":
         newService = await prisma.designer.create({
           data: {
@@ -332,57 +282,50 @@ const registerService = async (req, res) => {
             style: processedData.style,
             experienceYears: Number(processedData.experienceYears),
             priceRange: processedData.priceRange,
-            contact: processedData.contact,
-            images: imageUrls,
-            userId,
+            images: imagesField,
+            providerId: userId,
+            eventTypes: singleEventType,
+            portfolio: processedData.portfolio,
+            ...contactData
           },
         });
         break;
     }
-
-    // Update user's providerType if not set
-    if (!user.providerType) {
+    if (!user.serviceType) {
       await prisma.user.update({
         where: { id: userId },
-        data: { providerType: serviceType }
+        data: { serviceType: serviceType }
       });
     }
-
     res.status(201).json({ message: "Service registered successfully", service: newService });
-
   } catch (error) {
+    console.error("Error in registerService:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
-const getProviderType = async (req, res) => {
+const getServiceType = async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json({ providerType: user.providerType });
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json({ serviceType: user.serviceType });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 const getMe = async (req, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       include: { profile: true },
     });
-
     res.json({
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
-      providerType: user.providerType,
+      serviceType: user.serviceType,
       verificationStatus: user.verificationStatus,
       profile: user.profile,
     });
@@ -394,36 +337,27 @@ const getMe = async (req, res) => {
 const validateServiceRegistration = async (req, res) => {
   try {
     const { serviceType } = req.body;
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (!user.providerType) {
-      return res.json({ canProceed: true, message: "You can register any service type" });
-    }
-
-    if (user.providerType !== serviceType) {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user.serviceType) return res.json({ canProceed: true, message: "You can register any service type" });
+    if (user.serviceType !== serviceType) {
       return res.json({
         canProceed: false,
-        message: `You are registered as a ${user.providerType} provider. You cannot register services in multiple categories.`,
+        message: `You are registered as a ${user.serviceType} provider. You cannot register services in multiple categories.`,
       });
     }
-
     res.json({ canProceed: true });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 module.exports = {
   register,
   login,
   registerService,
-getMe,
+  getMe,
   validateServiceRegistration,
- getProviderType,
-  upload, // multer middleware
+  getServiceType,
+  upload
 };

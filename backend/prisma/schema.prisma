@@ -53,7 +53,7 @@ model Venue {
   eventTypes  String        @db.LongText 
   price       Float
   amenities   String?       @db.LongText
-  images      Json?
+  images      String?       @db.LongText
   providerId  String
   status      ServiceStatus @default(PENDING)
   createdAt   DateTime      @default(now())
@@ -76,7 +76,7 @@ model Catering {
   cuisineType    String
   serviceType    String
   dietaryOptions String?       @db.LongText
-  images         Json?
+  images         String?       @db.LongText
   providerId     String
   status         ServiceStatus @default(PENDING)
   createdAt      DateTime      @default(now())
@@ -104,7 +104,7 @@ model Photographer {
   status          ServiceStatus @default(PENDING)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  images          Json?
+  images          String?       @db.LongText
   favorites       Favorite[]
   provider        User          @relation("PhotographerProvider", fields: [providerId], references: [id])
   viewHistory     ViewHistory[]
@@ -126,7 +126,7 @@ model Designer {
   status      ServiceStatus @default(PENDING)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  images      Json?
+  images      String?       @db.LongText
   provider    User          @relation("DesignerProvider", fields: [providerId], references: [id])
   favorites   Favorite[]
   viewHistory ViewHistory[]

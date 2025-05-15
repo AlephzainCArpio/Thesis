@@ -7,7 +7,8 @@ const {
   getProviderType,
   validateServiceRegistration, 
   registerService,
-  upload
+  upload,
+  getServiceType
 } = require('../controllers/providerController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
@@ -18,7 +19,7 @@ router.post('/login', login);
 // Protected routes
 router.use(protect);
 router.get('/me', getMe);
-router.get('/provider-type', getProviderType);
+router.get('/provider-type', getServiceType);
 router.post('/validate-service', validateServiceRegistration);
 
 // Service routes

@@ -2,6 +2,7 @@ import React from 'react';
 import { Form, Input, InputNumber, Select, Upload } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { PlusOutlined } from '@ant-design/icons';
+import { submitServiceData } from '../../services/api';
 
 const { Option } = Select;
 
@@ -28,8 +29,61 @@ const RegisterServicePage = () => {
 
 // Venue form
 const VenueForm = () => {
+  const [form] = Form.useForm();
+  const [submitting, setSubmitting] = React.useState(false);
+
+  const handleFinish = async (values) => {
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("serviceType", "VENUE");
+      formData.append("name", values.name);
+      formData.append("description", values.description);
+      formData.append("location", values.location);
+      formData.append("capacity", values.capacity);
+      formData.append("price", values.price);
+
+      if (values.amenities) {
+        values.amenities.forEach((a) => formData.append("amenities", a));
+      }
+
+      // Only single eventType (not array)
+      if (values.eventTypes) {
+        formData.append("eventTypes", values.eventTypes);
+      }
+
+      if (values.images && Array.isArray(values.images)) {
+        values.images.forEach((fileObj) => {
+          if (fileObj.originFileObj) {
+            formData.append("images", fileObj.originFileObj);
+          }
+        });
+      }
+
+      await submitServiceData(formData);
+      window.alert("Venue registered successfully!");
+      form.resetFields();
+    } catch (error) {
+      window.alert(
+        error.response?.data?.message || "Error registering venue. Please check your input."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const normFile = (e) => {
+    if (Array.isArray(e)) return e;
+    return e?.fileList;
+  };
+
   return (
-    <Form layout="vertical">
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleFinish}
+      initialValues={{ amenities: [] }}
+    >
       <Form.Item
         name="name"
         label="Venue Name"
@@ -73,10 +127,26 @@ const VenueForm = () => {
         </Select>
       </Form.Item>
       <Form.Item
+        name="eventTypes"
+        label="Event Types"
+        rules={[
+          { required: true, message: "Please select event type" },
+        ]}
+      >
+        <Select placeholder="Select event type">
+          <Option value="wedding">Wedding</Option>
+          <Option value="birthday">Birthday Party</Option>
+          <Option value="corporate">Corporate Event</Option>
+          <Option value="reunion">Reunion</Option>
+          <Option value="social">Social Gathering</Option>
+        </Select>
+      </Form.Item>
+      <Form.Item
         name="images"
         label="Images"
         valuePropName="fileList"
-        getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
+        getValueFromEvent={normFile}
+        rules={[{ required: true, message: "Please upload at least one image" }]}
       >
         <Upload
           listType="picture-card"
@@ -92,13 +162,15 @@ const VenueForm = () => {
         </Upload>
       </Form.Item>
       <Form.Item>
-        <button type="submit">Register Venue</button>
+        <button type="submit" disabled={submitting}>
+          {submitting ? "Registering..." : "Register Venue"}
+        </button>
       </Form.Item>
     </Form>
   );
 };
 
-// Catering form
+// Catering form (No changes; implement similar logic as VenueForm if needed)
 const CateringForm = () => {
   return (
     <Form layout="vertical">
@@ -153,6 +225,7 @@ const CateringForm = () => {
           <Option value="vegetarian">Vegetarian</Option>
           <Option value="vegan">Vegan</Option>
           <Option value="gluten-free">Gluten-Free</Option>
+          <Option value="protien">Protien</Option>
         </Select>
       </Form.Item>
       <Form.Item
@@ -181,7 +254,7 @@ const CateringForm = () => {
   );
 };
 
-// Photographer form
+// Photographer form (No changes; implement similar logic as VenueForm if needed)
 const PhotographerForm = () => {
   return (
     <Form layout="vertical">
@@ -271,7 +344,7 @@ const PhotographerForm = () => {
   );
 };
 
-// Designer form
+// Designer form (eventTypes is now single select)
 const DesignerForm = () => {
   return (
     <Form layout="vertical">
@@ -314,10 +387,19 @@ const DesignerForm = () => {
       >
         <Input placeholder="e.g., 20000-50000" />
       </Form.Item>
-      <Form.Item name="eventTypes" label="Event Types">
-        <Select mode="tags" placeholder="Enter event types">
+      <Form.Item
+        name="eventTypes"
+        label="Event Types"
+        rules={[
+          { required: true, message: "Please select event type" },
+        ]}
+      >
+        <Select placeholder="Select event type">
           <Option value="wedding">Wedding</Option>
-          <Option value="corporate">Corporate</Option>
+          <Option value="birthday">Birthday Party</Option>
+          <Option value="corporate">Corporate Event</Option>
+          <Option value="reunion">Reunion</Option>
+          <Option value="social">Social Gathering</Option>
         </Select>
       </Form.Item>
       <Form.Item name="portfolio" label="Portfolio URL">
