@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Card, Row, Col, Typography, Descriptions, Tag, Image, Spin, Divider,Button } from "antd"
-import { EnvironmentOutlined, MailOutlined,
-  PhoneOutlined} from "@ant-design/icons"
+import { Card, Row, Col, Typography, Descriptions, Tag, Image, Spin, Divider, Button } from "antd"
+import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons"
 import api from "../../services/api"
 
 const { Title, Text, Paragraph } = Typography
@@ -17,6 +16,7 @@ const DesignerDetailPage = () => {
     const fetchDesigner = async () => {
       try {
         const response = await api.get(`/api/designers/${id}`)
+        console.log("API Response for Designer:", response.data) // Debugging log
         setDesigner(response.data)
       } catch (error) {
         console.error("Error fetching designer:", error)
@@ -40,8 +40,25 @@ const DesignerDetailPage = () => {
     return null
   }
 
-  const portfolioImages = designer.portfolio ? JSON.parse(designer.portfolio) : []
-  const eventTypes = designer.eventTypes ? JSON.parse(designer.eventTypes) : []
+  let portfolioImages = []
+  let eventTypes = []
+  
+  // Handle portfolio JSON
+  try {
+    portfolioImages = designer.portfolio ? JSON.parse(designer.portfolio) : []
+  } catch (error) {
+    console.error(`Error parsing portfolio JSON for designer ${designer.name}:`, error)
+  }
+
+  // Handle eventTypes JSON
+  try {
+    eventTypes = designer.eventTypes ? JSON.parse(designer.eventTypes) : []
+  } catch (error) {
+    console.error(`Error parsing eventTypes JSON for designer ${designer.name}:`, error)
+  }
+
+  // Debugging logs
+  console.log("Event Types:", eventTypes)
 
   return (
     <div style={{ padding: 24 }}>
@@ -94,21 +111,25 @@ const DesignerDetailPage = () => {
 
             <Title level={4}>Event Types</Title>
             <div style={{ marginBottom: 16 }}>
-              {eventTypes.map((type) => (
-                <Tag color="blue" key={type} style={{ marginBottom: 8 }}>
-                  {type}
-                </Tag>
-              ))}
+              {eventTypes.length > 0 ? (
+                eventTypes.map((type) => (
+                  <Tag color="blue" key={type} style={{ marginBottom: 8 }}>
+                    {type}
+                  </Tag>
+                ))
+              ) : (
+                <Text type="secondary">No event types available</Text>
+              )}
             </div>
           </Card>
         </Col>
 
         <Col xs={24} lg={8}>
-        <Card title="Designer Provider" style={{ marginBottom: 24 }}>
+          <Card title="Designer Provider" style={{ marginBottom: 24 }}>
             <Descriptions column={1}>
               <Descriptions.Item label="Name">{designer.provider?.name || "N/A"}</Descriptions.Item>
               <Descriptions.Item label="Email">
-                <MailOutlined /> {designer .provider?.email || "N/A"}
+                <MailOutlined /> {designer.provider?.email || "N/A"}
               </Descriptions.Item>
               <Descriptions.Item label="Phone">
                 <PhoneOutlined /> {designer.provider?.phone || "N/A"}

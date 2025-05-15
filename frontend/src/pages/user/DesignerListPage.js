@@ -17,6 +17,7 @@ const DesignerListPage = () => {
     try {
       setLoading(true)
       const response = await api.get("/api/designers")
+      console.log("API Response for Designers:", response.data) // Debugging log
       setDesigners(response.data.designers || response.data)
     } catch (error) {
       console.error("Error fetching designers:", error)
@@ -26,7 +27,12 @@ const DesignerListPage = () => {
   }
 
   const renderDesignerCard = (designer) => {
-    const images = designer.portfolio ? JSON.parse(designer.portfolio) : []
+    let images = []
+    try {
+      images = designer.portfolio ? JSON.parse(designer.portfolio) : []
+    } catch (error) {
+      console.error(`Error parsing portfolio JSON for designer ${designer.name}:`, error)
+    }
     const firstImage = images.length > 0 ? images[0] : "/placeholder.svg?height=200&width=300"
 
     return (
