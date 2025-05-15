@@ -172,7 +172,7 @@ const getPendingProviders = async (req, res) => {
         name: true,
         email: true,
         phone: true,
-        serviceType: true, // Ensure serviceType is included
+        serviceType: true,
         verificationDoc: true,
         createdAt: true,
       },
@@ -271,8 +271,6 @@ const rejectProvider = async (req, res) => {
   }
 };
 
-
-
 // VENUES
 const getAdminVenues = async (req, res) => {
   try {
@@ -318,6 +316,246 @@ const getAdminDesigners = async (req, res) => {
   }
 };
 
+// --- VENUE RESTFUL HANDLERS ---
+const approveVenueDirect = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await prisma.venue.update({ where: { id }, data: { status: "APPROVED" } });
+    res.json({ message: `venue approved successfully`, result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const rejectVenueDirect = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await prisma.venue.update({ where: { id }, data: { status: "REJECTED" } });
+    res.json({ message: `venue rejected`, result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const updateVenue = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { name, location, description, capacity, price, amenities } = req.body;
+    if (Array.isArray(amenities)) {
+      amenities = JSON.stringify(amenities);
+    } else if (typeof amenities === "string" && amenities.length > 0) {
+      try {
+        amenities = JSON.stringify(
+          amenities.split(",").map((s) => s.trim()).filter(Boolean)
+        );
+      } catch {
+        amenities = JSON.stringify([amenities]);
+      }
+    } else {
+      amenities = "[]";
+    }
+    const updatedVenue = await prisma.venue.update({
+      where: { id },
+      data: {
+        name,
+        location,
+        description,
+        capacity: Number(capacity),
+        price: Number(price),
+        amenities,
+      },
+    });
+    res.json({ message: "Venue updated", venue: updatedVenue });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const deleteVenue = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.venue.delete({ where: { id } });
+    res.json({ message: "Venue deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// --- CATERING RESTFUL HANDLERS ---
+const approveCateringDirect = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await prisma.catering.update({ where: { id }, data: { status: "APPROVED" } });
+    res.json({ message: `catering approved successfully`, result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const rejectCateringDirect = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await prisma.catering.update({ where: { id }, data: { status: "REJECTED" } });
+    res.json({ message: `catering rejected`, result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const updateCatering = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { name, location, description, maxPeople, pricePerPerson, cuisineType, dietaryOptions } = req.body;
+    if (Array.isArray(dietaryOptions)) {
+      dietaryOptions = JSON.stringify(dietaryOptions);
+    } else if (typeof dietaryOptions === "string" && dietaryOptions.length > 0) {
+      try {
+        dietaryOptions = JSON.stringify(
+          dietaryOptions.split(",").map((s) => s.trim()).filter(Boolean)
+        );
+      } catch {
+        dietaryOptions = JSON.stringify([dietaryOptions]);
+      }
+    } else {
+      dietaryOptions = "[]";
+    }
+    const updatedCatering = await prisma.catering.update({
+      where: { id },
+      data: {
+        name,
+        location,
+        description,
+        maxPeople: Number(maxPeople),
+        pricePerPerson: Number(pricePerPerson),
+        cuisineType,
+        dietaryOptions,
+      },
+    });
+    res.json({ message: "Catering updated", catering: updatedCatering });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const deleteCatering = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.catering.delete({ where: { id } });
+    res.json({ message: "Catering deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// --- PHOTOGRAPHER RESTFUL HANDLERS ---
+const approvePhotographerDirect = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await prisma.photographer.update({ where: { id }, data: { status: "APPROVED" } });
+    res.json({ message: `photographer approved successfully`, result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const rejectPhotographerDirect = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await prisma.photographer.update({ where: { id }, data: { status: "REJECTED" } });
+    res.json({ message: `photographer rejected`, result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const updatePhotographer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { name, location, description, experienceYears, priceRange, style, copyType, serviceType, portfolio } = req.body;
+    const updatedPhotographer = await prisma.photographer.update({
+      where: { id },
+      data: {
+        name,
+        location,
+        description,
+        experienceYears: Number(experienceYears),
+        priceRange,
+        style,
+        copyType,
+        serviceType,
+        portfolio,
+      },
+    });
+    res.json({ message: "Photographer updated", photographer: updatedPhotographer });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const deletePhotographer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.photographer.delete({ where: { id } });
+    res.json({ message: "Photographer deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// --- DESIGNER RESTFUL HANDLERS ---
+const approveDesignerDirect = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await prisma.designer.update({ where: { id }, data: { status: "APPROVED" } });
+    res.json({ message: `designer approved successfully`, result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const rejectDesignerDirect = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await prisma.designer.update({ where: { id }, data: { status: "REJECTED" } });
+    res.json({ message: `designer rejected`, result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const updateDesigner = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { name, location, description, priceRange, style, eventTypes, portfolio } = req.body;
+    if (Array.isArray(eventTypes)) {
+      eventTypes = JSON.stringify(eventTypes);
+    } else if (typeof eventTypes === "string" && eventTypes.length > 0) {
+      try {
+        eventTypes = JSON.stringify(
+          eventTypes.split(",").map((s) => s.trim()).filter(Boolean)
+        );
+      } catch {
+        eventTypes = JSON.stringify([eventTypes]);
+      }
+    } else {
+      eventTypes = "[]";
+    }
+    const updatedDesigner = await prisma.designer.update({
+      where: { id },
+      data: {
+        name,
+        location,
+        description,
+        priceRange,
+        style,
+        eventTypes,
+        portfolio,
+      },
+    });
+    res.json({ message: "Designer updated", designer: updatedDesigner });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+const deleteDesigner = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.designer.delete({ where: { id } });
+    res.json({ message: "Designer deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
@@ -334,4 +572,20 @@ module.exports = {
   getAdminCaterings,
   getAdminPhotographers,
   getAdminDesigners,
+  approveVenueDirect,
+  rejectVenueDirect,
+  updateVenue,
+  deleteVenue,
+  approveCateringDirect,
+  rejectCateringDirect,
+  updateCatering,
+  deleteCatering,
+  approvePhotographerDirect,
+  rejectPhotographerDirect,
+  updatePhotographer,
+  deletePhotographer,
+  approveDesignerDirect,
+  rejectDesignerDirect,
+  updateDesigner,
+  deleteDesigner,
 };

@@ -76,7 +76,8 @@ const AdminVenuesPage = () => {
   const handleApprove = async (id) => {
     try {
       setActionLoading(true);
-      await api.put(`/api/admin/venues/${id}/approve`);
+      // Update endpoint to match backend: /api/admin/approve/venue/:id
+      await api.put(`/api/admin/approve/venue/${id}`);
       message.success("Venue approved");
       fetchVenues();
     } catch (error) {
@@ -96,7 +97,7 @@ const AdminVenuesPage = () => {
     try {
       const values = await form.validateFields();
       setActionLoading(true);
-      await api.put(`/api/admin/venues/${selectedVenue.id}/reject`, {
+      await api.put(`/api/admin/reject/venue/${selectedVenue.id}`, {
         reason: values.reason,
       });
       message.success("Venue rejected");
@@ -112,15 +113,29 @@ const AdminVenuesPage = () => {
   const showEditModal = (venue) => {
     setSelectedVenue(venue);
     setEditModalVisible(true);
+    // Amenities: convert to comma string for editing
+    let amenitiesInput = "";
+    if (Array.isArray(venue.amenities)) {
+      amenitiesInput = venue.amenities.join(", ");
+    } else if (typeof venue.amenities === "string" && venue.amenities.length > 0) {
+      try {
+        const parsed = JSON.parse(venue.amenities);
+        if (Array.isArray(parsed)) {
+          amenitiesInput = parsed.join(", ");
+        } else {
+          amenitiesInput = venue.amenities;
+        }
+      } catch {
+        amenitiesInput = venue.amenities;
+      }
+    }
     editForm.setFieldsValue({
       name: venue.name,
       location: venue.location,
       description: venue.description,
       capacity: venue.capacity,
       price: venue.price,
-      amenities: Array.isArray(venue.amenities)
-        ? venue.amenities.join(", ")
-        : venue.amenities || "",
+      amenities: amenitiesInput,
     });
   };
 
@@ -199,14 +214,30 @@ const AdminVenuesPage = () => {
       title: "Amenities",
       dataIndex: "amenities",
       key: "amenities",
-      render: (amenities) =>
-        Array.isArray(amenities)
-          ? amenities.map((amenity, index) => (
+      render: (amenities) => {
+        let amenitiesArr = [];
+        if (Array.isArray(amenities)) {
+          amenitiesArr = amenities;
+        } else if (typeof amenities === "string" && amenities.length > 0) {
+          try {
+            const parsed = JSON.parse(amenities);
+            if (Array.isArray(parsed)) {
+              amenitiesArr = parsed;
+            } else {
+              amenitiesArr = [amenities];
+            }
+          } catch {
+            amenitiesArr = amenities.split(",").map((s) => s.trim());
+          }
+        }
+        return amenitiesArr.length > 0
+          ? amenitiesArr.map((amenity, index) => (
               <Tag key={index} color="blue">
                 {amenity}
               </Tag>
             ))
-          : amenities || "No amenities",
+          : "No amenities";
+      },
     },
     {
       title: "Status",
@@ -265,6 +296,27 @@ const AdminVenuesPage = () => {
     },
   ];
 
+  // Helper to normalize images into an array for rendering
+  const getImagesArray = (images) => {
+    if (Array.isArray(images)) {
+      return images;
+    } else if (typeof images === "string" && images.length > 0) {
+      // Try to parse as JSON array
+      try {
+        const parsed = JSON.parse(images);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {
+        // Not JSON, treat as comma separated or single string
+        if (images.includes(",")) {
+          return images.split(",").map((s) => s.trim());
+        } else {
+          return [images];
+        }
+      }
+    }
+    return [];
+  };
+
   return (
     <div>
       <Table
@@ -302,27 +354,54 @@ const AdminVenuesPage = () => {
               ₱{selectedVenue.price?.toLocaleString()}
             </Descriptions.Item>
             <Descriptions.Item label="Amenities">
-              {Array.isArray(selectedVenue.amenities)
-                ? selectedVenue.amenities.map((a, i) => (
-                    <Tag key={i}>{a}</Tag>
-                  ))
-                : selectedVenue.amenities || "None"}
+              {(() => {
+                let amenitiesArr = [];
+                if (Array.isArray(selectedVenue.amenities)) {
+                  amenitiesArr = selectedVenue.amenities;
+                } else if (
+                  typeof selectedVenue.amenities === "string" &&
+                  selectedVenue.amenities.length > 0
+                ) {
+                  try {
+                    const parsed = JSON.parse(selectedVenue.amenities);
+                    if (Array.isArray(parsed)) {
+                      amenitiesArr = parsed;
+                    } else {
+                      amenitiesArr = [selectedVenue.amenities];
+                    }
+                  } catch {
+                    amenitiesArr = selectedVenue.amenities
+                      .split(",")
+                      .map((s) => s.trim());
+                  }
+                }
+                return amenitiesArr.length > 0
+                  ? amenitiesArr.map((a, i) => <Tag key={i}>{a}</Tag>)
+                  : "None";
+              })()}
             </Descriptions.Item>
             <Descriptions.Item label="Images">
-              {selectedVenue.images?.length > 0 ? (
-                <Carousel autoplay>
-                  {selectedVenue.images.map((img, i) => (
-                    <img
-                      key={i}
-                      src={`/uploads/${img}`}
-                      alt={`venue-${i}`}
-                      style={{ width: "100%", height: "200px", objectFit: "cover" }}
-                    />
-                  ))}
-                </Carousel>
-              ) : (
-                "No images"
-              )}
+              {(() => {
+                const imagesArr = getImagesArray(selectedVenue.images);
+                return imagesArr.length > 0 ? (
+                  <Carousel autoplay>
+                    {imagesArr.map((img, i) => (
+                      <img
+                        key={i}
+                        src={img.startsWith("/uploads/") ? img : `/uploads/${img}`}
+                        alt={`venue-${i}`}
+                        style={{
+                          width: "100%",
+                          height: "200px",
+                          objectFit: "cover",
+                        }}
+                      />
+                    ))}
+                  </Carousel>
+                ) : (
+                  "No images"
+                );
+              })()}
             </Descriptions.Item>
           </Descriptions>
         )}
