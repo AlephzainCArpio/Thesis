@@ -21,14 +21,15 @@ router.post('/:serviceType', protect, (req, res, next) => {
 
   try {
     const providerId = req.user.id;
-    const images = req.filePaths; 
+    // Store as a comma-separated string for database
+    const images = req.filePaths.join(',');
 
     let result;
     switch (serviceType.toLowerCase()) {
       case 'venues':
         result = await prisma.venue.create({
           data: {
-            images, 
+            images,
             providerId,
             status: 'PENDING',
           },

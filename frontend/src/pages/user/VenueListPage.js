@@ -8,6 +8,26 @@ import api from "../../services/api"
 const { Title, Paragraph } = Typography
 const { Meta } = Card
 
+// Safe JSON parse function, handles single string and array
+const safeParseImages = (input) => {
+  if (!input) return []
+  if (Array.isArray(input)) return input
+  if (typeof input === "string") {
+    try {
+      // Try to parse as JSON
+      const parsed = JSON.parse(input)
+      if (Array.isArray(parsed)) return parsed
+      // If it's a plain string but not JSON array, treat as single image
+      if (typeof parsed === "string") return [parsed]
+      return []
+    } catch {
+      // Not valid JSON, treat as single image string
+      return [input]
+    }
+  }
+  return []
+}
+
 const VenueListPage = () => {
   const [venues, setVenues] = useState([])
   const [loading, setLoading] = useState(true)
@@ -19,6 +39,7 @@ const VenueListPage = () => {
 
   useEffect(() => {
     fetchVenues()
+    // eslint-disable-next-line
   }, [])
 
   const fetchVenues = async () => {
@@ -40,8 +61,7 @@ const VenueListPage = () => {
   }
 
   const renderVenueCard = (venue) => {
-    // Parse images from JSON string
-    const images = venue.images ? JSON.parse(venue.images) : []
+    const images = safeParseImages(venue.images)
     const firstImage = images.length > 0 ? images[0] : "/placeholder.svg?height=200&width=300"
 
     return (
@@ -52,7 +72,7 @@ const VenueListPage = () => {
             <div style={{ height: 200, overflow: "hidden" }}>
               <img
                 alt={venue.name}
-                src={firstImage || "/placeholder.svg"}
+                src={firstImage}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             </div>
@@ -82,8 +102,6 @@ const VenueListPage = () => {
     <div className="venue-list-page">
       <Title level={2}>Find Your Perfect Venue</Title>
       <Paragraph>Browse through our collection of venues for your special event.</Paragraph>
-
-      {/* Venues List */}
       {loading ? (
         <div style={{ textAlign: "center", padding: "50px 0" }}>
           <Spin size="large" />

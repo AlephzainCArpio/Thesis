@@ -29,6 +29,18 @@ import { useAuth } from "../../contexts/AuthContext"
 
 const { Title, Paragraph } = Typography
 
+// Safe parser for possibly non-JSON array or string fields
+const safeParseArray = (field) => {
+  if (!field) return []
+  if (Array.isArray(field)) return field
+  try {
+    const parsed = JSON.parse(field)
+    return Array.isArray(parsed) ? parsed : [parsed]
+  } catch {
+    return typeof field === "string" && field.trim() !== "" ? [field] : []
+  }
+}
+
 const VenueDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -124,8 +136,8 @@ const VenueDetailPage = () => {
     )
   }
 
-  const images = venue.images ? JSON.parse(venue.images) : []
-  const amenities = venue.amenities ? JSON.parse(venue.amenities) : []
+  const images = safeParseArray(venue.images)
+  const amenities = safeParseArray(venue.amenities)
 
   return (
     <div className="venue-detail-page">
@@ -203,7 +215,7 @@ const VenueDetailPage = () => {
                     <DollarOutlined style={{ fontSize: 24, color: "#52c41a" }} />
                     <div style={{ marginTop: 8 }}>
                       <strong>Price</strong>
-                      <p>₱{venue.price.toLocaleString()}</p>
+                      <p>₱{venue.price?.toLocaleString()}</p>
                     </div>
                   </div>
                 </Card>

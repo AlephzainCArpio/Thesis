@@ -351,6 +351,26 @@ const validateServiceRegistration = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+const getMyServices = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [venues, caterings, photographers, designers] = await Promise.all([
+      prisma.venue.findMany({ where: { providerId: userId } }),
+      prisma.catering.findMany({ where: { providerId: userId } }),
+      prisma.photographer.findMany({ where: { providerId: userId } }),
+      prisma.designer.findMany({ where: { providerId: userId } }),
+    ]);
+    const allServices = [
+      ...venues.map(v => ({ ...v, category: "VENUE" })),
+      ...caterings.map(c => ({ ...c, category: "CATERING" })),
+      ...photographers.map(p => ({ ...p, category: "PHOTOGRAPHER" })),
+      ...designers.map(d => ({ ...d, category: "DESIGNER" })),
+    ];
+    res.json(allServices);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
 module.exports = {
   register,
@@ -359,5 +379,6 @@ module.exports = {
   getMe,
   validateServiceRegistration,
   getServiceType,
+  getMyServices,
   upload
-};
+};  
