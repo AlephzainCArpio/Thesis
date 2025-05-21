@@ -109,11 +109,17 @@ class RecommendationModel:
         if not reference_service or len(services) <= 1:
             return {"above_budget": [], "below_budget": []}
 
+        # Exclude the best match (reference_service) from the similar options
+        filtered_services = [
+            s for s in services
+            if s != reference_service
+        ]
+
         budget = reference_service.get('price', float('inf'))
         above_budget = []
         below_budget = []
 
-        for service in services:
+        for service in filtered_services:
             price = service.get('price', 0)
             if price > budget:
                 above_budget.append(service)
