@@ -25,11 +25,23 @@ import api from "../../services/api"
 
 const { Title, Paragraph } = Typography
 
-
-const safeParse = (str) => {
+// Safe JSON parse with validation for supported image formats
+const safeParseImages = (str) => {
   try {
-    return str && str !== "" ? JSON.parse(str) : []
+    const parsed = str && str !== "" ? JSON.parse(str) : []
+    return parsed.filter((image) =>
+      /\.(jpg|jpeg|png)$/i.test(image)
+    )
   } catch (err) {
+    return []
+  }
+}
+
+// Safe JSON parse for dietary options
+const safeParseArray = (str) => {
+  try {
+    return Array.isArray(str) ? str : JSON.parse(str)
+  } catch {
     return []
   }
 }
@@ -68,15 +80,13 @@ const CateringDetailPage = () => {
     return null
   }
 
- 
-  const images = safeParse(catering.images)
-  const dietaryOptions = safeParse(catering.dietaryOptions)
+  const images = safeParseImages(catering.images)
+  const dietaryOptions = safeParseArray(catering.dietaryOptions)
 
   return (
     <div className="catering-detail-page">
       <Row gutter={[24, 24]}>
         <Col xs={24} md={16}>
-          {/* Images */}
           <Card style={{ marginBottom: 24 }}>
             {images.length > 0 ? (
               <Carousel autoplay>
@@ -84,7 +94,7 @@ const CateringDetailPage = () => {
                   <div key={index}>
                     <div style={{ height: "400px", background: "#f0f0f0", overflow: "hidden" }}>
                       <img
-                        src={image || "/placeholder.svg"}
+                        src={image}
                         alt={`${catering.name} - Image ${index + 1}`}
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
@@ -107,7 +117,6 @@ const CateringDetailPage = () => {
             )}
           </Card>
 
-          {/* Main Details */}
           <Card>
             <Title level={2}>{catering.name}</Title>
 
@@ -156,17 +165,21 @@ const CateringDetailPage = () => {
 
             <Divider orientation="left">Dietary Options</Divider>
             <div>
-              {dietaryOptions.map((option, index) => (
-                <Tag key={index} color="green" style={{ margin: "0 8px 8px 0" }}>
-                  <CheckCircleOutlined /> {option}
-                </Tag>
-              ))}
+              {Array.isArray(dietaryOptions) && dietaryOptions.length > 0 ? (
+                dietaryOptions.map((option, index) => (
+                  <Tag key={index} color="green" style={{ margin: "0 8px 8px 0" }}>
+                    <CheckCircleOutlined /> {option}
+                  </Tag>
+                ))
+              ) : (
+                <p>No dietary options available</p>
+              )}
             </div>
           </Card>
         </Col>
 
         <Col xs={24} md={8}>
-        <Card title="Catering Provider" style={{ marginBottom: 24 }}>
+          <Card title="Catering Provider" style={{ marginBottom: 24 }}>
             <Descriptions column={1}>
               <Descriptions.Item label="Name">{catering.provider?.name || "N/A"}</Descriptions.Item>
               <Descriptions.Item label="Email">
@@ -178,8 +191,7 @@ const CateringDetailPage = () => {
             </Descriptions>
           </Card>
 
-          {/* Location */}
-          <Card title="Location"> 
+          <Card title="Location">
             <div
               style={{
                 height: "200px",

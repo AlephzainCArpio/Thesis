@@ -6,6 +6,17 @@ import api from "../../services/api"
 const { Title, Paragraph } = Typography
 const { Meta } = Card
 
+const safeParseImages = (input) => {
+  try {
+    const parsed = input ? JSON.parse(input) : []
+    return parsed.filter((image) =>
+      /\.(jpg|jpeg|png)$/i.test(image)
+    )
+  } catch {
+    return []
+  }
+}
+
 const PhotographerListPage = () => {
   const [photographers, setPhotographers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -26,18 +37,8 @@ const PhotographerListPage = () => {
     }
   }
 
-  const safeJsonParse = (jsonString) => {
-    try {
-      return jsonString ? JSON.parse(jsonString) : []
-    } catch (error) {
-      console.warn('Failed to parse JSON:', error)
-      return []
-    }
-  }
-
   const renderPhotographerCard = (photographer) => {
-    // Safely parse the portfolio JSON
-    const images = safeJsonParse(photographer.portfolio)
+    const images = safeParseImages(photographer.portfolio)
     const firstImage = images.length > 0 ? images[0] : "/placeholder.svg?height=200&width=300"
 
     return (
@@ -48,7 +49,7 @@ const PhotographerListPage = () => {
             <div style={{ height: 200, overflow: "hidden" }}>
               <img
                 alt={photographer.name}
-                src={firstImage || "/placeholder.svg"}
+                src={firstImage}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             </div>
