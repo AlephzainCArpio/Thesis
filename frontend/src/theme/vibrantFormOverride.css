@@ -1,0 +1,59 @@
+/* Vibrant AntD form and button overrides */
+
+.ant-form-item-label > label {
+  color: #ff4d4f !important; /* vibrant red for labels */
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.ant-input,
+.ant-input-number,
+.ant-select-selector,
+.ant-upload.ant-upload-select-picture-card {
+  border-radius: 10px !important;
+  border: 2px solid #40a9ff !important;
+  background: #fff !important;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-size: 16px;
+}
+
+.ant-input:focus,
+.ant-input-number:focus,
+.ant-select-focused .ant-select-selector,
+.ant-input-number-focused,
+.ant-input-affix-wrapper-focused {
+  border-color: #ff4d4f !important;
+  box-shadow: 0 0 0 2px rgba(255,77,79,0.12);
+}
+
+.ant-btn-primary,
+button[type="submit"] {
+  background: linear-gradient(90deg, #ff4d4f 60%, #40a9ff 100%) !important;
+  border: none !important;
+  color: #fff !important;
+  border-radius: 8px !important;
+  font-weight: 700;
+  font-size: 17px;
+  box-shadow: 0 2px 8px 0 rgba(255,77,79,0.09);
+  transition: background 0.2s, box-shadow 0.2s;
+  padding: 10px 0 !important;
+}
+
+.ant-btn-primary:hover,
+button[type="submit"]:hover {
+  background: linear-gradient(90deg, #ff7875 60%, #69c0ff 100%) !important;
+  color: #fff !important;
+}
+
+.ant-upload-list-picture-card .ant-upload-list-item {
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px 0 rgba(64,169,255,0.09);
+}
+
+/* Optional: Add subtle shadow to form cards */
+.vibrant-form-card {
+  border-radius: 18px;
+  box-shadow: 0 8px 32px 0 rgba(255,77,79,0.11);
+  background: #fff;
+  padding: 32px 24px;
+}

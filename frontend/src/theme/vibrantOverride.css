@@ -1,0 +1,56 @@
+/* Extra global styles for vibrance and polish */
+body {
+  background: linear-gradient(120deg, #f6f9ff 0%, #ffecf0 100%);
+  font-family: 'Montserrat', 'Roboto', sans-serif;
+  color: #22223b;
+}
+
+.ant-card {
+  transition: box-shadow 0.25s;
+}
+.ant-card:hover {
+  box-shadow: 0 8px 30px 0 rgba(255,77,79,0.16);
+}
+
+.ant-btn-primary {
+  background: linear-gradient(90deg, #ff4d4f 60%, #40a9ff 100%);
+  border: none;
+  color: #fff;
+  transition: background 0.2s;
+}
+.ant-btn-primary:hover, .ant-btn-primary:focus {
+  background: linear-gradient(90deg, #ff7875 60%, #69c0ff 100%);
+  color: #fff;
+}
+
+.ant-input, .ant-select-selector {
+  background: #fff;
+  border-radius: 8px !important;
+  border: 1.5px solid #40a9ff !important;
+  transition: border-color 0.2s;
+}
+
+.ant-table-thead > tr > th {
+  background: #fff5f5 !important;
+  color: #ff4d4f !important;
+  font-weight: 700;
+}
+.ant-table-tbody > tr.ant-table-row:hover > td {
+  background: #e6f7ff !important;
+}
+
+.ant-modal-content {
+  border-radius: 16px;
+  box-shadow: 0 8px 40px 0 rgba(64,169,255,0.18);
+}
+
+/* Vibrant tag colors */
+.ant-tag {
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+/* Add transitions for smoother feel */
+.ant-btn, .ant-input, .ant-card, .ant-table, .ant-modal-content {
+  transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+}

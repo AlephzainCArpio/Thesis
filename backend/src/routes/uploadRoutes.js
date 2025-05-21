@@ -5,7 +5,12 @@ const { protect } = require('../middlewares/authMiddleware');
 const { handleUpload } = require('../middlewares/uploadMiddleware');
 
 const prisma = new PrismaClient();
-
+router.post('/venues', handleUpload('venues'), (req, res) => {
+  if (!req.filePaths || req.filePaths.length === 0) {
+    return res.status(400).json({ error: 'No files uploaded' });
+  }
+  res.json({ images: req.filePaths });
+});
 router.post('/:serviceType', protect, (req, res, next) => {
   const folder = req.params.serviceType.toLowerCase();
   handleUpload(folder)(req, res, next);
@@ -21,8 +26,8 @@ router.post('/:serviceType', protect, (req, res, next) => {
 
   try {
     const providerId = req.user.id;
-    // Store as a comma-separated string for database
-    const images = req.filePaths.join(',');
+    // Store as a JSON array string for database (so frontend can JSON.parse it)
+    const images = JSON.stringify(req.filePaths);
 
     let result;
     switch (serviceType.toLowerCase()) {

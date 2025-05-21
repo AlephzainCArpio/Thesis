@@ -2,7 +2,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import axios from "axios";
-
+import { ConfigProvider } from 'antd';
+import vibrantTheme, { minimalistTheme } from './theme/vibrantTheme';
 // Layouts
 import MainLayout from "./layouts/MainLayout";
 import AdminLayout from "./layouts/AdminLayout";
@@ -73,6 +74,7 @@ function App() {
   if (loading) return <div>Loading...</div>;
 
   return (
+       <ConfigProvider theme={vibrantTheme}>
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<MainLayout />}>
@@ -117,6 +119,7 @@ function App() {
       {/* Catch All */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </ConfigProvider>
   );
 }
 

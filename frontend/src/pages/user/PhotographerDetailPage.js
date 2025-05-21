@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Card, Row, Col, Typography, Descriptions, Image, Spin, Divider, Button } from "antd"
-import { EnvironmentOutlined,MailOutlined,
-  PhoneOutlined } from "@ant-design/icons"
+import { Card, Row, Col, Typography, Descriptions, Carousel, Spin, Divider, Button } from "antd"
+import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons"
 import api from "../../services/api"
 
 const { Title, Text, Paragraph } = Typography
@@ -74,19 +73,19 @@ const PhotographerDetailPage = () => {
             <Title level={4}>Portfolio</Title>
             <div style={{ marginBottom: 24 }}>
               {portfolioImages.length > 0 ? (
-                <Image.PreviewGroup>
-                  <Row gutter={[16, 16]}>
-                    {portfolioImages.map((image, index) => (
-                      <Col xs={12} sm={8} md={6} key={index}>
-                        <Image
+                <Carousel autoplay>
+                  {portfolioImages.map((image, idx) => (
+                    <div key={idx}>
+                      <div style={{ height: 300, background: "#f0f0f0", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                        <img
                           src={image}
-                          alt={`Portfolio ${index + 1}`}
-                          style={{ objectFit: "cover", height: 150 }}
+                          alt={`Portfolio ${idx + 1}`}
+                          style={{ maxWidth: "100%", maxHeight: "300px", objectFit: "contain" }}
                         />
-                      </Col>
-                    ))}
-                  </Row>
-                </Image.PreviewGroup>
+                      </div>
+                    </div>
+                  ))}
+                </Carousel>
               ) : (
                 <Text type="secondary">No portfolio images available</Text>
               )}
@@ -104,7 +103,7 @@ const PhotographerDetailPage = () => {
         </Col>
 
         <Col xs={24} lg={8}>
-        <Card title="Photographer Provider" style={{ marginBottom: 24 }}>
+          <Card title="Photographer Provider" style={{ marginBottom: 24 }}>
             <Descriptions column={1}>
               <Descriptions.Item label="Name">{photographer.provider?.name || "N/A"}</Descriptions.Item>
               <Descriptions.Item label="Email">
@@ -125,7 +124,6 @@ const PhotographerDetailPage = () => {
                 alignItems: "center",
               }}
             >
-            
               <EnvironmentOutlined style={{ fontSize: 32 }} />
               <p style={{ marginLeft: 8 }}>{photographer.location}</p>
             </div>

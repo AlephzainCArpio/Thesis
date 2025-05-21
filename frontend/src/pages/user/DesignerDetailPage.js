@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Card, Row, Col, Typography, Descriptions, Tag, Image, Spin, Divider, Button } from "antd"
+import { Card, Row, Col, Typography, Descriptions, Tag, Carousel, Spin, Divider, Button } from "antd"
 import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons"
 import api from "../../services/api"
 
@@ -16,7 +16,6 @@ const DesignerDetailPage = () => {
     const fetchDesigner = async () => {
       try {
         const response = await api.get(`/api/designers/${id}`)
-        console.log("API Response for Designer:", response.data) // Debugging log
         setDesigner(response.data)
       } catch (error) {
         console.error("Error fetching designer:", error)
@@ -57,9 +56,6 @@ const DesignerDetailPage = () => {
     console.error(`Error parsing eventTypes JSON for designer ${designer.name}:`, error)
   }
 
-  // Debugging logs
-  console.log("Event Types:", eventTypes)
-
   return (
     <div style={{ padding: 24 }}>
       <Row gutter={[24, 24]}>
@@ -82,19 +78,19 @@ const DesignerDetailPage = () => {
             <Title level={4}>Portfolio</Title>
             <div style={{ marginBottom: 24 }}>
               {portfolioImages.length > 0 ? (
-                <Image.PreviewGroup>
-                  <Row gutter={[16, 16]}>
-                    {portfolioImages.map((image, index) => (
-                      <Col xs={12} sm={8} md={6} key={index}>
-                        <Image
+                <Carousel autoplay>
+                  {portfolioImages.map((image, idx) => (
+                    <div key={idx}>
+                      <div style={{ height: 300, background: "#f0f0f0", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                        <img
                           src={image}
-                          alt={`Portfolio ${index + 1}`}
-                          style={{ objectFit: "cover", height: 150 }}
+                          alt={`Portfolio ${idx + 1}`}
+                          style={{ maxWidth: "100%", maxHeight: "300px", objectFit: "contain" }}
                         />
-                      </Col>
-                    ))}
-                  </Row>
-                </Image.PreviewGroup>
+                      </div>
+                    </div>
+                  ))}
+                </Carousel>
               ) : (
                 <Text type="secondary">No portfolio images available</Text>
               )}
