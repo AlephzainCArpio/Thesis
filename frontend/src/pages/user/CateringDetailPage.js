@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   Row,
   Col,
@@ -9,8 +9,8 @@ import {
   Tag,
   Divider,
   Spin,
-  Descriptions
-} from "antd"
+  Descriptions,
+} from "antd";
 import {
   EnvironmentOutlined,
   TeamOutlined,
@@ -18,85 +18,87 @@ import {
   CheckCircleOutlined,
   CoffeeOutlined,
   MailOutlined,
-  PhoneOutlined
-} from "@ant-design/icons"
-import { useParams, useNavigate } from "react-router-dom"
-import api from "../../services/api"
+  PhoneOutlined,
+} from "@ant-design/icons";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../../services/api";
 
-const { Title, Paragraph } = Typography
+const { Title, Paragraph } = Typography;
 
-// Safe JSON parse with validation for supported image formats
-const safeParseImages = (str) => {
+const safeJsonParse = (jsonString) => {
+  if (!jsonString) return [];
   try {
-    const parsed = str && str !== "" ? JSON.parse(str) : []
-    return parsed.filter((image) =>
-      /\.(jpg|jpeg|png)$/i.test(image)
-    )
-  } catch (err) {
-    return []
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    return [];
   }
-}
-
-// Safe JSON parse for dietary options
-const safeParseArray = (str) => {
-  try {
-    return Array.isArray(str) ? str : JSON.parse(str)
-  } catch {
-    return []
-  }
-}
+};
 
 const CateringDetailPage = () => {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const [catering, setCatering] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [catering, setCatering] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCateringDetails()
-  }, [id])
+    fetchCateringDetails();
+  }, [id]);
 
   const fetchCateringDetails = async () => {
     try {
-      setLoading(true)
-      const response = await api.get(`/api/catering/${id}`)
-      setCatering(response.data)
+      setLoading(true);
+      const response = await api.get(`/api/catering/${id}`);
+      setCatering(response.data);
     } catch (error) {
-      console.error("Error fetching catering details:", error)
+      console.error("Error fetching catering details:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   if (loading) {
     return (
       <div style={{ textAlign: "center", padding: "50px 0" }}>
         <Spin size="large" />
       </div>
-    )
+    );
   }
 
   if (!catering) {
-    return null
+    return null;
   }
 
-  const images = safeParseImages(catering.images)
-  const dietaryOptions = safeParseArray(catering.dietaryOptions)
+  const images = safeJsonParse(catering.images);
+  const dietaryOptions = Array.isArray(safeJsonParse(catering.dietaryOptions))
+    ? safeJsonParse(catering.dietaryOptions)
+    : [];
 
   return (
     <div className="catering-detail-page">
       <Row gutter={[24, 24]}>
         <Col xs={24} md={16}>
+          {/* Images */}
           <Card style={{ marginBottom: 24 }}>
             {images.length > 0 ? (
               <Carousel autoplay>
                 {images.map((image, index) => (
                   <div key={index}>
-                    <div style={{ height: "400px", background: "#f0f0f0", overflow: "hidden" }}>
+                    <div
+                      style={{
+                        height: "400px",
+                        background: "#f0f0f0",
+                        overflow: "hidden",
+                      }}
+                    >
                       <img
-                        src={image}
+                        src={image || "/placeholder.svg"}
                         alt={`${catering.name} - Image ${index + 1}`}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
                       />
                     </div>
                   </div>
@@ -117,6 +119,7 @@ const CateringDetailPage = () => {
             )}
           </Card>
 
+          {/* Main Details */}
           <Card>
             <Title level={2}>{catering.name}</Title>
 
@@ -150,7 +153,9 @@ const CateringDetailPage = () => {
               <Col span={8}>
                 <Card size="small">
                   <div style={{ textAlign: "center" }}>
-                    <CoffeeOutlined style={{ fontSize: 24, color: "#fa8c16" }} />
+                    <CoffeeOutlined
+                      style={{ fontSize: 24, color: "#fa8c16" }}
+                    />
                     <div style={{ marginTop: 8 }}>
                       <strong>Cuisine Type</strong>
                       <p>{catering.cuisineType}</p>
@@ -165,15 +170,15 @@ const CateringDetailPage = () => {
 
             <Divider orientation="left">Dietary Options</Divider>
             <div>
-              {Array.isArray(dietaryOptions) && dietaryOptions.length > 0 ? (
-                dietaryOptions.map((option, index) => (
-                  <Tag key={index} color="green" style={{ margin: "0 8px 8px 0" }}>
-                    <CheckCircleOutlined /> {option}
-                  </Tag>
-                ))
-              ) : (
-                <p>No dietary options available</p>
-              )}
+              {dietaryOptions.map((option, index) => (
+                <Tag
+                  key={index}
+                  color="green"
+                  style={{ margin: "0 8px 8px 0" }}
+                >
+                  <CheckCircleOutlined /> {option}
+                </Tag>
+              ))}
             </div>
           </Card>
         </Col>
@@ -181,7 +186,9 @@ const CateringDetailPage = () => {
         <Col xs={24} md={8}>
           <Card title="Catering Provider" style={{ marginBottom: 24 }}>
             <Descriptions column={1}>
-              <Descriptions.Item label="Name">{catering.provider?.name || "N/A"}</Descriptions.Item>
+              <Descriptions.Item label="Name">
+                {catering.provider?.name || "N/A"}
+              </Descriptions.Item>
               <Descriptions.Item label="Email">
                 <MailOutlined /> {catering.provider?.email || "N/A"}
               </Descriptions.Item>
@@ -191,6 +198,7 @@ const CateringDetailPage = () => {
             </Descriptions>
           </Card>
 
+          {/* Location */}
           <Card title="Location">
             <div
               style={{
@@ -207,7 +215,9 @@ const CateringDetailPage = () => {
             <Button
               type="link"
               block
-              href={`https://maps.google.com/?q=${encodeURIComponent(catering.location)}`}
+              href={`https://maps.google.com/?q=${encodeURIComponent(
+                catering.location
+              )}`}
               target="_blank"
               style={{ marginTop: 16 }}
             >
@@ -217,7 +227,7 @@ const CateringDetailPage = () => {
         </Col>
       </Row>
     </div>
-  )
-}
+  );
+};
 
-export default CateringDetailPage
+export default CateringDetailPage;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 import {
   Row,
   Col,
@@ -12,7 +12,7 @@ import {
   Spin,
   message,
   Result,
-} from "antd"
+} from "antd";
 import {
   EnvironmentOutlined,
   TeamOutlined,
@@ -22,95 +22,93 @@ import {
   MailOutlined,
   HeartOutlined,
   HeartFilled,
-} from "@ant-design/icons"
-import { useParams, useNavigate } from "react-router-dom"
-import api from "../../services/api"
-import { useAuth } from "../../contexts/AuthContext"
+} from "@ant-design/icons";
+import { useParams, useNavigate } from "react-router-dom";
+import api from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
 
-const { Title, Paragraph } = Typography
+const { Title, Paragraph } = Typography;
 
-// Safe parser for possibly non-JSON array or string fields
-const safeParseArray = (field) => {
-  if (!field) return []
-  if (Array.isArray(field)) return field
+const safeJsonParse = (jsonString) => {
+  if (!jsonString) return null;
   try {
-    const parsed = JSON.parse(field)
-    return Array.isArray(parsed) ? parsed : [parsed]
-  } catch {
-    return typeof field === "string" && field.trim() !== "" ? [field] : []
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    return null;
   }
-}
+};
 
 const VenueDetailPage = () => {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const { currentUser } = useAuth()
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
-  const [venue, setVenue] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [isFavorite, setIsFavorite] = useState(false)
+  const [venue, setVenue] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   useEffect(() => {
-    fetchVenueDetails()
+    fetchVenueDetails();
     if (currentUser) {
-      checkIfFavorite()
-      recordView()
+      checkIfFavorite();
+      recordView();
     }
-  }, [id, currentUser])
+  }, [id, currentUser]);
 
   const fetchVenueDetails = async () => {
     try {
-      setLoading(true)
-      const response = await api.get(`/api/venues/${id}`)
-      setVenue(response.data)
+      setLoading(true);
+      const response = await api.get(`/api/venues/${id}`);
+      setVenue(response.data);
     } catch (error) {
-      console.error("Error fetching venue details:", error)
-      message.error("Failed to load venue details")
+      console.error("Error fetching venue details:", error);
+      message.error("Failed to load venue details");
       if (error.response && error.response.status === 404) {
-        navigate("/user/venues")
+        navigate("/user/venues");
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const checkIfFavorite = async () => {
     try {
-      const response = await api.get(`/api/users/favorites/check?venueId=${id}`)
-      setIsFavorite(response.data.isFavorite)
+      const response = await api.get(`/api/users/favorites/check?venueId=${id}`);
+      setIsFavorite(response.data.isFavorite);
     } catch (error) {
-      console.error("Error checking favorite status:", error)
+      console.error("Error checking favorite status:", error);
     }
-  }
+  };
 
   const recordView = async () => {
     try {
-      await api.post(`/api/venues/${id}/view`)
+      await api.post(`/api/venues/${id}/view`);
     } catch (error) {
-      console.error("Error recording view:", error)
+      console.error("Error recording view:", error);
     }
-  }
+  };
 
   const toggleFavorite = async () => {
     if (!currentUser) {
-      message.info("Please login to save favorites")
-      return
+      message.info("Please login to save favorites");
+      return;
     }
 
     try {
       if (isFavorite) {
-        await api.delete(`/api/users/favorites/venue/${id}`)
-        message.success("Removed from favorites")
+        await api.delete(`/api/users/favorites/venue/${id}`);
+        message.success("Removed from favorites");
       } else {
-        await api.post(`/api/users/favorites`, { venueId: id })
-        message.success("Added to favorites")
+        await api.post(`/api/users/favorites`, { venueId: id });
+        message.success("Added to favorites");
       }
-      setIsFavorite(!isFavorite)
+      setIsFavorite(!isFavorite);
     } catch (error) {
-      console.error("Error updating favorite:", error)
-      message.error("Failed to update favorites")
+      console.error("Error updating favorite:", error);
+      message.error("Failed to update favorites");
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -118,7 +116,7 @@ const VenueDetailPage = () => {
         <Spin size="large" />
         <p style={{ marginTop: 16 }}>Loading venue details...</p>
       </div>
-    )
+    );
   }
 
   if (!venue) {
@@ -133,11 +131,11 @@ const VenueDetailPage = () => {
           </Button>
         }
       />
-    )
+    );
   }
 
-  const images = safeParseArray(venue.images)
-  const amenities = safeParseArray(venue.amenities)
+  const images = safeJsonParse(venue.images) || [];
+  const amenities = safeJsonParse(venue.amenities) || [];
 
   return (
     <div className="venue-detail-page">
@@ -148,11 +146,21 @@ const VenueDetailPage = () => {
               <Carousel autoplay>
                 {images.map((image, index) => (
                   <div key={index}>
-                    <div style={{ height: "400px", background: "#f0f0f0", overflow: "hidden" }}>
+                    <div
+                      style={{
+                        height: "400px",
+                        background: "#f0f0f0",
+                        overflow: "hidden",
+                      }}
+                    >
                       <img
                         src={image || "/placeholder.svg"}
                         alt={`${venue.name} - Image ${index + 1}`}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
                       />
                     </div>
                   </div>
@@ -187,7 +195,13 @@ const VenueDetailPage = () => {
               </Title>
               <Button
                 type="text"
-                icon={isFavorite ? <HeartFilled style={{ color: "#ff4d4f" }} /> : <HeartOutlined />}
+                icon={
+                  isFavorite ? (
+                    <HeartFilled style={{ color: "#ff4d4f" }} />
+                  ) : (
+                    <HeartOutlined />
+                  )
+                }
                 onClick={toggleFavorite}
                 size="large"
               />
@@ -228,7 +242,11 @@ const VenueDetailPage = () => {
             <Divider orientation="left">Amenities</Divider>
             <div>
               {amenities.map((amenity, index) => (
-                <Tag key={index} color="blue" style={{ margin: "0 8px 8px 0" }}>
+                <Tag
+                  key={index}
+                  color="blue"
+                  style={{ margin: "0 8px 8px 0" }}
+                >
                   <CheckCircleOutlined /> {amenity}
                 </Tag>
               ))}
@@ -239,7 +257,9 @@ const VenueDetailPage = () => {
         <Col xs={24} md={8}>
           <Card title="Venue Provider" style={{ marginBottom: 24 }}>
             <Descriptions column={1}>
-              <Descriptions.Item label="Name">{venue.provider?.name || "N/A"}</Descriptions.Item>
+              <Descriptions.Item label="Name">
+                {venue.provider?.name || "N/A"}
+              </Descriptions.Item>
               <Descriptions.Item label="Email">
                 <MailOutlined /> {venue.provider?.email || "N/A"}
               </Descriptions.Item>
@@ -265,7 +285,9 @@ const VenueDetailPage = () => {
             <Button
               type="link"
               block
-              href={`https://maps.google.com/?q=${encodeURIComponent(venue.location)}`}
+              href={`https://maps.google.com/?q=${encodeURIComponent(
+                venue.location
+              )}`}
               target="_blank"
               style={{ marginTop: 16 }}
             >
@@ -275,7 +297,7 @@ const VenueDetailPage = () => {
         </Col>
       </Row>
     </div>
-  )
-}
+  );
+};
 
-export default VenueDetailPage
+export default VenueDetailPage;

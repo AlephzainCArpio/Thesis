@@ -1,111 +1,213 @@
-import { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { Card, Row, Col, Typography, Descriptions, Carousel, Spin, Divider, Button } from "antd"
-import { EnvironmentOutlined, MailOutlined, PhoneOutlined } from "@ant-design/icons"
-import api from "../../services/api"
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Card,
+  Row,
+  Col,
+  Typography,
+  Descriptions,
+  Carousel,
+  Spin,
+  Divider,
+  Button,
+} from "antd";
+import {
+  EnvironmentOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
+import api from "../../services/api";
 
-const { Title, Text, Paragraph } = Typography
+const { Title, Paragraph, Link } = Typography;
+
+const safeJsonParse = (jsonString) => {
+  if (!jsonString) return [];
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    return [];
+  }
+};
 
 const PhotographerDetailPage = () => {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const [photographer, setPhotographer] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [photographer, setPhotographer] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPhotographer = async () => {
       try {
-        const response = await api.get(`/api/photographers/${id}`)
-        setPhotographer(response.data)
+        const response = await api.get(`/api/photographers/${id}`);
+        setPhotographer(response.data);
       } catch (error) {
-        console.error("Error fetching photographer:", error)
+        console.error("Error fetching photographer:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchPhotographer()
-  }, [id])
+    fetchPhotographer();
+  }, [id]);
 
   if (loading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "80vh",
+        }}
+      >
         <Spin size="large" />
       </div>
-    )
+    );
   }
 
   if (!photographer) {
-    return null
+    return null;
   }
 
-  // Safe portfolio parsing
-  let portfolioImages = []
-  try {
-    portfolioImages = photographer.portfolio ? JSON.parse(photographer.portfolio) : []
-    if (!Array.isArray(portfolioImages)) {
-      portfolioImages = []
-    }
-  } catch (error) {
-    console.error("Invalid portfolio JSON:", error)
-    portfolioImages = []
-  }
+  const images = safeJsonParse(photographer.images);
+  const portfolio = photographer.portfolio;
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="photographer-detail-page">
       <Row gutter={[24, 24]}>
-        <Col xs={24} lg={16}>
-          <Card bordered={false} style={{ marginBottom: 24 }}>
+        <Col xs={24} md={16}>
+          {/* Image Carousel */}
+          <Card style={{ marginBottom: 24 }}>
+            {images.length > 0 ? (
+              <Carousel autoplay>
+                {images.map((image, index) => (
+                  <div key={index}>
+                    <div
+                      style={{
+                        height: "400px",
+                        background: "#f0f0f0",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <img
+                        src={image || "/placeholder.svg"}
+                        alt={`${photographer.name} - Image ${index + 1}`}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </Carousel>
+            ) : (
+              <div
+                style={{
+                  height: "400px",
+                  background: "#f0f0f0",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <p>No images available</p>
+              </div>
+            )}
+          </Card>
+
+          {/* Main Details */}
+          <Card>
             <Title level={2}>{photographer.name}</Title>
 
-            <Paragraph style={{ fontSize: 16 }}>
-              <EnvironmentOutlined style={{ marginRight: 8 }} />
-              {photographer.location}
+            <Paragraph>
+              <EnvironmentOutlined /> {photographer.location}
             </Paragraph>
 
-            <Divider />
+            <Row gutter={16} style={{ marginBottom: 24 }}>
+              <Col span={12}>
+                <Card size="small">
+                  <div style={{ textAlign: "center" }}>
+                    <CheckCircleOutlined
+                      style={{ fontSize: 24, color: "#1890ff" }}
+                    />
+                    <div style={{ marginTop: 8 }}>
+                      <strong>Photography Style</strong>
+                      <p>{photographer.style || "N/A"}</p>
+                    </div>
+                  </div>
+                </Card>
+              </Col>
+              <Col span={12}>
+                <Card size="small">
+                  <div style={{ textAlign: "center" }}>
+                    <CheckCircleOutlined
+                      style={{ fontSize: 24, color: "#52c41a" }}
+                    />
+                    <div style={{ marginTop: 8 }}>
+                      <strong>Experience</strong>
+                      <p>{photographer.experienceYears || "N/A"} years</p>
+                    </div>
+                  </div>
+                </Card>
+              </Col>
+            </Row>
 
-            <Title level={4}>About the Photographer</Title>
+            <Row gutter={16} style={{ marginBottom: 24 }}>
+              <Col span={12}>
+                <Card size="small">
+                  <div style={{ textAlign: "center" }}>
+                    <CheckCircleOutlined
+                      style={{ fontSize: 24, color: "#fa8c16" }}
+                    />
+                    <div style={{ marginTop: 8 }}>
+                      <strong>Price Range</strong>
+                      <p>{photographer.priceRange || "N/A"}</p>
+                    </div>
+                  </div>
+                </Card>
+              </Col>
+              <Col span={12}>
+                <Card size="small">
+                  <div style={{ textAlign: "center" }}>
+                    <CheckCircleOutlined
+                      style={{ fontSize: 24, color: "#fa541c" }}
+                    />
+                    <div style={{ marginTop: 8 }}>
+                      <strong>Copy Type</strong>
+                      <p>{photographer.copyType || "N/A"}</p>
+                    </div>
+                  </div>
+                </Card>
+              </Col>
+            </Row>
+
+            <Divider orientation="left">About the Photographer</Divider>
             <Paragraph>{photographer.description}</Paragraph>
 
-            <Divider />
-
-            <Title level={4}>Portfolio</Title>
-            <div style={{ marginBottom: 24 }}>
-              {portfolioImages.length > 0 ? (
-                <Carousel autoplay>
-                  {portfolioImages.map((image, idx) => (
-                    <div key={idx}>
-                      <div style={{ height: 300, background: "#f0f0f0", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                        <img
-                          src={image}
-                          alt={`Portfolio ${idx + 1}`}
-                          style={{ maxWidth: "100%", maxHeight: "300px", objectFit: "contain" }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </Carousel>
-              ) : (
-                <Text type="secondary">No portfolio images available</Text>
-              )}
-            </div>
-
-            <Divider />
-
-            <Descriptions title="Professional Details" column={1}>
-              <Descriptions.Item label="Photography Style">{photographer.style}</Descriptions.Item>
-              <Descriptions.Item label="Experience">{photographer.experienceYears} years</Descriptions.Item>
-              <Descriptions.Item label="Price Range">{photographer.priceRange}</Descriptions.Item>
-              <Descriptions.Item label="Copy Type">{photographer.copyType}</Descriptions.Item>
-            </Descriptions>
+            <Divider orientation="left">Portfolio</Divider>
+            {portfolio ? (
+              <Paragraph>
+                <a href={portfolio} target="_blank" rel="noopener noreferrer">
+                  View Portfolio
+                </a>
+              </Paragraph>
+            ) : (
+              <Paragraph>No portfolio available</Paragraph>
+            )}
           </Card>
         </Col>
 
-        <Col xs={24} lg={8}>
+        <Col xs={24} md={8}>
+          {/* Provider Details */}
           <Card title="Photographer Provider" style={{ marginBottom: 24 }}>
             <Descriptions column={1}>
-              <Descriptions.Item label="Name">{photographer.provider?.name || "N/A"}</Descriptions.Item>
+              <Descriptions.Item label="Name">
+                {photographer.provider?.name || "N/A"}
+              </Descriptions.Item>
               <Descriptions.Item label="Email">
                 <MailOutlined /> {photographer.provider?.email || "N/A"}
               </Descriptions.Item>
@@ -114,6 +216,8 @@ const PhotographerDetailPage = () => {
               </Descriptions.Item>
             </Descriptions>
           </Card>
+
+          {/* Location */}
           <Card title="Location">
             <div
               style={{
@@ -130,7 +234,9 @@ const PhotographerDetailPage = () => {
             <Button
               type="link"
               block
-              href={`https://maps.google.com/?q=${encodeURIComponent(photographer.location)}`}
+              href={`https://maps.google.com/?q=${encodeURIComponent(
+                photographer.location
+              )}`}
               target="_blank"
               style={{ marginTop: 16 }}
             >
@@ -140,7 +246,7 @@ const PhotographerDetailPage = () => {
         </Col>
       </Row>
     </div>
-  )
-}
+  );
+};
 
-export default PhotographerDetailPage
+export default PhotographerDetailPage;
