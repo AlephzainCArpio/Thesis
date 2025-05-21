@@ -35,29 +35,24 @@ const CustomizationPage = () => {
       setLoading(true);
 
       const serviceType = serviceTypeMapping[selectedService] || selectedService;
-      
-      // Prepare the event payload
+
       const payload = {
         serviceType,
         budget: values.budget,
       };
 
-      // Include the 'guests' field if needed
       if (selectedService === "venues" || selectedService === "catering") {
         payload.guests = values.guests;
       }
 
-      // Include the 'eventTypes' field if needed
       if (selectedService === "venues" || selectedService === "designers") {
         payload.eventTypes = values.eventTypes;
       }
 
       console.log("Request Payload:", payload);
 
-      // Call the recommendation API
       const response = await api.post("/recommendation", payload);
 
-      // Handle recommendations
       if (response.data && response.data.recommendations) {
         setRecommendations(response.data.recommendations);
         setIsModalVisible(true);
@@ -73,7 +68,6 @@ const CustomizationPage = () => {
       setLoading(false);
     }
   };
-  console.log(isModalVisible)
 
   const onServiceTypeChange = (e) => {
     setSelectedService(e.target.value);
@@ -117,32 +111,39 @@ const CustomizationPage = () => {
   );
 
   return (
-    <div>
+    <div style={{ padding: "24px" }}>
       <h2>Customize Your Event</h2>
       <p>Tell us about your event and we'll find the perfect services for you.</p>
 
       <Card title="Event Details" style={{ marginBottom: 24 }}>
-        <Form name="customization" layout="vertical" onFinish={onFinish}>
+        <Form
+          name="customization"
+          layout="vertical"
+          onFinish={onFinish}
+          style={{ maxWidth: 600, margin: "0 auto" }}
+        >
           <Form.Item
             name="serviceType"
             label="Select Service Type"
             rules={[{ required: true, message: "Please select a service type." }]}
           >
             <Radio.Group onChange={onServiceTypeChange}>
-              <Radio value="venues">Venue</Radio>
-              <Radio value="catering">Catering</Radio>
-              <Radio value="photographers">Photographer</Radio>
-              <Radio value="designers">Event Designer</Radio>
+              <Row gutter={[16, 16]}>
+                <Col span={12}><Radio value="venues">Venue</Radio></Col>
+                <Col span={12}><Radio value="catering">Catering</Radio></Col>
+                <Col span={12}><Radio value="photographers">Photographer</Radio></Col>
+                <Col span={12}><Radio value="designers">Event Designer</Radio></Col>
+              </Row>
             </Radio.Group>
           </Form.Item>
 
           {(selectedService === "venues" || selectedService === "designers") && (
             <Form.Item
               name="eventTypes"
-              label="Event Types"
+              label="Event Type"
               rules={[{ required: true, message: "Please select an event type." }]}
             >
-              <Select>
+              <Select placeholder="Select an event type">
                 <Option value="wedding">Wedding</Option>
                 <Option value="birthday">Birthday Party</Option>
                 <Option value="corporate">Corporate Event</Option>
@@ -156,11 +157,14 @@ const CustomizationPage = () => {
             <Form.Item
               name="guests"
               label="Number of Guests"
-              rules={[
-                { required: true, message: "Please enter the number of guests." },
-              ]}
+              rules={[{ required: true, message: "Please enter the number of guests." }]}
             >
-              <InputNumber min={1} max={1000} style={{ width: "100%" }} />
+              <InputNumber
+                min={1}
+                max={1000}
+                style={{ width: "100%" }}
+                placeholder="Enter number of guests"
+              />
             </Form.Item>
           )}
 
@@ -174,13 +178,16 @@ const CustomizationPage = () => {
               min={100}
               max={500000}
               step={5000}
-              formatter={(value) => `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+              placeholder="Enter your budget"
+              formatter={(value) =>
+                `₱ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+              }
               parser={(value) => value.replace(/₱\s?|(,*)/g, "")}
             />
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" loading={loading}>
+            <Button type="primary" htmlType="submit" loading={loading} block>
               Get Recommendations
             </Button>
           </Form.Item>
@@ -201,6 +208,5 @@ const CustomizationPage = () => {
     </div>
   );
 };
-
 
 export default CustomizationPage;

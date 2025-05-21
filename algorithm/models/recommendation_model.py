@@ -58,18 +58,22 @@ class RecommendationModel:
         guests = user_input.get("guests", 0)
         event_type = user_input.get("event_type", "").lower()
 
-        self.logger.info(f"Filtering services with budget: {budget}, guests: {guests}, event type: {event_type}")
+        # Add 5% leeway
+        min_guests = guests * 0.95
+        max_guests = guests * 1.05
+
+        self.logger.info(f"Filtering services with budget: {budget}, guests: {guests} (leeway: {min_guests}-{max_guests}), event type: {event_type}")
         for service in services:
             try:
                 if service['type'] == 'VENUE':
                     capacity = service.get('capacity', 0)
                     price = service.get('price', float('inf'))
-                    if guests > capacity:
+                    if capacity < min_guests:
                         continue
                 elif service['type'] == 'CATERING':
                     max_people = service.get('maxPeople', 0)
                     price_per_person = service.get('pricePerPerson', 0)
-                    if guests > max_people:
+                    if max_people < min_guests:
                         continue
                     price = guests * price_per_person
                 else:
