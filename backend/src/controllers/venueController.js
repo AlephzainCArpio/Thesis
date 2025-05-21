@@ -30,7 +30,16 @@ const getVenueByIdController = async (req, res) => {
 
 const createVenueController = async (req, res) => {
   try {
-    const venue = await createVenue(req.body, req.user.id, req.user.role)
+    let images = null;
+    if (req.files && req.files.length > 0) {
+      // Only save filenames, not full path (they're already in correct folder)
+      images = JSON.stringify(req.files.map(f => f.filename));
+    } else if (req.body.images) {
+      images = req.body.images;
+    }
+    // Merge images into body for service
+    const venueData = { ...req.body, images };
+    const venue = await createVenue(venueData, req.user.id, req.user.role)
     res.status(201).json(venue)
   } catch (error) {
     res.status(500).json({ message: error.message })
@@ -39,7 +48,14 @@ const createVenueController = async (req, res) => {
 
 const updateVenueController = async (req, res) => {
   try {
-    const venue = await updateVenue(req.params.id, req.body, req.user.id, req.user.role)
+    let images = undefined;
+    if (req.files && req.files.length > 0) {
+      images = JSON.stringify(req.files.map(f => f.filename));
+    } else if (req.body.images) {
+      images = req.body.images;
+    }
+    const venueData = { ...req.body, ...(images !== undefined ? { images } : {}) };
+    const venue = await updateVenue(req.params.id, venueData, req.user.id, req.user.role)
     res.json(venue)
   } catch (error) {
     if (error.message === "Venue not found") {

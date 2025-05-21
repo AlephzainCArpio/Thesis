@@ -26,6 +26,34 @@ import api from "../../services/api";
 const { TextArea } = Input;
 const { confirm } = Modal;
 
+// Robust helper for extracting image URLs from any DB format
+const getImagesArray = (images) => {
+  if (!images) return [];
+  if (Array.isArray(images)) return images;
+  if (typeof images === "string") {
+    // Try JSON array first
+    try {
+      const parsed = JSON.parse(images);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {}
+    // Comma-separated string
+    if (images.includes(",")) return images.split(",").map((s) => s.trim());
+    // Single string
+    return [images];
+  }
+  return [];
+};
+
+// Helper to get public image URL
+const getImageUrl = (img) => {
+  // Already has /uploads prefix
+  if (img.startsWith("/uploads/")) return img;
+  // Already has http/https
+  if (/^https?:\/\//.test(img)) return img;
+  // Otherwise, prepend
+  return `/uploads/${img.replace(/^\/?uploads\//, "")}`;
+};
+
 const AdminVenuesPage = () => {
   const [venues, setVenues] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,7 +104,6 @@ const AdminVenuesPage = () => {
   const handleApprove = async (id) => {
     try {
       setActionLoading(true);
-      // Update endpoint to match backend: /api/admin/approve/venue/:id
       await api.put(`/api/admin/approve/venue/${id}`);
       message.success("Venue approved");
       fetchVenues();
@@ -296,27 +323,6 @@ const AdminVenuesPage = () => {
     },
   ];
 
-  // Helper to normalize images into an array for rendering
-  const getImagesArray = (images) => {
-    if (Array.isArray(images)) {
-      return images;
-    } else if (typeof images === "string" && images.length > 0) {
-      // Try to parse as JSON array
-      try {
-        const parsed = JSON.parse(images);
-        if (Array.isArray(parsed)) return parsed;
-      } catch {
-        // Not JSON, treat as comma separated or single string
-        if (images.includes(",")) {
-          return images.split(",").map((s) => s.trim());
-        } else {
-          return [images];
-        }
-      }
-    }
-    return [];
-  };
-
   return (
     <div>
       <Table
@@ -388,7 +394,7 @@ const AdminVenuesPage = () => {
                     {imagesArr.map((img, i) => (
                       <img
                         key={i}
-                        src={img.startsWith("/uploads/") ? img : `/uploads/${img}`}
+                        src={getImageUrl(img)}
                         alt={`venue-${i}`}
                         style={{
                           width: "100%",

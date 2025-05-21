@@ -76,7 +76,14 @@ const getDesignerById = async (req, res) => {
 
 const createDesigner = async (req, res) => {
   try {
-    const { name, description, location, style, priceRange,eventTypes, portfolio } = req.body
+    let images = null;
+    if (req.files && req.files.length > 0) {
+      images = JSON.stringify(req.files.map(f => f.filename));
+    } else if (req.body.images) {
+      images = req.body.images;
+    }
+
+    const { name, description, location, style, priceRange, eventTypes, portfolio } = req.body
 
     const designer = await prisma.designer.create({
       data: {
@@ -87,6 +94,7 @@ const createDesigner = async (req, res) => {
         priceRange,
         eventTypes,
         portfolio,
+        images: images || null,
         providerId: req.user.id,
         status: req.user.role === "ADMIN" ? "APPROVED" : "PENDING",
       },
@@ -113,7 +121,14 @@ const updateDesigner = async (req, res) => {
       return res.status(403).json({ message: "Not authorized" })
     }
 
-    const { name, description, location, style, priceRange,eventTypes, portfolio, status } = req.body
+    let images = undefined;
+    if (req.files && req.files.length > 0) {
+      images = JSON.stringify(req.files.map(f => f.filename));
+    } else if (req.body.images) {
+      images = req.body.images;
+    }
+
+    const { name, description, location, style, priceRange, eventTypes, portfolio, status } = req.body
 
     const updatedDesigner = await prisma.designer.update({
       where: { id: req.params.id },
@@ -125,6 +140,7 @@ const updateDesigner = async (req, res) => {
         priceRange,
         eventTypes,
         portfolio,
+        images,
         status: req.user.role === "ADMIN" ? status : designer.status,
       },
     })

@@ -3,16 +3,38 @@ const jwt = require("jsonwebtoken");
 const { PrismaClient } = require("@prisma/client");
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const prisma = new PrismaClient();
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadsDir = path.join(__dirname, '../../uploads/');
-    cb(null, uploadsDir);
+    let serviceType = req.body.serviceType;
+    if (typeof serviceType === 'string') serviceType = serviceType.toUpperCase();
+
+    let folder = 'uploads';
+    switch (serviceType) {
+      case 'VENUE':
+        folder = 'uploads/venues';
+        break;
+      case 'CATERING':
+        folder = 'uploads/catering';
+        break;
+      case 'PHOTOGRAPHER':
+        folder = 'uploads/photographers';
+        break;
+      case 'DESIGNER':
+        folder = 'uploads/designers';
+        break;
+      default:
+        folder = 'uploads/other';
+    }
+    // Ensure folder exists
+    const fullPath = path.join(__dirname, '../../', folder);
+    if (!fs.existsSync(fullPath)) fs.mkdirSync(fullPath, { recursive: true });
+    cb(null, fullPath);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
@@ -167,7 +189,13 @@ const registerService = async (req, res) => {
       }
     }
 
-    const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+    // Save images as URLs with correct subfolder path
+    const imageUrls = req.files.map(file => {
+      // file.path: /absolute/path/to/uploads/venues/12345-pic.jpg
+      // Want: /uploads/venues/12345-pic.jpg
+      const relPath = file.path.split('uploads')[1].replace(/\\/g, '/');
+      return `/uploads${relPath}`;
+    });
     let imagesField = "";
     if (imageUrls.length === 1) imagesField = imageUrls[0];
     else imagesField = imageUrls.join(",");
@@ -231,7 +259,7 @@ const registerService = async (req, res) => {
       eventTypes: singleEventType,
       ...contactData
     };
-    console.log('Venue creation data:', venueData);
+    // console.log('Venue creation data:', venueData);
 
     let newService;
     switch (serviceType) {
@@ -381,4 +409,4 @@ module.exports = {
   getServiceType,
   getMyServices,
   upload
-};  
+};

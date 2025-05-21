@@ -80,6 +80,13 @@ const getCateringById = async (req, res) => {
 
 const createCatering = async (req, res) => {
   try {
+    let images = null;
+    if (req.files && req.files.length > 0) {
+      images = JSON.stringify(req.files.map(f => f.filename));
+    } else if (req.body.images) {
+      images = req.body.images;
+    }
+
     const {
       name,
       description,
@@ -89,12 +96,7 @@ const createCatering = async (req, res) => {
       cuisineType,
       serviceType,
       dietaryOptions,
-      images,
     } = req.body;
-
-    console.log("Request body:", req.body); 
-    console.log("User ID:", req.user.id);
-    console.log("User Role:", req.user.role);
 
     if (
       !name ||
@@ -141,9 +143,15 @@ const updateCatering = async (req, res) => {
       return res.status(404).json({ message: "Catering not found" })
     }
 
-    
     if (catering.providerId !== req.user.id && req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Not authorized" })
+    }
+
+    let images = undefined;
+    if (req.files && req.files.length > 0) {
+      images = JSON.stringify(req.files.map(f => f.filename));
+    } else if (req.body.images) {
+      images = req.body.images;
     }
 
     const {
@@ -155,7 +163,6 @@ const updateCatering = async (req, res) => {
       cuisineType,
       serviceType,
       dietaryOptions,
-      images,
       status,
     } = req.body
 
@@ -191,7 +198,6 @@ const deleteCatering = async (req, res) => {
       return res.status(404).json({ message: "Catering not found" })
     }
 
-    
     if (catering.providerId !== req.user.id && req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Not authorized" })
     }

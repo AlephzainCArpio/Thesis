@@ -2,29 +2,41 @@ import { useState, useEffect } from "react";
 import {
   Table,
   Button,
-  Space,
   Tag,
   Drawer,
   Descriptions,
-  Modal,
   message,
+  Carousel,
 } from "antd";
-import {
-  EyeOutlined,
-  DeleteOutlined,
-  ExclamationCircleOutlined,
-} from "@ant-design/icons";
 import api from "../../services/api";
 
-const { confirm } = Modal;
+const getImagesArray = (images) => {
+  if (!images) return [];
+  if (Array.isArray(images)) return images;
+  if (typeof images === "string") {
+    try {
+      const parsed = JSON.parse(images);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {}
+    if (images.includes(",")) return images.split(",").map((s) => s.trim());
+    return [images];
+  }
+  return [];
+};
+const getImageUrl = (img) => {
+  if (!img) return "";
+  if (img.startsWith("/uploads/")) return img;
+  if (/^https?:\/\//.test(img)) return img;
+  return `/uploads/${img.replace(/^\/?uploads\//, "")}`;
+};
 
 const AdminPhotographersPage = () => {
   const [photographers, setPhotographers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPhotographer, setSelectedPhotographer] = useState(null);
-  const [drawerVisible, setDrawerVisible] = useState(false);
   const [filteredInfo, setFilteredInfo] = useState({});
   const [sortedInfo, setSortedInfo] = useState({});
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     fetchPhotographers();
@@ -44,14 +56,10 @@ const AdminPhotographersPage = () => {
 
   const getStatusTag = (status) => {
     switch (status) {
-      case "PENDING":
-        return <Tag color="blue">Pending</Tag>;
-      case "APPROVED":
-        return <Tag color="green">Approved</Tag>;
-      case "REJECTED":
-        return <Tag color="red">Rejected</Tag>;
-      default:
-        return <Tag>{status}</Tag>;
+      case "PENDING": return <Tag color="blue">Pending</Tag>;
+      case "APPROVED": return <Tag color="green">Approved</Tag>;
+      case "REJECTED": return <Tag color="red">Rejected</Tag>;
+      default: return <Tag>{status}</Tag>;
     }
   };
 
@@ -64,84 +72,40 @@ const AdminPhotographersPage = () => {
       sortOrder: sortedInfo.columnKey === "name" && sortedInfo.order,
       ellipsis: true,
     },
-    {
-      title: "Style",
-      dataIndex: "style",
-      key: "style",
-      ellipsis: true,
-    },
+    { title: "Location", dataIndex: "location", key: "location", ellipsis: true },
+    { title: "Style", dataIndex: "style", key: "style", ellipsis: true },
     {
       title: "Experience (Years)",
       dataIndex: "experienceYears",
       key: "experienceYears",
       sorter: (a, b) => a.experienceYears - b.experienceYears,
+      sortOrder: sortedInfo.columnKey === "experienceYears" && sortedInfo.order,
     },
-    {
-      title: "Copy Type",
-      dataIndex: "copyType",
-      key: "copyType",
-    },
-    {
-      title: "Style",
-      dataIndex: "style",
-      key: "Style",
-    },
-    {
-      title: "Price Range",
-      dataIndex: "priceRange",
-      key: "priceRange",
-    },
+    { title: "Copy Type", dataIndex: "copyType", key: "copyType" },
+    { title: "Price Range", dataIndex: "priceRange", key: "priceRange" },
     {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => getStatusTag(status),
+      render: getStatusTag,
       filters: [
         { text: "Pending", value: "PENDING" },
         { text: "Approved", value: "APPROVED" },
         { text: "Rejected", value: "REJECTED" },
       ],
-      onFilter: (value, record) => record.status === value,
       filteredValue: filteredInfo.status || null,
+      onFilter: (value, record) => record.status === value,
     },
     {
       title: "Action",
       key: "action",
       render: (_, record) => (
-        <Space size="small">
-          <Button
-            type="primary"
-            icon={<EyeOutlined />}
-            onClick={() => {
-              setSelectedPhotographer(record);
-              setDrawerVisible(true);
-            }}
-          />
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => confirmDelete(record.id)}
-          />
-        </Space>
+        <Button type="link" onClick={() => { setSelected(record); setDrawerVisible(true); }}>
+          Details
+        </Button>
       ),
     },
   ];
-
-  const confirmDelete = async (id) => {
-    confirm({
-      title: "Are you sure you want to delete this photographer?",
-      icon: <ExclamationCircleOutlined />,
-      onOk: async () => {
-        try {
-          await api.delete(`/api/admin/photographers/${id}`);
-          message.success("Photographer deleted.");
-          fetchPhotographers();
-        } catch (error) {
-          message.error("Failed to delete photographer.");
-        }
-      },
-    });
-  };
 
   return (
     <div>
@@ -159,27 +123,36 @@ const AdminPhotographersPage = () => {
         }}
         pagination={{ pageSize: 10 }}
       />
+
       <Drawer
-        title={selectedPhotographer?.name}
+        title={selected?.name}
         visible={drawerVisible}
         onClose={() => setDrawerVisible(false)}
-        width={700}
+        width={600}
       >
-        {selectedPhotographer && (
-          <Descriptions bordered layout="vertical" column={2}>
-            <Descriptions.Item label="Name">{selectedPhotographer.name}</Descriptions.Item>
-            <Descriptions.Item label="Location">{selectedPhotographer.location}</Descriptions.Item>
-            <Descriptions.Item label="Style">{selectedPhotographer.style}</Descriptions.Item>
-            <Descriptions.Item label="Experience (Years)">{selectedPhotographer.experienceYears}</Descriptions.Item>
-            <Descriptions.Item label="Copy Type">{selectedPhotographer.copyType}</Descriptions.Item>
-            <Descriptions.Item label="Style">{selectedPhotographer.style}</Descriptions.Item>
-            <Descriptions.Item label="Price Range">{selectedPhotographer.priceRange}</Descriptions.Item>
-            <Descriptions.Item label="Description" span={2}>
-              {selectedPhotographer.description}
+        {selected && (
+          <Descriptions column={1} bordered>
+            <Descriptions.Item label="Name">{selected.name}</Descriptions.Item>
+            <Descriptions.Item label="Location">{selected.location}</Descriptions.Item>
+            <Descriptions.Item label="Description">{selected.description}</Descriptions.Item>
+            <Descriptions.Item label="Style">{selected.style}</Descriptions.Item>
+            <Descriptions.Item label="Experience (Years)">{selected.experienceYears}</Descriptions.Item>
+            <Descriptions.Item label="Copy Type">{selected.copyType}</Descriptions.Item>
+            <Descriptions.Item label="Price Range">{selected.priceRange}</Descriptions.Item>
+            <Descriptions.Item label="Portfolio">{selected.portfolio}</Descriptions.Item>
+            <Descriptions.Item label="Images">
+              {(() => {
+                const arr = getImagesArray(selected.images);
+                return arr.length > 0 ? (
+                  <Carousel autoplay>
+                    {arr.map((img, i) => (
+                      <img key={i} src={getImageUrl(img)} alt={`photographer-${i}`} style={{ width: "100%", height: "200px", objectFit: "cover" }} />
+                    ))}
+                  </Carousel>
+                ) : "No images";
+              })()}
             </Descriptions.Item>
-            <Descriptions.Item label="Portfolio" span={2}>
-              {selectedPhotographer.portfolio || "N/A"}
-            </Descriptions.Item>
+            <Descriptions.Item label="Status">{getStatusTag(selected.status)}</Descriptions.Item>
           </Descriptions>
         )}
       </Drawer>

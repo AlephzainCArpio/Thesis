@@ -89,6 +89,12 @@ const getPhotographerById = async (req, res) => {
 // Create a new photographer
 const createPhotographer = async (req, res) => {
   try {
+    let images = null;
+    if (req.files && req.files.length > 0) {
+      images = JSON.stringify(req.files.map(f => f.filename));
+    } else if (req.body.images) {
+      images = req.body.images;
+    }
     const { name, description, location, style, experienceYears, priceRange, copyType, serviceType, portfolio } =
       req.body
 
@@ -105,6 +111,7 @@ const createPhotographer = async (req, res) => {
         copyType,
         serviceType,
         portfolio: parsedPortfolio,
+        images: images || null,
         providerId: req.user.id,
         status: req.user.role === "ADMIN" ? "APPROVED" : "PENDING",
       },
@@ -130,6 +137,13 @@ const updatePhotographer = async (req, res) => {
     // Check if user is provider of this photographer or an admin
     if (photographer.providerId !== req.user.id && req.user.role !== "ADMIN") {
       return res.status(403).json({ message: "Not authorized" })
+    }
+
+    let images = undefined;
+    if (req.files && req.files.length > 0) {
+      images = JSON.stringify(req.files.map(f => f.filename));
+    } else if (req.body.images) {
+      images = req.body.images;
     }
 
     const {
@@ -159,6 +173,7 @@ const updatePhotographer = async (req, res) => {
         copyType,
         serviceType,
         portfolio: parsedPortfolio,
+        images,
         status: req.user.role === "ADMIN" ? status : photographer.status,
       },
     })
