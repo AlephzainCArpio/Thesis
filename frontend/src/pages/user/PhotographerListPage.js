@@ -6,12 +6,12 @@ import api from "../../services/api"
 const { Title, Paragraph } = Typography
 const { Meta } = Card
 
-// AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/photographers/[filename]
-const getFirstImageUrl = (portfolio) => {
-  if (!portfolio) return "/placeholder.svg?height=200&width=300"
+// Use AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/photographers/[filename]
+const getFirstImageUrl = (images) => {
+  if (!images) return "/placeholder.svg?height=200&width=300"
   let imgArr
   try {
-    imgArr = typeof portfolio === "string" ? JSON.parse(portfolio) : portfolio
+    imgArr = typeof images === "string" ? JSON.parse(images) : images
     if (!Array.isArray(imgArr)) return "/placeholder.svg?height=200&width=300"
   } catch {
     return "/placeholder.svg?height=200&width=300"
@@ -43,7 +43,8 @@ const PhotographerListPage = () => {
   }
 
   const renderPhotographerCard = (photographer) => {
-    const firstImage = getFirstImageUrl(photographer.portfolio)
+    // Use images field, fallback to portfolio for compatibility
+    const firstImage = getFirstImageUrl(photographer.images || photographer.portfolio)
 
     return (
       <Col xs={24} sm={12} md={8} key={photographer.id}>

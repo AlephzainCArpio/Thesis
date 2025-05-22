@@ -34,7 +34,7 @@ const ProviderManagementPage = () => {
     try {
       setDocumentLoading(true)
       setViewingProvider(provider)
-      setDocumentUrl(`${api.defaults.baseURL}/uploads/${provider.verificationDoc}`)
+      setDocumentUrl(`${api.defaults.baseURL}/uploads/verification/${provider.verificationDoc}`)
       setDocumentVisible(true)
     } catch (error) {
       message.error("Failed to load document")

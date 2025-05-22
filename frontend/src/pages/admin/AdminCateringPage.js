@@ -25,32 +25,34 @@ import api from "../../services/api";
 const { confirm } = Modal;
 const { TextArea } = Input;
 
-// Utility: Parse images array/JSON/string
-const getImagesArray = (images) => {
-  if (!images) return [];
-  if (Array.isArray(images)) return images;
-  if (typeof images === "string") {
-    try {
-      const parsed = JSON.parse(images);
-      if (Array.isArray(parsed)) return parsed;
-    } catch {}
-    if (images.includes(",")) return images.split(",").map((s) => s.trim());
-    return [images];
+const API_URL = process.env.REACT_APP_API_URL || "";
+
+// Helper to safely parse JSON array or return null
+const safeJsonParse = (json) => {
+  if (!json) return null;
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+// Improved image extraction: support JSON array string, or plain filename string
+const getImagesArray = (imagesField) => {
+  if (!imagesField) return [];
+  const parsed = safeJsonParse(imagesField);
+  if (Array.isArray(parsed) && parsed.length > 0) {
+    return parsed;
+  }
+  if (typeof imagesField === "string" && imagesField.trim() !== "") {
+    return [imagesField];
   }
   return [];
 };
 
-// Utility: Build correct image URL
-const getImageUrl = (img) => {
-  if (!img) return "";
-  // If already absolute URL
-  if (/^https?:\/\//.test(img)) return img;
-  // Remove any duplicate 'uploads/' at the start
-  let cleanImg = img.replace(/^\/?uploads\//, "");
-  // Default: use /uploads/ prefix (assuming proxy to backend or same-origin)
-  return `/uploads/${cleanImg}`;
-  // If you need to always use backend port, use:
-  // return `http://localhost:5000/uploads/${cleanImg}`;
+const getImagePath = (filename) => {
+  if (!filename) return "/placeholder.jpg";
+  return `${API_URL}/uploads/catering/${filename}`;
 };
 
 const AdminCateringPage = () => {
@@ -178,13 +180,17 @@ const AdminCateringPage = () => {
         const arr = getImagesArray(record.images);
         return arr.length > 0 ? (
           <img
-            src={getImageUrl(arr[0])}
+            src={getImagePath(arr[0])}
             alt=""
             style={{
               width: 50,
               height: 50,
               objectFit: "cover",
               borderRadius: 4,
+            }}
+            onError={e => {
+              e.target.onerror = null;
+              e.target.src = "/placeholder.jpg";
             }}
           />
         ) : (
@@ -291,12 +297,16 @@ const AdminCateringPage = () => {
                     {imagesArr.map((img, i) => (
                       <img
                         key={i}
-                        src={getImageUrl(img)}
+                        src={getImagePath(img)}
                         alt={`catering-${i}`}
                         style={{
                           width: "100%",
                           height: "200px",
                           objectFit: "cover",
+                        }}
+                        onError={e => {
+                          e.target.onerror = null;
+                          e.target.src = "/placeholder.jpg";
                         }}
                       />
                     ))}

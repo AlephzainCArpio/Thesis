@@ -153,15 +153,14 @@ const AdminDashboard = () => {
     }
   };
 
-  // Improved image extraction: support JSON array string, or plain filename string
   const getFirstImage = (imagesField) => {
     if (!imagesField) return null;
-    // Try parse JSON array if possible
+    
     const parsed = safeJsonParse(imagesField);
     if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed[0];
     }
-    // If not JSON array but a non-empty string, assume single filename
+    
     if (typeof imagesField === "string" && imagesField.trim() !== "") {
       return imagesField;
     }

@@ -28,8 +28,6 @@ import api from "../../services/api";
 import { useAuth } from "../../contexts/AuthContext";
 
 const { Title, Paragraph } = Typography;
-
-// AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/venues/[filename]
 const getImageUrlArray = (images) => {
   if (!images) return []
   let imgArr

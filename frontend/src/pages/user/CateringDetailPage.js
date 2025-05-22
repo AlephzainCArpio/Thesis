@@ -20,41 +20,47 @@ import {
   MailOutlined,
   PhoneOutlined,
 } from "@ant-design/icons";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import api from "../../services/api";
 
 const { Title, Paragraph } = Typography;
 
-// AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/caterings/[filename]
-const getImageUrlArray = (images) => {
-  if (!images) return []
-  let imgArr
+const API_URL = process.env.REACT_APP_API_URL || "";
+const safeJsonParse = (json) => {
+  if (!json) return null;
   try {
-    imgArr = typeof images === "string" ? JSON.parse(images) : images
-    if (!Array.isArray(imgArr)) return []
+    return JSON.parse(json);
   } catch {
-    return []
+    return null;
   }
-  return imgArr.map(img =>
-    typeof img === "string"
-      ? `${process.env.REACT_APP_API_URL || ""}/uploads/caterings/${img}`
-      : "/placeholder.svg"
-  )
-}
+};
 
-const safeJsonParse = (jsonString) => {
-  if (!jsonString) return [];
-  try {
-    return JSON.parse(jsonString);
-  } catch (error) {
-    console.error("Error parsing JSON:", error);
-    return [];
+const getImagesArray = (imagesField) => {
+  if (!imagesField) return [];
+  const parsed = safeJsonParse(imagesField);
+  if (Array.isArray(parsed) && parsed.length > 0) {
+    return parsed;
   }
+  if (typeof imagesField === "string" && imagesField.trim() !== "") {
+    return [imagesField];
+  }
+  return [];
+};
+
+const getImagePath = (filename) => {
+  if (!filename) return "/placeholder.jpg";
+  return `${API_URL}/uploads/catering/${filename}`;
+};
+
+const safeDietaryOptions = (dietaryOptions) => {
+  if (!dietaryOptions) return [];
+  const parsed = safeJsonParse(dietaryOptions);
+  if (Array.isArray(parsed)) return parsed;
+  return [];
 };
 
 const CateringDetailPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [catering, setCatering] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -86,10 +92,8 @@ const CateringDetailPage = () => {
     return null;
   }
 
-  const images = getImageUrlArray(catering.images);
-  const dietaryOptions = Array.isArray(safeJsonParse(catering.dietaryOptions))
-    ? safeJsonParse(catering.dietaryOptions)
-    : [];
+  const images = getImagesArray(catering.images);
+  const dietaryOptions = safeDietaryOptions(catering.dietaryOptions);
 
   return (
     <div className="catering-detail-page">
@@ -99,8 +103,8 @@ const CateringDetailPage = () => {
           <Card style={{ marginBottom: 24 }}>
             {images.length > 0 ? (
               <Carousel autoplay>
-                {images.map((image, index) => (
-                  <div key={index}>
+                {images.map((image, idx) => (
+                  <div key={idx}>
                     <div
                       style={{
                         height: "400px",
@@ -109,14 +113,17 @@ const CateringDetailPage = () => {
                       }}
                     >
                       <img
-                        src={image || "/placeholder.svg"}
-                        alt={`${catering.name} - Image ${index + 1}`}
+                        src={getImagePath(image)}
+                        alt={`${catering.name} - Image ${idx + 1}`}
                         style={{
                           width: "100%",
                           height: "100%",
                           objectFit: "cover",
                         }}
-                        onError={e => { e.target.onerror = null; e.target.src = "/placeholder.svg" }}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "/placeholder.jpg";
+                        }}
                       />
                     </div>
                   </div>
@@ -171,9 +178,7 @@ const CateringDetailPage = () => {
               <Col span={8}>
                 <Card size="small">
                   <div style={{ textAlign: "center" }}>
-                    <CoffeeOutlined
-                      style={{ fontSize: 24, color: "#fa8c16" }}
-                    />
+                    <CoffeeOutlined style={{ fontSize: 24, color: "#fa8c16" }} />
                     <div style={{ marginTop: 8 }}>
                       <strong>Cuisine Type</strong>
                       <p>{catering.cuisineType}</p>
@@ -188,15 +193,19 @@ const CateringDetailPage = () => {
 
             <Divider orientation="left">Dietary Options</Divider>
             <div>
-              {dietaryOptions.map((option, index) => (
-                <Tag
-                  key={index}
-                  color="green"
-                  style={{ margin: "0 8px 8px 0" }}
-                >
-                  <CheckCircleOutlined /> {option}
-                </Tag>
-              ))}
+              {dietaryOptions.length > 0 ? (
+                dietaryOptions.map((option, idx) => (
+                  <Tag
+                    key={idx}
+                    color="green"
+                    style={{ margin: "0 8px 8px 0" }}
+                  >
+                    <CheckCircleOutlined /> {option}
+                  </Tag>
+                ))
+              ) : (
+                <Paragraph>No dietary options specified.</Paragraph>
+              )}
             </div>
           </Card>
         </Col>

@@ -5,12 +5,12 @@ import api from "../../services/api"
 
 const { Title, Text } = Typography
 
-// AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/designers/[filename]
-const getFirstImageUrl = (portfolio) => {
-  if (!portfolio) return "/placeholder.svg?height=200&width=300"
+
+const getFirstImageUrl = (images) => {
+  if (!images) return "/placeholder.svg?height=200&width=300"
   let imgArr
   try {
-    imgArr = typeof portfolio === "string" ? JSON.parse(portfolio) : portfolio
+    imgArr = typeof images === "string" ? JSON.parse(images) : images
     if (!Array.isArray(imgArr)) return "/placeholder.svg?height=200&width=300"
   } catch {
     return "/placeholder.svg?height=200&width=300"
@@ -33,7 +33,6 @@ const DesignerListPage = () => {
     try {
       setLoading(true)
       const response = await api.get("/api/designers")
-      console.log("API Response for Designers:", response.data) // Debugging log
       setDesigners(response.data.designers || response.data)
     } catch (error) {
       console.error("Error fetching designers:", error)
@@ -43,7 +42,7 @@ const DesignerListPage = () => {
   }
 
   const renderDesignerCard = (designer) => {
-    const firstImage = getFirstImageUrl(designer.portfolio)
+    const firstImage = getFirstImageUrl(designer.images || designer.portfolio)
 
     return (
       <Col xs={24} sm={12} md={8} key={designer.id}>
@@ -54,7 +53,7 @@ const DesignerListPage = () => {
             <div style={{ height: 200, overflow: "hidden" }}>
               <img
                 alt={designer.name}
-                src={firstImage || "/placeholder.svg?height=200&width=300"}
+                src={firstImage}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 onError={e => { e.target.onerror = null; e.target.src = "/placeholder.svg?height=200&width=300" }}
               />

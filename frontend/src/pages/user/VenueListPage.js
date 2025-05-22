@@ -9,7 +9,6 @@ const { Title, Paragraph } = Typography
 const { Meta } = Card
 
 const getFirstImageUrl = (images) => {
-  // AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/venues/[filename]
   if (!images) return "/placeholder.svg?height=200&width=300"
   let imgArr
   try {
@@ -35,7 +34,6 @@ const VenueListPage = () => {
 
   useEffect(() => {
     fetchVenues()
-    // eslint-disable-next-line
   }, [])
 
   const fetchVenues = async () => {
