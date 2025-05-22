@@ -20,16 +20,50 @@ import {
 } from "@ant-design/icons";
 import api from "../../services/api";
 
+// If you have a placeholder.svg in your public folder, use "/placeholder.svg"
+// If you want to use a local asset, import it: 
+// import placeholderImg from '../../assets/placeholder.svg';
+const PLACEHOLDER_IMG = "/placeholder.svg";
+
 const { Title, Paragraph, Link } = Typography;
 
-const safeJsonParse = (jsonString) => {
-  if (!jsonString) return [];
-  try {
-    return JSON.parse(jsonString);
-  } catch (error) {
-    console.error("Error parsing JSON:", error);
-    return [];
+// Parse images robustly: array, JSON string, comma-separated, or single URL
+const safeImageParse = (images) => {
+  if (!images) return [];
+  if (Array.isArray(images)) return images.filter(Boolean);
+  if (typeof images === "string") {
+    try {
+      const parsed = JSON.parse(images);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+      if (typeof parsed === "string" && parsed.trim()) return [parsed.trim()];
+    } catch (e) {
+      if (images.includes(",")) {
+        return images.split(",").map((img) => img.trim()).filter(Boolean);
+      }
+      if (images.trim()) return [images.trim()];
+    }
   }
+  return [];
+};
+
+const safeEventTypesParse = (eventTypes) => {
+  if (!eventTypes) return [];
+  if (Array.isArray(eventTypes)) return eventTypes;
+  if (typeof eventTypes === "string") {
+    try {
+      const parsed = JSON.parse(eventTypes);
+      if (Array.isArray(parsed)) return parsed;
+      if (typeof parsed === "string" && parsed.trim()) {
+        return parsed.split(",").map((type) => type.trim());
+      }
+    } catch (e) {
+      if (eventTypes.includes(",")) {
+        return eventTypes.split(",").map((type) => type.trim());
+      }
+      if (eventTypes.trim()) return [eventTypes.trim()];
+    }
+  }
+  return [];
 };
 
 const DesignerDetailPage = () => {
@@ -37,6 +71,9 @@ const DesignerDetailPage = () => {
   const navigate = useNavigate();
   const [designer, setDesigner] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Track broken images by index to avoid infinite onError loops
+  const [brokenImages, setBrokenImages] = useState({}); // { [index]: true }
 
   useEffect(() => {
     const fetchDesigner = async () => {
@@ -52,6 +89,11 @@ const DesignerDetailPage = () => {
 
     fetchDesigner();
   }, [id]);
+
+  // Reset broken images tracking if designer/images change
+  useEffect(() => {
+    setBrokenImages({});
+  }, [designer]);
 
   if (loading) {
     return (
@@ -72,9 +114,13 @@ const DesignerDetailPage = () => {
     return null;
   }
 
-  const images = safeJsonParse(designer.images);
+  const images = safeImageParse(designer.images);
   const portfolio = designer.portfolio;
-  const eventTypes = safeJsonParse(designer.eventTypes);
+  const eventTypes = safeEventTypesParse(designer.eventTypes);
+
+  const handleImgError = (index) => {
+    setBrokenImages((prev) => ({ ...prev, [index]: true }));
+  };
 
   return (
     <div className="designer-detail-page">
@@ -91,16 +137,26 @@ const DesignerDetailPage = () => {
                         height: "400px",
                         background: "#f0f0f0",
                         overflow: "hidden",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
                       <img
-                        src={image || "/placeholder.svg"}
+                        src={
+                          brokenImages[index]
+                            ? PLACEHOLDER_IMG
+                            : image || PLACEHOLDER_IMG
+                        }
                         alt={`${designer.name} - Image ${index + 1}`}
                         style={{
                           width: "100%",
                           height: "100%",
                           objectFit: "cover",
+                          objectPosition: "center",
+                          display: "block",
                         }}
+                        onError={() => handleImgError(index)}
                       />
                     </div>
                   </div>
@@ -116,6 +172,11 @@ const DesignerDetailPage = () => {
                   alignItems: "center",
                 }}
               >
+                <img
+                  src={PLACEHOLDER_IMG}
+                  alt="No images"
+                  style={{ height: "80px", marginRight: 16 }}
+                />
                 <p>No images available</p>
               </div>
             )}

@@ -51,8 +51,10 @@ const AdminDashboard = () => {
           axios.get(`${API_URL}/api/designers`, config)
         ]);
 
+      console.log("Venues Response:", venuesRes.data);
+
       setServices({
-        venues: venuesRes.data || [],
+        venues: venuesRes.data.venues || [],
         caterings: cateringsRes.data || [],
         photographers: photographersRes.data || [],
         designers: designersRes.data || []
@@ -141,24 +143,55 @@ const AdminDashboard = () => {
     { label: "Designer", key: "DESIGNER" }
   ];
 
-  // Fixed function to safely parse JSON and handle errors
-  const safeJsonParse = (jsonString) => {
-    if (!jsonString) return null;
+  // Helper to safely parse JSON array or return null
+  const safeJsonParse = (json) => {
+    if (!json) return null;
     try {
-      return JSON.parse(jsonString);
-    } catch (error) {
-      console.error("Error parsing JSON:", error);
+      return JSON.parse(json);
+    } catch {
       return null;
     }
   };
 
+  // Improved image extraction: support JSON array string, or plain filename string
+  const getFirstImage = (imagesField) => {
+    if (!imagesField) return null;
+    // Try parse JSON array if possible
+    const parsed = safeJsonParse(imagesField);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed[0];
+    }
+    // If not JSON array but a non-empty string, assume single filename
+    if (typeof imagesField === "string" && imagesField.trim() !== "") {
+      return imagesField;
+    }
+    return null;
+  };
+
   const renderServiceCards = (type) => {
     const serviceList = services[type.toLowerCase() + "s"];
-    if (!Array.isArray(serviceList)) return null;
+    console.log("Service List for", type, serviceList);
+
+    if (!Array.isArray(serviceList) || serviceList.length === 0) {
+      console.log("No services found for", type);
+      return <p>No services found</p>;
+    }
 
     return serviceList.map((service) => {
-      const parsedImages = safeJsonParse(service.images);
-      const firstImage = Array.isArray(parsedImages) && parsedImages.length > 0 ? parsedImages[0] : "default.jpg";
+      const firstImage = getFirstImage(service.images);
+
+      let imagePath;
+      if (firstImage) {
+        if (type === "VENUE") {
+          imagePath = `${API_URL}/uploads/venues/${firstImage}`;
+        } else if (type === "CATERING") {
+          imagePath = `${API_URL}/uploads/catering/${firstImage}`;
+        } else {
+          imagePath = `${API_URL}/uploads/${type.toLowerCase()}s/${firstImage}`;
+        }
+      } else {
+        imagePath = "/placeholder.jpg"; // fallback image
+      }
 
       return (
         <Card
@@ -173,7 +206,7 @@ const AdminDashboard = () => {
         >
           <div style={{ height: 200, overflow: "hidden" }}>
             <img
-              src={service.images ? `${API_URL}/uploads/${type.toLowerCase()}s/${firstImage}` : "/placeholder.jpg"}
+              src={imagePath}
               alt={service.name}
               style={{
                 width: "100%",
@@ -260,7 +293,7 @@ const AdminDashboard = () => {
 
         <Modal
           title={`Add New ${activeTab.charAt(0)}${activeTab.slice(1).toLowerCase()}`}
-          open={isModalVisible}
+          visible={isModalVisible}
           onCancel={() => {
             setIsModalVisible(false);
             form.resetFields();
@@ -270,7 +303,6 @@ const AdminDashboard = () => {
         >
           <div className="vibrant-form-card">
             <Form form={form} layout="vertical" onFinish={handleSubmit}>
-              {/* shared fields */}
               <Form.Item
                 name="name"
                 label="Name"
@@ -295,7 +327,6 @@ const AdminDashboard = () => {
                 <Input />
               </Form.Item>
 
-              {/* VENUE */}
               {activeTab === "VENUE" && (
                 <>
                   <Form.Item
@@ -317,7 +348,7 @@ const AdminDashboard = () => {
                       <Option value="wedding">Wedding</Option>
                       <Option value="birthday">Birthday Party</Option>
                       <Option value="corporate">Corporate Event</Option>
-                      <Option value="Reunion">Reunion</Option>
+                      <Option value="reunion">Reunion</Option>
                       <Option value="social">Social Gathering</Option>
                     </Select>
                   </Form.Item>
@@ -332,7 +363,6 @@ const AdminDashboard = () => {
                 </>
               )}
 
-              {/* CATERING */}
               {activeTab === "CATERING" && (
                 <>
                   <Form.Item
@@ -369,13 +399,12 @@ const AdminDashboard = () => {
                       <Option value="vegetarian">Vegetarian</Option>
                       <Option value="vegan">Vegan</Option>
                       <Option value="gluten-free">Gluten-Free</Option>
-                      <Option value="protien">Protien</Option>
+                      <Option value="protein">Protein</Option>
                     </Select>
                   </Form.Item>
                 </>
               )}
 
-              {/* PHOTOGRAPHER */}
               {activeTab === "PHOTOGRAPHER" && (
                 <>
                   <Form.Item
@@ -420,7 +449,6 @@ const AdminDashboard = () => {
                 </>
               )}
 
-              {/* DESIGNER */}
               {activeTab === "DESIGNER" && (
                 <>
                   <Form.Item
@@ -446,7 +474,7 @@ const AdminDashboard = () => {
                       <Option value="wedding">Wedding</Option>
                       <Option value="birthday">Birthday Party</Option>
                       <Option value="corporate">Corporate Event</Option>
-                      <Option value="Reunion">Reunion</Option>
+                      <Option value="reunion">Reunion</Option>
                       <Option value="social">Social Gathering</Option>
                     </Select>
                   </Form.Item>
@@ -483,6 +511,7 @@ const AdminDashboard = () => {
                   loading={loading}
                   block
                   size="large"
+                  disabled={loading}
                 >
                   {loading ? "Submitting..." : "Submit"}
                 </Button>
