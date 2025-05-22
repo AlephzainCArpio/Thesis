@@ -5,6 +5,22 @@ import api from "../../services/api"
 
 const { Title, Text } = Typography
 
+// AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/designers/[filename]
+const getFirstImageUrl = (portfolio) => {
+  if (!portfolio) return "/placeholder.svg?height=200&width=300"
+  let imgArr
+  try {
+    imgArr = typeof portfolio === "string" ? JSON.parse(portfolio) : portfolio
+    if (!Array.isArray(imgArr)) return "/placeholder.svg?height=200&width=300"
+  } catch {
+    return "/placeholder.svg?height=200&width=300"
+  }
+  if (imgArr.length > 0 && typeof imgArr[0] === "string") {
+    return `${process.env.REACT_APP_API_URL || ""}/uploads/designers/${imgArr[0]}`
+  }
+  return "/placeholder.svg?height=200&width=300"
+}
+
 const DesignerListPage = () => {
   const [designers, setDesigners] = useState([])
   const [loading, setLoading] = useState(true)
@@ -27,13 +43,7 @@ const DesignerListPage = () => {
   }
 
   const renderDesignerCard = (designer) => {
-    let images = []
-    try {
-      images = designer.portfolio ? JSON.parse(designer.portfolio) : []
-    } catch (error) {
-      console.error(`Error parsing portfolio JSON for designer ${designer.name}:`, error)
-    }
-    const firstImage = images.length > 0 ? images[0] : "/placeholder.svg?height=200&width=300"
+    const firstImage = getFirstImageUrl(designer.portfolio)
 
     return (
       <Col xs={24} sm={12} md={8} key={designer.id}>
@@ -44,8 +54,9 @@ const DesignerListPage = () => {
             <div style={{ height: 200, overflow: "hidden" }}>
               <img
                 alt={designer.name}
-                src={firstImage || "/placeholder.svg"}
+                src={firstImage || "/placeholder.svg?height=200&width=300"}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={e => { e.target.onerror = null; e.target.src = "/placeholder.svg?height=200&width=300" }}
               />
             </div>
           }

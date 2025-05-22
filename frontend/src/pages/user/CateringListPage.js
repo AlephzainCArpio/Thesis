@@ -6,7 +6,22 @@ import api from "../../services/api"
 const { Title, Paragraph } = Typography
 const { Meta } = Card
 
-// Safe JSON parse function
+// AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/caterings/[filename]
+const getFirstImageUrl = (images) => {
+  if (!images) return "/placeholder.svg?height=200&width=300"
+  let imgArr
+  try {
+    imgArr = typeof images === "string" ? JSON.parse(images) : images
+    if (!Array.isArray(imgArr)) return "/placeholder.svg?height=200&width=300"
+  } catch {
+    return "/placeholder.svg?height=200&width=300"
+  }
+  if (imgArr.length > 0 && typeof imgArr[0] === "string") {
+    return `${process.env.REACT_APP_API_URL || ""}/uploads/caterings/${imgArr[0]}`
+  }
+  return "/placeholder.svg?height=200&width=300"
+}
+
 const safeParse = (str) => {
   try {
     return str && str !== "" ? JSON.parse(str) : []
@@ -38,7 +53,7 @@ const CateringListPage = () => {
   const renderCateringCard = (catering) => {
     const images = safeParse(catering.images)
     const dietaryOptions = safeParse(catering.dietaryOptions)
-    const firstImage = images.length > 0 ? images[0] : "/placeholder.svg?height=200&width=300"
+    const firstImage = getFirstImageUrl(catering.images)
 
     return (
       <Col xs={24} sm={12} lg={8} key={catering.id}>
@@ -50,6 +65,7 @@ const CateringListPage = () => {
                 alt={catering.name}
                 src={firstImage}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={e => { e.target.onerror = null; e.target.src = "/placeholder.svg?height=200&width=300" }}
               />
             </div>
           }

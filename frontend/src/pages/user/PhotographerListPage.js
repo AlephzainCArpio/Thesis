@@ -6,15 +6,20 @@ import api from "../../services/api"
 const { Title, Paragraph } = Typography
 const { Meta } = Card
 
-const safeParseImages = (input) => {
+// AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/photographers/[filename]
+const getFirstImageUrl = (portfolio) => {
+  if (!portfolio) return "/placeholder.svg?height=200&width=300"
+  let imgArr
   try {
-    const parsed = input ? JSON.parse(input) : []
-    return parsed.filter((image) =>
-      /\.(jpg|jpeg|png)$/i.test(image)
-    )
+    imgArr = typeof portfolio === "string" ? JSON.parse(portfolio) : portfolio
+    if (!Array.isArray(imgArr)) return "/placeholder.svg?height=200&width=300"
   } catch {
-    return []
+    return "/placeholder.svg?height=200&width=300"
   }
+  if (imgArr.length > 0 && typeof imgArr[0] === "string") {
+    return `${process.env.REACT_APP_API_URL || ""}/uploads/photographers/${imgArr[0]}`
+  }
+  return "/placeholder.svg?height=200&width=300"
 }
 
 const PhotographerListPage = () => {
@@ -38,8 +43,7 @@ const PhotographerListPage = () => {
   }
 
   const renderPhotographerCard = (photographer) => {
-    const images = safeParseImages(photographer.portfolio)
-    const firstImage = images.length > 0 ? images[0] : "/placeholder.svg?height=200&width=300"
+    const firstImage = getFirstImageUrl(photographer.portfolio)
 
     return (
       <Col xs={24} sm={12} md={8} key={photographer.id}>
@@ -51,6 +55,7 @@ const PhotographerListPage = () => {
                 alt={photographer.name}
                 src={firstImage}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={e => { e.target.onerror = null; e.target.src = "/placeholder.svg?height=200&width=300" }}
               />
             </div>
           }

@@ -21,6 +21,23 @@ import api from "../../services/api";
 
 const { Title, Paragraph, Link } = Typography;
 
+// AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/photographers/[filename]
+const getImageUrlArray = (images) => {
+  if (!images) return []
+  let imgArr
+  try {
+    imgArr = typeof images === "string" ? JSON.parse(images) : images
+    if (!Array.isArray(imgArr)) return []
+  } catch {
+    return []
+  }
+  return imgArr.map(img =>
+    typeof img === "string"
+      ? `${process.env.REACT_APP_API_URL || ""}/uploads/photographers/${img}`
+      : "/placeholder.svg"
+  )
+}
+
 const safeJsonParse = (jsonString) => {
   if (!jsonString) return [];
   try {
@@ -71,7 +88,7 @@ const PhotographerDetailPage = () => {
     return null;
   }
 
-  const images = safeJsonParse(photographer.images);
+  const images = getImageUrlArray(photographer.images);
   const portfolio = photographer.portfolio;
 
   return (
@@ -99,6 +116,7 @@ const PhotographerDetailPage = () => {
                           height: "100%",
                           objectFit: "cover",
                         }}
+                        onError={e => { e.target.onerror = null; e.target.src = "/placeholder.svg" }}
                       />
                     </div>
                   </div>

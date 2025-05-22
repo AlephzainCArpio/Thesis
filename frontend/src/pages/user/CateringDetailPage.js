@@ -25,6 +25,23 @@ import api from "../../services/api";
 
 const { Title, Paragraph } = Typography;
 
+// AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/caterings/[filename]
+const getImageUrlArray = (images) => {
+  if (!images) return []
+  let imgArr
+  try {
+    imgArr = typeof images === "string" ? JSON.parse(images) : images
+    if (!Array.isArray(imgArr)) return []
+  } catch {
+    return []
+  }
+  return imgArr.map(img =>
+    typeof img === "string"
+      ? `${process.env.REACT_APP_API_URL || ""}/uploads/caterings/${img}`
+      : "/placeholder.svg"
+  )
+}
+
 const safeJsonParse = (jsonString) => {
   if (!jsonString) return [];
   try {
@@ -69,7 +86,7 @@ const CateringDetailPage = () => {
     return null;
   }
 
-  const images = safeJsonParse(catering.images);
+  const images = getImageUrlArray(catering.images);
   const dietaryOptions = Array.isArray(safeJsonParse(catering.dietaryOptions))
     ? safeJsonParse(catering.dietaryOptions)
     : [];
@@ -99,6 +116,7 @@ const CateringDetailPage = () => {
                           height: "100%",
                           objectFit: "cover",
                         }}
+                        onError={e => { e.target.onerror = null; e.target.src = "/placeholder.svg" }}
                       />
                     </div>
                   </div>

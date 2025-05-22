@@ -8,24 +8,20 @@ import api from "../../services/api"
 const { Title, Paragraph } = Typography
 const { Meta } = Card
 
-// Safe JSON parse function, handles single string and array
-const safeParseImages = (input) => {
-  if (!input) return []
-  if (Array.isArray(input)) return input
-  if (typeof input === "string") {
-    try {
-      // Try to parse as JSON
-      const parsed = JSON.parse(input)
-      if (Array.isArray(parsed)) return parsed
-      // If it's a plain string but not JSON array, treat as single image
-      if (typeof parsed === "string") return [parsed]
-      return []
-    } catch {
-      // Not valid JSON, treat as single image string
-      return [input]
-    }
+const getFirstImageUrl = (images) => {
+  // AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/venues/[filename]
+  if (!images) return "/placeholder.svg?height=200&width=300"
+  let imgArr
+  try {
+    imgArr = typeof images === "string" ? JSON.parse(images) : images
+    if (!Array.isArray(imgArr)) return "/placeholder.svg?height=200&width=300"
+  } catch {
+    return "/placeholder.svg?height=200&width=300"
   }
-  return []
+  if (imgArr.length > 0 && typeof imgArr[0] === "string") {
+    return `${process.env.REACT_APP_API_URL || ""}/uploads/venues/${imgArr[0]}`
+  }
+  return "/placeholder.svg?height=200&width=300"
 }
 
 const VenueListPage = () => {
@@ -61,8 +57,7 @@ const VenueListPage = () => {
   }
 
   const renderVenueCard = (venue) => {
-    const images = safeParseImages(venue.images)
-    const firstImage = images.length > 0 ? images[0] : "/placeholder.svg?height=200&width=300"
+    const firstImage = getFirstImageUrl(venue.images)
 
     return (
       <Col xs={24} sm={12} lg={8} key={venue.id}>
@@ -74,6 +69,7 @@ const VenueListPage = () => {
                 alt={venue.name}
                 src={firstImage}
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={e => { e.target.onerror = null; e.target.src = "/placeholder.svg?height=200&width=300" }}
               />
             </div>
           }

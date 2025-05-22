@@ -23,6 +23,30 @@ const serviceTypeMapping = {
   designers: "DESIGNER",
 };
 
+// AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/[service]/[filename]
+const getFirstImageUrl = (service, images, type) => {
+  if (!images) return "https://via.placeholder.com/300x200"
+  let imgArr
+  try {
+    imgArr = typeof images === "string" ? JSON.parse(images) : images
+    if (!Array.isArray(imgArr)) return "https://via.placeholder.com/300x200"
+  } catch {
+    return "https://via.placeholder.com/300x200"
+  }
+  if (imgArr.length > 0 && typeof imgArr[0] === "string") {
+    // type: venues, catering, photographers, designers
+    let folder = type
+    if (type === "catering") folder = "caterings"
+    else if (type === "venue") folder = "venues"
+    else if (type === "photographer") folder = "photographers"
+    else if (type === "designer") folder = "designers"
+    // fallback for plural/singular
+    if (!folder.endsWith("s")) folder += "s"
+    return `${process.env.REACT_APP_API_URL || ""}/uploads/${folder}/${imgArr[0]}`
+  }
+  return "https://via.placeholder.com/300x200"
+}
+
 const CustomizationPage = () => {
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState(null);
@@ -83,11 +107,8 @@ const CustomizationPage = () => {
               cover={
                 <img
                   alt={service.name}
-                  src={
-                    service.images && service.images.length > 0
-                      ? JSON.parse(service.images)[0]
-                      : "https://via.placeholder.com/300x200"
-                  }
+                  src={getFirstImageUrl(service, service.images, selectedService)}
+                  onError={e => { e.target.onerror = null; e.target.src = "https://via.placeholder.com/300x200" }}
                 />
               }
             >
@@ -161,7 +182,7 @@ const CustomizationPage = () => {
             >
               <InputNumber
                 min={1}
-                max={1000}
+                max={100000}
                 style={{ width: "100%" }}
                 placeholder="Enter number of guests"
               />
@@ -176,7 +197,7 @@ const CustomizationPage = () => {
             <InputNumber
               style={{ width: "100%" }}
               min={100}
-              max={500000}
+              max={50000000000}
               step={5000}
               placeholder="Enter your budget"
               formatter={(value) =>
