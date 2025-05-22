@@ -3,7 +3,7 @@ import { Form, Input, InputNumber, Select, Upload } from 'antd';
 import { useAuth } from '../../contexts/AuthContext';
 import { PlusOutlined } from '@ant-design/icons';
 import { submitServiceData } from '../../services/api';
-import '../../theme/vibrantFormOverrides.css';
+
 const { Option } = Select;
 
 const RegisterServicePage = () => {
@@ -27,7 +27,7 @@ const RegisterServicePage = () => {
   );
 };
 
-
+// Venue form
 const VenueForm = () => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = React.useState(false);
@@ -170,7 +170,7 @@ const VenueForm = () => {
   );
 };
 
-
+// Catering form (No changes; implement similar logic as VenueForm if needed)
 const CateringForm = () => {
   return (
     <Form layout="vertical">
@@ -253,6 +253,8 @@ const CateringForm = () => {
     </Form>
   );
 };
+
+// Photographer form (No changes; implement similar logic as VenueForm if needed)
 const PhotographerForm = () => {
   return (
     <Form layout="vertical">
@@ -342,7 +344,7 @@ const PhotographerForm = () => {
   );
 };
 
-
+// Designer form (eventTypes is now single select)
 const DesignerForm = () => {
   return (
     <Form layout="vertical">

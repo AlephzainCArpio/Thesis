@@ -189,14 +189,9 @@ const registerService = async (req, res) => {
       }
     }
 
-    // === ADMIN STYLE: Save only file names ===
-    const imageFilenames = req.files.map(file => file.filename);
-    let imagesField = "";
-    if (imageFilenames.length === 1) {
-      imagesField = imageFilenames[0];
-    } else {
-      imagesField = JSON.stringify(imageFilenames);
-    }
+    // Save images as JSON array of filenames
+    const imageFilenames = req.files.map(file => path.basename(file.path));
+    const imagesField = JSON.stringify(imageFilenames);
 
     const processedData = { ...serviceData };
     ['dietaryOptions'].forEach(field => {
