@@ -25,25 +25,15 @@ import api from "../../services/api";
 const { confirm } = Modal;
 const { TextArea } = Input;
 
-const getImagesArray = (images) => {
-  if (!images) return [];
-  if (Array.isArray(images)) return images;
-  if (typeof images === "string") {
-    try {
-      const parsed = JSON.parse(images);
-      if (Array.isArray(parsed)) return parsed;
-    } catch {}
-    if (images.includes(",")) return images.split(",").map((s) => s.trim());
-    return [images];
+// Use same image parsing as AdminDashboard
+const safeJsonParse = (jsonString) => {
+  if (!jsonString) return null;
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    return null;
   }
-  return [];
-};
-
-const getImageUrl = (img) => {
-  if (!img) return "";
-  if (img.startsWith("/uploads/")) return img;
-  if (/^https?:\/\//.test(img)) return img;
-  return `/uploads/${img.replace(/^\/?uploads\//, "")}`;
 };
 
 const AdminDesignersPage = () => {
@@ -55,6 +45,8 @@ const AdminDesignersPage = () => {
   const [selectedDesigner, setSelectedDesigner] = useState(null);
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
+
+  const API_URL = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     fetchDesigners();
@@ -167,10 +159,11 @@ const AdminDesignersPage = () => {
       title: "Images",
       key: "images",
       render: (_, record) => {
-        const arr = getImagesArray(record.images);
-        return arr.length > 0 ? (
+        const parsedImages = safeJsonParse(record.images);
+        const firstImage = Array.isArray(parsedImages) && parsedImages.length > 0 ? parsedImages[0] : "default.jpg";
+        return (
           <img
-            src={getImageUrl(arr[0])}
+            src={record.images ? `${API_URL}/uploads/designers/${firstImage}` : "/placeholder.jpg"}
             alt=""
             style={{
               width: 50,
@@ -178,9 +171,11 @@ const AdminDesignersPage = () => {
               objectFit: "cover",
               borderRadius: 4,
             }}
+            onError={e => {
+              e.target.onerror = null;
+              e.target.src = "/placeholder.jpg";
+            }}
           />
-        ) : (
-          "No image"
         );
       },
     },
@@ -277,18 +272,22 @@ const AdminDesignersPage = () => {
             <Descriptions.Item label="Event Types">{selectedDesigner.eventTypes}</Descriptions.Item>
             <Descriptions.Item label="Images">
               {(() => {
-                const images = getImagesArray(selectedDesigner.images);
-                return images.length ? (
+                const parsedImages = safeJsonParse(selectedDesigner.images);
+                return Array.isArray(parsedImages) && parsedImages.length > 0 ? (
                   <Carousel autoplay>
-                    {images.map((img, index) => (
+                    {parsedImages.map((img, index) => (
                       <img
                         key={index}
-                        src={getImageUrl(img)}
+                        src={selectedDesigner.images ? `${API_URL}/uploads/designers/${img}` : "/placeholder.jpg"}
                         alt={`designer-${index}`}
                         style={{
                           width: "100%",
                           height: "200px",
                           objectFit: "cover",
+                        }}
+                        onError={e => {
+                          e.target.onerror = null;
+                          e.target.src = "/placeholder.jpg";
                         }}
                       />
                     ))}

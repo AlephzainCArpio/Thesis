@@ -25,25 +25,15 @@ import api from "../../services/api";
 const { confirm } = Modal;
 const { TextArea } = Input;
 
-const getImagesArray = (images) => {
-  if (!images) return [];
-  if (Array.isArray(images)) return images;
-  if (typeof images === "string") {
-    try {
-      const parsed = JSON.parse(images);
-      if (Array.isArray(parsed)) return parsed;
-    } catch {}
-    if (images.includes(",")) return images.split(",").map((s) => s.trim());
-    return [images];
+// Use same image parsing as AdminDashboard
+const safeJsonParse = (jsonString) => {
+  if (!jsonString) return null;
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    return null;
   }
-  return [];
-};
-
-const getImageUrl = (img) => {
-  if (!img) return "";
-  if (img.startsWith("/uploads/")) return img;
-  if (/^https?:\/\//.test(img)) return img;
-  return `/uploads/${img.replace(/^\/?uploads\//, "")}`;
 };
 
 const AdminPhotographersPage = () => {
@@ -55,6 +45,8 @@ const AdminPhotographersPage = () => {
   const [selectedPhotographer, setSelectedPhotographer] = useState(null);
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
+
+  const API_URL = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     fetchPhotographers();
@@ -168,10 +160,11 @@ const AdminPhotographersPage = () => {
       title: "Images",
       key: "images",
       render: (_, record) => {
-        const arr = getImagesArray(record.images);
-        return arr.length > 0 ? (
+        const parsedImages = safeJsonParse(record.images);
+        const firstImage = Array.isArray(parsedImages) && parsedImages.length > 0 ? parsedImages[0] : "default.jpg";
+        return (
           <img
-            src={getImageUrl(arr[0])}
+            src={record.images ? `${API_URL}/uploads/photographers/${firstImage}` : "/placeholder.jpg"}
             alt=""
             style={{
               width: 50,
@@ -179,9 +172,11 @@ const AdminPhotographersPage = () => {
               objectFit: "cover",
               borderRadius: 4,
             }}
+            onError={e => {
+              e.target.onerror = null;
+              e.target.src = "/placeholder.jpg";
+            }}
           />
-        ) : (
-          "No image"
         );
       },
     },
@@ -279,18 +274,22 @@ const AdminPhotographersPage = () => {
             <Descriptions.Item label="Price Range">{selectedPhotographer.priceRange}</Descriptions.Item>
             <Descriptions.Item label="Images">
               {(() => {
-                const images = getImagesArray(selectedPhotographer.images);
-                return images.length ? (
+                const parsedImages = safeJsonParse(selectedPhotographer.images);
+                return Array.isArray(parsedImages) && parsedImages.length > 0 ? (
                   <Carousel autoplay>
-                    {images.map((img, index) => (
+                    {parsedImages.map((img, index) => (
                       <img
                         key={index}
-                        src={getImageUrl(img)}
+                        src={selectedPhotographer.images ? `${API_URL}/uploads/photographers/${img}` : "/placeholder.jpg"}
                         alt={`photographer-${index}`}
                         style={{
                           width: "100%",
                           height: "200px",
                           objectFit: "cover",
+                        }}
+                        onError={e => {
+                          e.target.onerror = null;
+                          e.target.src = "/placeholder.jpg";
                         }}
                       />
                     ))}

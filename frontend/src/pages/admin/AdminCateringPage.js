@@ -25,25 +25,15 @@ import api from "../../services/api";
 const { confirm } = Modal;
 const { TextArea } = Input;
 
-const getImagesArray = (images) => {
-  if (!images) return [];
-  if (Array.isArray(images)) return images;
-  if (typeof images === "string") {
-    try {
-      const parsed = JSON.parse(images);
-      if (Array.isArray(parsed)) return parsed;
-    } catch {}
-    if (images.includes(",")) return images.split(",").map((s) => s.trim());
-    return [images];
+// Use same image parsing as AdminDashboard
+const safeJsonParse = (jsonString) => {
+  if (!jsonString) return null;
+  try {
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error("Error parsing JSON:", error);
+    return null;
   }
-  return [];
-};
-
-const getImageUrl = (img) => {
-  if (!img) return "";
-  if (img.startsWith("/uploads/")) return img;
-  if (/^https?:\/\//.test(img)) return img;
-  return `/uploads/${img.replace(/^\/?uploads\//, "")}`;
 };
 
 const AdminCateringPage = () => {
@@ -55,6 +45,8 @@ const AdminCateringPage = () => {
   const [selectedCatering, setSelectedCatering] = useState(null);
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
+
+  const API_URL = process.env.REACT_APP_API_URL;
 
   useEffect(() => {
     fetchCaterings();
@@ -168,10 +160,11 @@ const AdminCateringPage = () => {
       title: "Images",
       key: "images",
       render: (_, record) => {
-        const arr = getImagesArray(record.images);
-        return arr.length > 0 ? (
+        const parsedImages = safeJsonParse(record.images);
+        const firstImage = Array.isArray(parsedImages) && parsedImages.length > 0 ? parsedImages[0] : "default.jpg";
+        return (
           <img
-            src={getImageUrl(arr[0])}
+            src={record.images ? `${API_URL}/uploads/caterings/${firstImage}` : "/placeholder.jpg"}
             alt=""
             style={{
               width: 50,
@@ -179,9 +172,11 @@ const AdminCateringPage = () => {
               objectFit: "cover",
               borderRadius: 4,
             }}
+            onError={e => {
+              e.target.onerror = null;
+              e.target.src = "/placeholder.jpg";
+            }}
           />
-        ) : (
-          "No image"
         );
       },
     },
@@ -278,18 +273,22 @@ const AdminCateringPage = () => {
             <Descriptions.Item label="Price Per Person">₱{selectedCatering.pricePerPerson?.toLocaleString()}</Descriptions.Item>
             <Descriptions.Item label="Images">
               {(() => {
-                const imagesArr = getImagesArray(selectedCatering.images);
-                return imagesArr.length > 0 ? (
+                const parsedImages = safeJsonParse(selectedCatering.images);
+                return Array.isArray(parsedImages) && parsedImages.length > 0 ? (
                   <Carousel autoplay>
-                    {imagesArr.map((img, i) => (
+                    {parsedImages.map((img, i) => (
                       <img
                         key={i}
-                        src={getImageUrl(img)}
+                        src={selectedCatering.images ? `${API_URL}/uploads/caterings/${img}` : "/placeholder.jpg"}
                         alt={`catering-${i}`}
                         style={{
                           width: "100%",
                           height: "200px",
                           objectFit: "cover",
+                        }}
+                        onError={e => {
+                          e.target.onerror = null;
+                          e.target.src = "/placeholder.jpg";
                         }}
                       />
                     ))}
