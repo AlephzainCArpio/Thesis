@@ -189,16 +189,14 @@ const registerService = async (req, res) => {
       }
     }
 
-    // Save images as URLs with correct subfolder path
-    const imageUrls = req.files.map(file => {
-      // file.path: /absolute/path/to/uploads/venues/12345-pic.jpg
-      // Want: /uploads/venues/12345-pic.jpg
-      const relPath = file.path.split('uploads')[1].replace(/\\/g, '/');
-      return `/uploads${relPath}`;
-    });
+    // === ADMIN STYLE: Save only file names ===
+    const imageFilenames = req.files.map(file => file.filename);
     let imagesField = "";
-    if (imageUrls.length === 1) imagesField = imageUrls[0];
-    else imagesField = imageUrls.join(",");
+    if (imageFilenames.length === 1) {
+      imagesField = imageFilenames[0];
+    } else {
+      imagesField = JSON.stringify(imageFilenames);
+    }
 
     const processedData = { ...serviceData };
     ['dietaryOptions'].forEach(field => {

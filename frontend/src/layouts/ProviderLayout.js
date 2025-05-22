@@ -53,20 +53,7 @@ const ProviderLayout = ({ children }) => {
 
   // Update userMenu with 'items' prop
   const userMenuItems = [
-    {
-      key: "profile",
-      icon: <ProfileOutlined />,
-      label: <Link to="/provider/profile">My Profile</Link>,
-    },
-    {
-      key: "settings",
-      icon: <SettingOutlined />,
-      label: <Link to="/provider/settings">Settings</Link>,
-    },
-    {
-      key: "divider",
-      type: "divider",
-    },
+   
     {
       key: "logout",
       icon: <LogoutOutlined />,
@@ -81,13 +68,10 @@ const ProviderLayout = ({ children }) => {
       <Sider trigger={null} collapsible collapsed={collapsed} width={256}>
         <Menu theme="dark" mode="inline" defaultSelectedKeys={[location.pathname]} selectedKeys={[location.pathname]}>
           <Menu.Item key="/provider/dashboard" icon={<DashboardOutlined />}>
-            <Link to="/provider/dashboard">Dashboard</Link>
+            <Link to="/provider">Dashboard</Link>
           </Menu.Item>
           <Menu.Item key="/provider/services" icon={<ProfileOutlined />}>
             <Link to="/provider/register-service">Manage Services</Link>
-          </Menu.Item>
-          <Menu.Item key="/provider/pending" icon={<ProfileOutlined />}>
-            <Link to="/provider/pending">Pending Services</Link>
           </Menu.Item>
         </Menu>
       </Sider>

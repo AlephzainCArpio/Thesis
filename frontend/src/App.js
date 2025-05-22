@@ -31,7 +31,7 @@ import CustomizationPage from "./pages/user/CustomizationPage";
 // Provider pages
 import ProviderDashboard from "./pages/provider/ProviderDashboard";
 import RegisterServicePage from "./pages/provider/RegisterServicePage";
-import PendingServicesPage from "./pages/provider/PendingServicesPage";
+
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -102,8 +102,8 @@ function App() {
       {/* Provider Routes */}
       <Route path="/provider" element={<ProtectedRoute allowedRoles={["PROVIDER"]} element={<ProviderLayout />} />}>
         <Route index element={<ProviderDashboard />} />
+        <Route path="dashboard" element={<ProviderDashboard />} />
         <Route path="register-service" element={<RegisterServicePage />} />
-        <Route path="pending" element={<PendingServicesPage />} />
       </Route>
 
       {/* Admin Routes */}
