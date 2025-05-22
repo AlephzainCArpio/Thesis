@@ -24,6 +24,12 @@ const LoginPage = () => {
         return;
       }
 
+      // Prevent login if provider is pending
+      if (user.role === "PROVIDER" && user.status === "pending") {
+        message.error("Your account is still pending approval. Please wait for an administrator to approve your account.");
+        return;
+      }
+
       message.success("Login successful!");
 
       // Add a small delay to ensure state updates properly

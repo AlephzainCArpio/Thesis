@@ -5,8 +5,6 @@ import api from "../../services/api"
 
 const { Title, Paragraph } = Typography
 const { Meta } = Card
-
-// Use AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/photographers/[filename]
 const getFirstImageUrl = (images) => {
   if (!images) return "/placeholder.svg?height=200&width=300"
   let imgArr
@@ -43,7 +41,6 @@ const PhotographerListPage = () => {
   }
 
   const renderPhotographerCard = (photographer) => {
-    // Use images field, fallback to portfolio for compatibility
     const firstImage = getFirstImageUrl(photographer.images || photographer.portfolio)
 
     return (

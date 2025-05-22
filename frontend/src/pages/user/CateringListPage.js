@@ -39,7 +39,6 @@ const CateringListPage = () => {
 
   useEffect(() => {
     fetchCaterings();
-    // eslint-disable-next-line
   }, []);
 
   const fetchCaterings = async () => {

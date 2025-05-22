@@ -9,6 +9,7 @@ const { Title, Paragraph } = Typography
 const { Meta } = Card
 
 const getFirstImageUrl = (images) => {
+  // AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/venues/[filename]
   if (!images) return "/placeholder.svg?height=200&width=300"
   let imgArr
   try {
@@ -34,6 +35,7 @@ const VenueListPage = () => {
 
   useEffect(() => {
     fetchVenues()
+    // eslint-disable-next-line
   }, [])
 
   const fetchVenues = async () => {
@@ -62,11 +64,25 @@ const VenueListPage = () => {
         <Card
           hoverable
           cover={
-            <div style={{ height: 200, overflow: "hidden" }}>
+            <div
+              style={{
+                height: 200,
+                background: "#f5f5f5",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+              }}
+            >
               <img
                 alt={venue.name}
                 src={firstImage}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  display: "block",
+                }}
                 onError={e => { e.target.onerror = null; e.target.src = "/placeholder.svg?height=200&width=300" }}
               />
             </div>
