@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
       setCurrentUser(user); // Ensure the user object is set
-      console.log('User after login:', user); // Debug log
+      console.log('User after login:', user);
       return user;
     } catch (err) {
       console.error('Login error details:', err);
