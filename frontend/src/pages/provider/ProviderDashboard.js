@@ -18,7 +18,6 @@ const PendingServicesPage = () => {
 
   useEffect(() => {
     fetchPendingServices();
-    // eslint-disable-next-line
   }, [currentUser]);
 
   const fetchPendingServices = async () => {

@@ -23,7 +23,6 @@ const serviceTypeMapping = {
   designers: "DESIGNER",
 };
 
-// AdminDashboard reference: expects images to be a JSON array of filenames, served as /uploads/[service]/[filename]
 const getFirstImageUrl = (service, images, type) => {
   if (!images) return "https://via.placeholder.com/300x200"
   let imgArr
@@ -40,7 +39,7 @@ const getFirstImageUrl = (service, images, type) => {
     else if (type === "venue") folder = "venues"
     else if (type === "photographer") folder = "photographers"
     else if (type === "designer") folder = "designers"
-    // fallback for plural/singular
+   
     if (!folder.endsWith("s")) folder += "s"
     return `${process.env.REACT_APP_API_URL || ""}/uploads/${folder}/${imgArr[0]}`
   }

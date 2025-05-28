@@ -6,7 +6,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 10000, // Optional: 10s timeout
+  timeout: 10000,
 });
 
 // Request interceptor for adding auth token
@@ -29,7 +29,7 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      // Redirect to login if needed
+  
       if (!window.location.pathname.includes("/login")) {
         window.location.href = "/login";
       }

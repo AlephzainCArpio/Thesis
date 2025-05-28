@@ -170,7 +170,7 @@ const VenueForm = () => {
   );
 };
 
-// Catering form (No changes; implement similar logic as VenueForm if needed)
+// Catering form 
 const CateringForm = () => {
   return (
     <Form layout="vertical">
@@ -254,7 +254,7 @@ const CateringForm = () => {
   );
 };
 
-// Photographer form (No changes; implement similar logic as VenueForm if needed)
+// Photographer form
 const PhotographerForm = () => {
   return (
     <Form layout="vertical">
@@ -344,7 +344,7 @@ const PhotographerForm = () => {
   );
 };
 
-// Designer form (eventTypes is now single select)
+// Designer form
 const DesignerForm = () => {
   return (
     <Form layout="vertical">

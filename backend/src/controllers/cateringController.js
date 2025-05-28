@@ -64,7 +64,7 @@ const getCateringById = async (req, res) => {
       return res.status(404).json({ message: "Catering not found" })
     }
 
-    // Don't return unapproved caterings unless it's the owner or an admin
+    // Don't return unapproved caterings unless it's an admin
     if (
       catering.status !== "APPROVED" &&
       (!req.user || (req.user.id !== catering.providerId && req.user.role !== "ADMIN"))

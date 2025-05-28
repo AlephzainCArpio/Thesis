@@ -51,7 +51,7 @@ const ProviderLayout = ({ children }) => {
     }
   }
 
-  // Update userMenu with 'items' prop
+ 
   const userMenuItems = [
    
     {

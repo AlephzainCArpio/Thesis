@@ -143,7 +143,6 @@ const AdminDashboard = () => {
     { label: "Designer", key: "DESIGNER" }
   ];
 
-  // Helper to safely parse JSON array or return null
   const safeJsonParse = (json) => {
     if (!json) return null;
     try {

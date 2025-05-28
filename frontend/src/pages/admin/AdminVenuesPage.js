@@ -25,7 +25,7 @@ import api from "../../services/api";
 const { confirm } = Modal;
 const { TextArea } = Input;
 
-// Use the same image parsing logic as AdminDashboard
+
 const safeJsonParse = (jsonString) => {
   if (!jsonString) return null;
   try {
@@ -46,7 +46,7 @@ const AdminVenuesPage = () => {
   const [form] = Form.useForm();
   const [editForm] = Form.useForm();
 
-  // For image URL, mimic AdminDashboard logic using REACT_APP_API_URL
+ 
   const API_URL = process.env.REACT_APP_API_URL;
 
   useEffect(() => {

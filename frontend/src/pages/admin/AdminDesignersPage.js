@@ -25,7 +25,7 @@ import api from "../../services/api";
 const { confirm } = Modal;
 const { TextArea } = Input;
 
-// Use same image parsing as AdminDashboard
+
 const safeJsonParse = (jsonString) => {
   if (!jsonString) return null;
   try {

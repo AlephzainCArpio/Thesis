@@ -26,7 +26,7 @@ router.post('/:serviceType', protect, (req, res, next) => {
 
   try {
     const providerId = req.user.id;
-    // Store as a JSON array string for database (so frontend can JSON.parse it)
+    
     const images = JSON.stringify(req.filePaths);
 
     let result;

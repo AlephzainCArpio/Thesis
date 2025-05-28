@@ -60,7 +60,7 @@ const getDesignerById = async (req, res) => {
       return res.status(404).json({ message: "Designer not found" })
     }
 
-    // Don't return unapproved designers unless it's the owner or an admin
+    // Don't return unapproved designers unless it's an admin
     if (
       designer.status !== "APPROVED" &&
       (!req.user || (req.user.id !== designer.providerId && req.user.role !== "ADMIN"))

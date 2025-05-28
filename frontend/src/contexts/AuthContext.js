@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
       localStorage.setItem('token', token);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
-      setCurrentUser(user); // Ensure the user object is set
+      setCurrentUser(user); 
       console.log('User after login:', user);
       return user;
     } catch (err) {

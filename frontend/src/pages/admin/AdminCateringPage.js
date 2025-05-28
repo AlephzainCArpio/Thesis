@@ -27,7 +27,6 @@ const { TextArea } = Input;
 
 const API_URL = process.env.REACT_APP_API_URL || "";
 
-// Helper to safely parse JSON array or return null
 const safeJsonParse = (json) => {
   if (!json) return null;
   try {
@@ -37,7 +36,7 @@ const safeJsonParse = (json) => {
   }
 };
 
-// Improved image extraction: support JSON array string, or plain filename string
+
 const getImagesArray = (imagesField) => {
   if (!imagesField) return [];
   const parsed = safeJsonParse(imagesField);

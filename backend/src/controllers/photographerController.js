@@ -1,7 +1,7 @@
 const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient()
 
-// Helper function to parse portfolio
+
 const parsePortfolio = (portfolioInput) => {
   try {
     const parsed = typeof portfolioInput === "string" ? JSON.parse(portfolioInput) : portfolioInput
@@ -11,7 +11,6 @@ const parsePortfolio = (portfolioInput) => {
   }
 }
 
-// Get all photographers based on query parameters
 const getPhotographers = async (req, res) => {
   try {
     const { location, style, serviceType, status } = req.query
